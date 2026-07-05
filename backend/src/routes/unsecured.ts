@@ -96,6 +96,8 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
     const whereClause: any = { store_id: storeId };
     if (status) {
       whereClause.status = status;
+    } else {
+      whereClause.status = { not: "cancelled" };
     }
     if (search) {
       whereClause.OR = [
@@ -1557,9 +1559,10 @@ router.delete("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req
         );
       }
 
-      // Delete main contract. Cascade in DB cleans up child tables
-      await tx.unsecuredContract.delete({
+      // Soft delete: set status to 'cancelled'
+      await tx.unsecuredContract.update({
         where: { id: contractId },
+        data: { status: "cancelled" },
       });
 
       return { message: "Unsecured contract deleted successfully and daily cash balanced" };

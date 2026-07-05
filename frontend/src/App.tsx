@@ -20,6 +20,17 @@ import { Contracts } from "./pages/Contracts";
 import { PawnDetail } from "./pages/PawnDetail";
 import { UnsecuredDetail } from "./pages/UnsecuredDetail";
 import { InstallmentDetail } from "./pages/InstallmentDetail";
+import { BeginningCash } from "./pages/BeginningCash";
+import { CapitalContracts } from "./pages/CapitalContracts";
+import { ShopsSummaryReport } from "./pages/reports/ShopsSummaryReport";
+import { TransactionsSummaryReport } from "./pages/reports/TransactionsSummaryReport";
+import { ProfitSummaryReport } from "./pages/reports/ProfitSummaryReport";
+import { InterestDetailReport } from "./pages/reports/InterestDetailReport";
+import { EmployeeCollectionReport } from "./pages/reports/EmployeeCollectionReport";
+import { ContractStatusReports } from "./pages/reports/ContractStatusReports";
+import { ShiftHandoverReport } from "./pages/reports/ShiftHandoverReport";
+import { DailyCashFlowReport } from "./pages/reports/DailyCashFlowReport";
+import { CollaboratorReport } from "./pages/reports/CollaboratorReport";
 
 const PrivateLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token, loading } = useAuth();
@@ -129,10 +140,26 @@ function App() {
             }
           />
           <Route
+            path="/cash/beginning"
+            element={
+              <PrivateLayout>
+                <BeginningCash />
+              </PrivateLayout>
+            }
+          />
+          <Route
             path="/cash"
             element={
               <PrivateLayout>
                 <CashFund />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/contracts/capital"
+            element={
+              <PrivateLayout>
+                <CapitalContracts />
               </PrivateLayout>
             }
           />
@@ -173,6 +200,79 @@ function App() {
             element={
               <PrivateLayout>
                 <InstallmentDetail />
+              </PrivateLayout>
+            }
+          />
+          {/* Reports Routes */}
+          <Route
+            path="/reports/overview"
+            element={
+              <PrivateLayout>
+                <ShopsSummaryReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/transactions"
+            element={
+              <PrivateLayout>
+                <TransactionsSummaryReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/profit"
+            element={
+              <PrivateLayout>
+                <ProfitSummaryReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/interest"
+            element={
+              <PrivateLayout>
+                <InterestDetailReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/collection"
+            element={
+              <PrivateLayout>
+                <EmployeeCollectionReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/contracts/:category"
+            element={
+              <PrivateLayout>
+                <ContractStatusReports />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/shift-handover"
+            element={
+              <PrivateLayout>
+                <ShiftHandoverReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/cashflow"
+            element={
+              <PrivateLayout>
+                <DailyCashFlowReport />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/reports/collaborators"
+            element={
+              <PrivateLayout>
+                <CollaboratorReport />
               </PrivateLayout>
             }
           />

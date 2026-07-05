@@ -18,6 +18,8 @@ import pawnRouter from "./routes/pawn";
 import unsecuredRouter from "./routes/unsecured";
 import installmentRouter from "./routes/installment";
 import vouchersRouter from "./routes/vouchers";
+import capitalRouter from "./routes/capital";
+import reportsRouter from "./routes/reports";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -37,7 +39,9 @@ app.use("/api/cash", cashRouter);
 app.use("/api/contracts/pawn", pawnRouter);
 app.use("/api/contracts/unsecured", unsecuredRouter);
 app.use("/api/contracts/installment", installmentRouter);
+app.use("/api/contracts/capital", capitalRouter);
 app.use("/api/vouchers", vouchersRouter);
+app.use("/api/reports", reportsRouter);
 
 // Serve Frontend static build in production
 const frontendBuildPath = path.join(__dirname, "../../frontend/dist");
