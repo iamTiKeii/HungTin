@@ -93,7 +93,7 @@ model InterestType {
   id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code                  String   @unique @db.VarChar(50)
   name                  String   @db.VarChar(100)
-  calculation_method    String   @db.VarChar(30)
+  calculation_method    String   @db.VarChar(50)
   is_principal_included Boolean  @default(false)
   status                String   @default("active") @db.VarChar(20)
   notes                 String?  @db.Text
