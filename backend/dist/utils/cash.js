@@ -1,0 +1,82 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.normalizeToMidnight = normalizeToMidnight;
+exports.adjustDailyCash = adjustDailyCash;
+const client_1 = require("@prisma/client");
+// Normalize a date to UTC midnight to store consistently in database @db.Date columns
+function normalizeToMidnight(dateInput) {
+    const d = new Date(dateInput);
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+}
+async function adjustDailyCash(tx, storeId, dateInput, amount, type, employeeId, description) {
+    const date = normalizeToMidnight(dateInput);
+    const changeAmt = new client_1.Prisma.Decimal(amount);
+    // 1. Check if DailyCash record exists for this store and date
+    let dailyCash = await tx.dailyCash.findUnique({
+        where: {
+            store_id_date: {
+                store_id: storeId,
+                date: date,
+            },
+        },
+    });
+    if (dailyCash) {
+        // Update existing daily cash
+        dailyCash = await tx.dailyCash.update({
+            where: { id: dailyCash.id },
+            data: {
+                current_cash: {
+                    increment: changeAmt,
+                },
+            },
+        });
+    }
+    else {
+        // Create new daily cash. Find the most recent daily cash before this date.
+        const lastDailyCash = await tx.dailyCash.findFirst({
+            where: {
+                store_id: storeId,
+                date: {
+                    lt: date,
+                },
+            },
+            orderBy: {
+                date: "desc",
+            },
+        });
+        let beginningCash = new client_1.Prisma.Decimal(0);
+        if (lastDailyCash) {
+            beginningCash = lastDailyCash.current_cash;
+        }
+        else {
+            // If no daily cash history, use store's initial investment capital
+            const store = await tx.store.findUnique({
+                where: { id: storeId },
+            });
+            if (store) {
+                beginningCash = store.investment_capital;
+            }
+        }
+        const currentCash = beginningCash.add(changeAmt);
+        dailyCash = await tx.dailyCash.create({
+            data: {
+                store_id: storeId,
+                date: date,
+                beginning_cash: beginningCash,
+                current_cash: currentCash,
+            },
+        });
+    }
+    // 2. Create CashFundHistory record
+    await tx.cashFundHistory.create({
+        data: {
+            store_id: storeId,
+            date: date,
+            employee_id: employeeId,
+            amount: changeAmt,
+            type: type,
+            description: description,
+        },
+    });
+    return dailyCash;
+}

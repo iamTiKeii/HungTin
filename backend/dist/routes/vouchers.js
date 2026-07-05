@@ -1,0 +1,243 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const client_1 = require("@prisma/client");
+const auth_1 = require("../middleware/auth");
+const permission_1 = require("../middleware/permission");
+const codeGen_1 = require("../utils/codeGen");
+const cash_1 = require("../utils/cash");
+const router = (0, express_1.Router)();
+const prisma = new client_1.PrismaClient();
+router.use(auth_1.authenticateToken);
+// 1. Get Categories
+router.get("/categories/income", async (req, res) => {
+    try {
+        const cats = await prisma.incomeCategory.findMany({ orderBy: { name: "asc" } });
+        return res.json(cats);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+router.get("/categories/expense", async (req, res) => {
+    try {
+        const cats = await prisma.expenseCategory.findMany({ orderBy: { name: "asc" } });
+        return res.json(cats);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 2. Get Receipts (PT) list
+router.get("/receipts", async (req, res) => {
+    try {
+        const receipts = await prisma.receiptVoucher.findMany({
+            where: { store_id: req.user.store_id },
+            include: {
+                category: true,
+                employee: { select: { full_name: true } },
+            },
+            orderBy: { created_at: "desc" },
+        });
+        return res.json(receipts);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 3. Get Payments (PC) list
+router.get("/payments", async (req, res) => {
+    try {
+        const payments = await prisma.paymentVoucher.findMany({
+            where: { store_id: req.user.store_id },
+            include: {
+                category: true,
+                employee: { select: { full_name: true } },
+            },
+            orderBy: { created_at: "desc" },
+        });
+        return res.json(payments);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 4. Create Receipt Voucher (PT)
+router.post("/receipts", (0, permission_1.requirePermission)(["VOUCHERS_MANAGE"]), async (req, res) => {
+    try {
+        const storeId = req.user.store_id;
+        const employeeId = req.user.id;
+        const { category_id, amount, recipient_name, notes } = req.body;
+        if (!category_id || !amount || !recipient_name || !notes) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        const value = Number(amount);
+        if (isNaN(value) || value <= 0) {
+            return res.status(400).json({ error: "Amount must be greater than 0" });
+        }
+        const result = await prisma.$transaction(async (tx) => {
+            const code = await (0, codeGen_1.generateVoucherCode)(tx, "receipt");
+            const today = new Date();
+            const voucher = await tx.receiptVoucher.create({
+                data: {
+                    store_id: storeId,
+                    voucher_code: code,
+                    category_id,
+                    amount: value,
+                    recipient_name,
+                    notes,
+                    voucher_date: today,
+                    employee_id: employeeId,
+                    status: "active",
+                },
+            });
+            // Update Daily Cash (+ amount)
+            await (0, cash_1.adjustDailyCash)(tx, storeId, today, value, "receipt_voucher", employeeId, `Thu tiền theo phiếu thu ${code}. Lý do: ${notes}`);
+            return voucher;
+        });
+        return res.status(201).json(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 5. Create Payment Voucher (PC)
+router.post("/payments", (0, permission_1.requirePermission)(["VOUCHERS_MANAGE"]), async (req, res) => {
+    try {
+        const storeId = req.user.store_id;
+        const employeeId = req.user.id;
+        const { category_id, amount, recipient_name, notes } = req.body;
+        if (!category_id || !amount || !recipient_name || !notes) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        const value = Number(amount);
+        if (isNaN(value) || value <= 0) {
+            return res.status(400).json({ error: "Amount must be greater than 0" });
+        }
+        const result = await prisma.$transaction(async (tx) => {
+            const code = await (0, codeGen_1.generateVoucherCode)(tx, "payment");
+            const today = new Date();
+            const voucher = await tx.paymentVoucher.create({
+                data: {
+                    store_id: storeId,
+                    voucher_code: code,
+                    category_id,
+                    amount: value,
+                    recipient_name,
+                    notes,
+                    voucher_date: today,
+                    employee_id: employeeId,
+                    status: "active",
+                },
+            });
+            // Update Daily Cash (- amount)
+            await (0, cash_1.adjustDailyCash)(tx, storeId, today, -value, "payment_voucher", employeeId, `Chi tiền theo phiếu chi ${code}. Lý do: ${notes}`);
+            return voucher;
+        });
+        return res.status(201).json(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 6. Cancel Receipt Voucher (PT)
+router.put("/receipts/:id/cancel", (0, permission_1.requirePermission)(["VOUCHERS_MANAGE"]), async (req, res) => {
+    try {
+        const id = req.params.id;
+        const employeeId = req.user.id;
+        const voucher = await prisma.receiptVoucher.findUnique({
+            where: { id },
+        });
+        if (!voucher) {
+            return res.status(404).json({ error: "Voucher not found" });
+        }
+        if (voucher.status === "cancelled") {
+            return res.status(400).json({ error: "Voucher is already cancelled" });
+        }
+        const result = await prisma.$transaction(async (tx) => {
+            const updated = await tx.receiptVoucher.update({
+                where: { id },
+                data: { status: "cancelled" },
+            });
+            // Reverse Cash flow (- amount)
+            await (0, cash_1.adjustDailyCash)(tx, voucher.store_id, new Date(), -Number(voucher.amount), "receipt_cancelled", employeeId, `Hủy phiếu thu ${voucher.voucher_code}. Số tiền gốc thu: ${voucher.amount}`);
+            return updated;
+        });
+        return res.json(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 7. Cancel Payment Voucher (PC)
+router.put("/payments/:id/cancel", (0, permission_1.requirePermission)(["VOUCHERS_MANAGE"]), async (req, res) => {
+    try {
+        const id = req.params.id;
+        const employeeId = req.user.id;
+        const voucher = await prisma.paymentVoucher.findUnique({
+            where: { id },
+        });
+        if (!voucher) {
+            return res.status(404).json({ error: "Voucher not found" });
+        }
+        if (voucher.status === "cancelled") {
+            return res.status(400).json({ error: "Voucher is already cancelled" });
+        }
+        const result = await prisma.$transaction(async (tx) => {
+            const updated = await tx.paymentVoucher.update({
+                where: { id },
+                data: { status: "cancelled" },
+            });
+            // Reverse Cash flow (+ amount)
+            await (0, cash_1.adjustDailyCash)(tx, voucher.store_id, new Date(), Number(voucher.amount), "payment_cancelled", employeeId, `Hủy phiếu chi ${voucher.voucher_code}. Số tiền gốc chi: ${voucher.amount}`);
+            return updated;
+        });
+        return res.json(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 8. Delete Receipt
+router.delete("/receipts/:id", (0, permission_1.requirePermission)(["VOUCHERS_MANAGE"]), async (req, res) => {
+    try {
+        const id = req.params.id;
+        const employeeId = req.user.id;
+        const voucher = await prisma.receiptVoucher.findUnique({ where: { id } });
+        if (!voucher)
+            return res.status(404).json({ error: "Voucher not found" });
+        await prisma.$transaction(async (tx) => {
+            if (voucher.status === "active") {
+                // Reverse Daily Cash flow since it was active
+                await (0, cash_1.adjustDailyCash)(tx, voucher.store_id, new Date(), -Number(voucher.amount), "receipt_deleted", employeeId, `Xóa phiếu thu active ${voucher.voucher_code}. Khấu trừ lại: ${voucher.amount}`);
+            }
+            await tx.receiptVoucher.delete({ where: { id } });
+        });
+        return res.json({ message: "Receipt voucher deleted" });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 9. Delete Payment
+router.delete("/payments/:id", (0, permission_1.requirePermission)(["VOUCHERS_MANAGE"]), async (req, res) => {
+    try {
+        const id = req.params.id;
+        const employeeId = req.user.id;
+        const voucher = await prisma.paymentVoucher.findUnique({ where: { id } });
+        if (!voucher)
+            return res.status(404).json({ error: "Voucher not found" });
+        await prisma.$transaction(async (tx) => {
+            if (voucher.status === "active") {
+                // Reverse Daily Cash flow since it was active
+                await (0, cash_1.adjustDailyCash)(tx, voucher.store_id, new Date(), Number(voucher.amount), "payment_deleted", employeeId, `Xóa phiếu chi active ${voucher.voucher_code}. Hoàn lại: ${voucher.amount}`);
+            }
+            await tx.paymentVoucher.delete({ where: { id } });
+        });
+        return res.json({ message: "Payment voucher deleted" });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+exports.default = router;
