@@ -132,7 +132,7 @@ export const Employees: React.FC = () => {
       setError("");
       setSuccess("");
       await axios.put(`/api/employees/${selectedEmp.id}/permissions`, {
-        permissions: selectedPerms,
+        permission_codes: selectedPerms,
       });
       setSuccess(`Cấp quyền thành công cho nhân sự ${selectedEmp.full_name}!`);
       setIsPermsOpen(false);
