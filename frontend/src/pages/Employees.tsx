@@ -112,7 +112,8 @@ export const Employees: React.FC = () => {
 
   const openPermissionsModal = (emp: Employee) => {
     setSelectedEmp(emp);
-    setSelectedPerms(emp.permissions);
+    const codes = (emp.permissions as any[]).map((p) => p.permission?.code).filter(Boolean);
+    setSelectedPerms(codes);
     setIsPermsOpen(true);
   };
 
