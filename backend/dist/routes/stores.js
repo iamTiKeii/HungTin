@@ -66,7 +66,7 @@ router.post("/", (0, permission_1.requirePermission)(["STORES_MANAGE"]), async (
     }
 });
 // 4. Update Store
-router.put("/:id", (0, permission_1.requirePermission)(["STORES_MANAGE"]), async (req, res) => {
+router.put("/:id", (0, permission_1.requirePermission)(["STORES_MANAGE", "STORES_DETAIL"]), async (req, res) => {
     try {
         const { name, investment_capital, status, address, phone, opening_date, manager_id, notes } = req.body;
         const existingStore = await prisma.store.findUnique({

@@ -33,6 +33,9 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
       gender: employee.gender,
       birthday: employee.birthday,
       two_factor_enabled: employee.two_factor_enabled,
+      bank_name: employee.bank_name,
+      bank_account_number: employee.bank_account_number,
+      bank_account_holder: employee.bank_account_holder,
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -42,7 +45,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
 // 2. Update profile details
 router.put("/", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { fullName, phone, email, address, gender, birthday } = req.body;
+    const { fullName, phone, email, address, gender, birthday, bankName, bankAccountNumber, bankAccountHolder } = req.body;
 
     if (!fullName) {
       return res.status(400).json({ error: "Họ và tên là bắt buộc." });
@@ -57,6 +60,9 @@ router.put("/", async (req: AuthenticatedRequest, res: Response) => {
         address: address || null,
         gender: gender || null,
         birthday: birthday ? new Date(birthday) : null,
+        bank_name: bankName || null,
+        bank_account_number: bankAccountNumber || null,
+        bank_account_holder: bankAccountHolder || null,
       },
     });
 
@@ -70,6 +76,9 @@ router.put("/", async (req: AuthenticatedRequest, res: Response) => {
         address: updated.address,
         gender: updated.gender,
         birthday: updated.birthday,
+        bankName: updated.bank_name,
+        bankAccountNumber: updated.bank_account_number,
+        bankAccountHolder: updated.bank_account_holder,
       },
     });
   } catch (error: any) {

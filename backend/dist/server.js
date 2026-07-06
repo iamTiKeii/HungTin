@@ -25,6 +25,7 @@ const capital_1 = __importDefault(require("./routes/capital"));
 const reports_1 = __importDefault(require("./routes/reports"));
 const profile_1 = __importDefault(require("./routes/profile"));
 const warnings_1 = __importDefault(require("./routes/warnings"));
+const settings_1 = __importDefault(require("./routes/settings"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5001;
 // Middlewares
@@ -46,6 +47,7 @@ app.use("/api/vouchers", vouchers_1.default);
 app.use("/api/reports", reports_1.default);
 app.use("/api/profile", profile_1.default);
 app.use("/api/warnings", warnings_1.default);
+app.use("/api/settings", settings_1.default);
 // Serve Frontend static build in production
 const frontendBuildPath = path_1.default.join(__dirname, "../../frontend/dist");
 app.use(express_1.default.static(frontendBuildPath));

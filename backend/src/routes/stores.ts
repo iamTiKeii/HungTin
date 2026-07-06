@@ -72,7 +72,7 @@ router.post("/", requirePermission(["STORES_MANAGE"]) as any, async (req: Authen
 });
 
 // 4. Update Store
-router.put("/:id", requirePermission(["STORES_MANAGE"]) as any, async (req: AuthenticatedRequest, res: Response) => {
+router.put("/:id", requirePermission(["STORES_MANAGE", "STORES_DETAIL"]) as any, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { name, investment_capital, status, address, phone, opening_date, manager_id, notes } = req.body;
 
