@@ -28,16 +28,16 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
   return (
     <div className="dropdown dropdown-end">
       <label tabIndex={0} className="btn btn-ghost btn-circle avatar bg-slate-100 hover:bg-slate-200 border border-slate-200">
-        <div className="w-10 rounded-full flex items-center justify-center font-bold text-slate-700 text-lg uppercase">
+        <div className="w-10 rounded-full flex items-center justify-center font-medium text-slate-700 text-lg uppercase">
           {user?.full_name ? user.full_name.charAt(0) : "U"}
         </div>
       </label>
       <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-xl bg-white border border-slate-200 text-slate-700 rounded-box w-60">
         {/* User Info Header */}
         <li className="border-b border-slate-100 pb-2 mb-1 px-4 py-2 pointer-events-none">
-          <p className="font-bold text-slate-800 text-sm truncate">{user?.full_name}</p>
+          <p className="font-semibold text-slate-800 text-sm truncate">{user?.full_name}</p>
           <p className="text-xs text-slate-500 truncate mt-0.5">@{user?.username}</p>
-          <span className="inline-block mt-1 bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span className="inline-block mt-1 bg-amber-100 text-amber-800 text-[10px] font-medium px-2 py-0.5 rounded-full">
             {user?.store?.name || "Hệ thống"}
           </span>
         </li>
@@ -126,7 +126,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
         <li className="border-t border-slate-100 mt-1 pt-1">
           <button 
             onClick={logout} 
-            className="flex items-center gap-2 py-2.5 text-red-500 hover:bg-red-50 hover:text-red-600 font-semibold"
+            className="flex items-center gap-2 py-2.5 text-red-500 hover:bg-red-50 hover:text-red-600 font-medium"
           >
             <LogOut className="w-4 h-4" />
             <span>Đăng xuất hệ thống</span>

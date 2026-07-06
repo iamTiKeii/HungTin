@@ -168,7 +168,7 @@ export const Stores: React.FC = () => {
     <div className="space-y-6 text-slate-800 animate-fade-in max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white border border-slate-200/80 p-6 rounded-3xl shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-slate-800 flex items-center gap-2">
             <Landmark className="text-amber-500 w-7 h-7" />
             Quản Lý Chuỗi Chi Nhánh
           </h1>
@@ -186,7 +186,7 @@ export const Stores: React.FC = () => {
           </button>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm font-bold gap-1 rounded-xl shadow-sm shadow-amber-500/10 flex-1 sm:flex-none"
+            className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm font-medium gap-1 rounded-xl shadow-sm shadow-amber-500/10 flex-1 sm:flex-none"
             type="button"
           >
             <Plus className="w-4 h-4" />
@@ -220,10 +220,10 @@ export const Stores: React.FC = () => {
               <div>
                 <div className="flex justify-between items-start border-b border-slate-100 pb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-800 group-hover:text-amber-600 transition-colors">{s.name}</h3>
+                    <h3 className="text-sm font-semibold text-slate-800 group-hover:text-amber-600 transition-colors">{s.name}</h3>
                     <p className="text-[9px] text-slate-400 font-mono mt-0.5">ID: {s.id.substring(0, 8)}...</p>
                   </div>
-                  <span className={`badge font-bold badge-xs py-2 uppercase border-none ${s.status === "active" ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-500"}`}>
+                  <span className={`badge font-medium badge-xs py-2 uppercase border-none ${s.status === "active" ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-500"}`}>
                     {s.status === "active" ? "Hoạt động" : "Tạm ngưng"}
                   </span>
                 </div>
@@ -231,11 +231,11 @@ export const Stores: React.FC = () => {
                 <div className="mt-4 space-y-2.5 text-xs">
                   <div className="flex justify-between border-b border-slate-50 pb-1.5">
                     <span className="text-slate-450">Vốn đầu tư:</span>
-                    <span className="text-slate-800 font-extrabold">{formatCurrency(s.investment_capital)}</span>
+                    <span className="text-slate-800 font-medium">{formatCurrency(s.investment_capital)}</span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-1.5">
                     <span className="text-slate-450">Nhân sự:</span>
-                    <span className="text-slate-800 font-bold">{s._count?.employees || 0} thành viên</span>
+                    <span className="text-slate-800 font-medium">{s._count?.employees || 0} thành viên</span>
                   </div>
                   
                   {s.phone && (
@@ -413,15 +413,15 @@ export const Stores: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-black text-lg text-slate-800 flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-2 mb-1">
               <DollarSign className="w-5 h-5 text-amber-500" />
               Điều Chỉnh Vốn Đầu Tư
             </h3>
-            <p className="text-slate-500 text-xs font-bold mb-4">Chi nhánh: <span className="text-amber-500 font-black">{selectedStore.name}</span></p>
+            <p className="text-slate-505 text-xs font-medium mb-4">Chi nhánh: <span className="text-amber-500 font-semibold">{selectedStore.name}</span></p>
             
             <form onSubmit={handleCapitalAdjust} className="space-y-4">
               <div>
-                <label className="label text-slate-600 font-bold text-xs py-1">Hướng giao dịch</label>
+                <label className="label text-slate-600 font-medium text-xs py-1">Hướng giao dịch</label>
                 <select
                   value={capitalAction}
                   onChange={(e: any) => setCapitalAction(e.target.value)}
@@ -432,7 +432,7 @@ export const Stores: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="label text-slate-600 font-bold text-xs py-1">Số tiền giao dịch (VNĐ) *</label>
+                <label className="label text-slate-600 font-medium text-xs py-1">Số tiền giao dịch (VNĐ) *</label>
                 <input
                   type="number"
                   placeholder="Nhập số tiền cần điều chỉnh..."
@@ -453,7 +453,7 @@ export const Stores: React.FC = () => {
                 >
                   Hủy bỏ
                 </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm rounded-xl font-bold px-6">
+                <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm rounded-xl font-medium px-6">
                   Xác nhận
                 </button>
               </div>
@@ -474,7 +474,7 @@ export const Stores: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-black text-lg text-slate-800 flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-2 mb-1">
               <Settings className="w-5 h-5 text-amber-500" />
               Cấu Hình Chi Nhánh
             </h3>
@@ -482,7 +482,7 @@ export const Stores: React.FC = () => {
 
             <form onSubmit={handleSaveConfiguration} className="space-y-4">
               <div>
-                <label className="label text-slate-600 font-bold text-xs py-1">Tên chi nhánh *</label>
+                <label className="label text-slate-600 font-medium text-xs py-1">Tên chi nhánh *</label>
                 <input
                   type="text"
                   value={editName}
@@ -494,7 +494,7 @@ export const Stores: React.FC = () => {
               </div>
 
               <div>
-                <label className="label text-slate-600 font-bold text-xs py-1">Số điện thoại liên hệ *</label>
+                <label className="label text-slate-600 font-medium text-xs py-1">Số điện thoại liên hệ *</label>
                 <input
                   type="text"
                   value={editPhone}
@@ -506,7 +506,7 @@ export const Stores: React.FC = () => {
               </div>
 
               <div>
-                <label className="label text-slate-600 font-bold text-xs py-1">Địa chỉ chi tiết *</label>
+                <label className="label text-slate-600 font-medium text-xs py-1">Địa chỉ chi tiết *</label>
                 <input
                   type="text"
                   value={editAddress}
@@ -518,7 +518,7 @@ export const Stores: React.FC = () => {
               </div>
 
               <div>
-                <label className="label text-slate-600 font-bold text-xs py-1">Ghi chú vận hành</label>
+                <label className="label text-slate-600 font-medium text-xs py-1">Ghi chú vận hành</label>
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
@@ -541,7 +541,7 @@ export const Stores: React.FC = () => {
                 </button>
                 <button 
                   type="submit" 
-                  className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm rounded-xl font-bold px-6"
+                  className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm rounded-xl font-medium px-6"
                   disabled={editLoading}
                 >
                   {editLoading ? <span className="loading loading-spinner btn-xs"></span> : <Save className="w-4 h-4" />}
