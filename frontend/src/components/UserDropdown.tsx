@@ -49,7 +49,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             onClick={onOpenProfile}
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <User className="w-4 h-4 text-slate-400" />
+            <User className="w-4 h-4 text-slate-500" />
             <span>Thông tin cá nhân</span>
           </button>
         </li>
@@ -61,7 +61,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             onClick={onOpenChangePassword}
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <KeyRound className="w-4 h-4 text-slate-400" />
+            <KeyRound className="w-4 h-4 text-slate-500" />
             <span>Đổi mật khẩu</span>
           </button>
         </li>
@@ -73,7 +73,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             onClick={onOpenTwoFactor}
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <QrCode className="w-4 h-4 text-slate-400" />
+            <QrCode className="w-4 h-4 text-slate-500" />
             <span>Google Authenticator (2FA)</span>
           </button>
         </li>
@@ -84,7 +84,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             to="/terms"
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <FileText className="w-4 h-4 text-slate-400" />
+            <FileText className="w-4 h-4 text-slate-500" />
             <span>Điều khoản sử dụng</span>
           </Link>
         </li>
@@ -95,7 +95,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             to="/subscription"
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <CalendarDays className="w-4 h-4 text-slate-400" />
+            <CalendarDays className="w-4 h-4 text-slate-500" />
             <span>Gia hạn tài khoản</span>
           </Link>
         </li>
@@ -106,7 +106,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             to="/store-addon"
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <PlusCircle className="w-4 h-4 text-slate-400" />
+            <PlusCircle className="w-4 h-4 text-slate-500" />
             <span>Mua thêm cửa hàng</span>
           </Link>
         </li>
@@ -117,7 +117,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             to="/settings"
             className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
           >
-            <Settings className="w-4 h-4 text-slate-400" />
+            <Settings className="w-4 h-4 text-slate-500" />
             <span>Cấu hình hệ thống</span>
           </Link>
         </li>

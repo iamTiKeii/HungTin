@@ -77,13 +77,13 @@ export const Collaborators: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <Users className="text-amber-500 w-7 h-7" />
             Quản Lý Cộng Tác Viên
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Danh sách cộng tác viên giới thiệu khách hàng vay trả góp, cầm đồ hoặc tín chấp.
           </p>
         </div>
@@ -121,10 +121,10 @@ export const Collaborators: React.FC = () => {
             placeholder="Tìm kiếm theo Tên cộng tác viên hoặc Số điện thoại..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full pl-11 bg-slate-900 border-slate-800 text-slate-100 focus:border-amber-500 focus:outline-none rounded-xl"
+            className="input input-bordered w-full pl-11 bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl"
           />
         </div>
-        <button type="submit" className="btn btn-neutral border-slate-800 text-slate-200 font-bold rounded-xl px-6">
+        <button type="submit" className="btn btn-neutral border-slate-200/80 text-slate-700 font-bold rounded-xl px-6">
           Tìm kiếm
         </button>
       </form>
@@ -135,7 +135,7 @@ export const Collaborators: React.FC = () => {
           <span className="loading loading-spinner loading-lg text-amber-500"></span>
         </div>
       ) : collaborators.length === 0 ? (
-        <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500">
+        <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl text-slate-500">
           Không tìm thấy cộng tác viên nào phù hợp
         </div>
       ) : (
@@ -143,11 +143,11 @@ export const Collaborators: React.FC = () => {
           {collaborators.map((collab) => (
             <div
               key={collab.id}
-              className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 flex flex-col justify-between shadow-lg"
+              className="bg-white border border-slate-200/80 hover:border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-lg"
             >
               <div>
-                <h3 className="text-lg font-bold text-slate-100">{collab.full_name}</h3>
-                <div className="mt-4 space-y-2 text-sm text-slate-400">
+                <h3 className="text-lg font-bold text-slate-800">{collab.full_name}</h3>
+                <div className="mt-4 space-y-2 text-sm text-slate-500">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-slate-500" />
                     <span>SĐT: {collab.phone}</span>
@@ -159,13 +159,13 @@ export const Collaborators: React.FC = () => {
                     </div>
                   )}
                   {collab.notes && (
-                    <div className="bg-slate-950/50 border border-slate-800/80 p-2 rounded-lg text-xs text-amber-500 mt-2 font-semibold">
+                    <div className="bg-slate-50/50 border border-slate-200/60 p-2 rounded-lg text-xs text-amber-500 mt-2 font-semibold">
                       Ghi chú: {collab.notes}
                     </div>
                   )}
                 </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-800/60 text-xs text-slate-500 font-semibold">
+              <div className="mt-6 pt-4 border-t border-slate-200/80/60 text-xs text-slate-500 font-semibold">
                 Đăng ký ngày: {new Date(collab.created_at).toLocaleDateString("vi-VN")}
               </div>
             </div>
@@ -176,52 +176,52 @@ export const Collaborators: React.FC = () => {
       {/* CREATE MODAL */}
       {isCreateOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4">Đăng Ký Cộng Tác Viên</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Họ và tên cộng tác viên *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Họ và tên cộng tác viên *</label>
                 <input
                   type="text"
                   placeholder="Lê Văn D"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
                   required
                 />
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Số điện thoại *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Số điện thoại *</label>
                 <input
                   type="text"
                   placeholder="0911223344"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
                   required
                 />
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Địa chỉ cư trú</label>
+                <label className="label text-slate-600 font-semibold text-sm">Địa chỉ cư trú</label>
                 <input
                   type="text"
                   placeholder="456 Đường XYZ, Quận B, TP. HCM"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
                 />
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Ghi chú (Tỷ lệ chiết khấu giới thiệu...)</label>
+                <label className="label text-slate-600 font-semibold text-sm">Ghi chú (Tỷ lệ chiết khấu giới thiệu...)</label>
                 <textarea
                   placeholder="Hưởng 1% trên thực giải ngân..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-20"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-20"
                 />
               </div>
               <div className="modal-action">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy bỏ
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">

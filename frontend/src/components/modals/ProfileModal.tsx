@@ -76,7 +76,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       <div className="modal-box bg-white max-w-lg text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
         <button 
           onClick={onClose}
-          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
           type="button"
         >
           <X className="w-5 h-5" />
@@ -120,7 +120,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <span className="label-text text-slate-600 font-bold text-xs">Họ và tên <span className="text-red-500">*</span></span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                   <User className="w-4 h-4" />
                 </span>
                 <input 
@@ -140,7 +140,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <span className="label-text text-slate-600 font-bold text-xs">Số điện thoại</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                   <Phone className="w-4 h-4" />
                 </span>
                 <input 
@@ -161,7 +161,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <span className="label-text text-slate-600 font-bold text-xs">Email</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                   <Mail className="w-4 h-4" />
                 </span>
                 <input 
@@ -180,7 +180,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <span className="label-text text-slate-600 font-bold text-xs">Ngày sinh</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                   <Calendar className="w-4 h-4" />
                 </span>
                 <input 
@@ -200,7 +200,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <span className="label-text text-slate-600 font-bold text-xs">Giới tính</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                   <Heart className="w-4 h-4" />
                 </span>
                 <select
@@ -221,7 +221,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <span className="label-text text-slate-600 font-bold text-xs">Địa chỉ</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                   <MapPin className="w-4 h-4" />
                 </span>
                 <input 

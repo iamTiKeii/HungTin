@@ -221,7 +221,7 @@ export const Stores: React.FC = () => {
                 <div className="flex justify-between items-start border-b border-slate-100 pb-3">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-800 group-hover:text-amber-600 transition-colors">{s.name}</h3>
-                    <p className="text-[9px] text-slate-400 font-mono mt-0.5">ID: {s.id.substring(0, 8)}...</p>
+                    <p className="text-[9px] text-slate-500 font-mono mt-0.5">ID: {s.id.substring(0, 8)}...</p>
                   </div>
                   <span className={`badge font-medium badge-xs py-2 uppercase border-none ${s.status === "active" ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-500"}`}>
                     {s.status === "active" ? "Hoạt động" : "Tạm ngưng"}
@@ -240,13 +240,13 @@ export const Stores: React.FC = () => {
                   
                   {s.phone && (
                     <div className="flex items-center gap-2 text-slate-600">
-                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       <span>{s.phone}</span>
                     </div>
                   )}
                   {s.address && (
                     <div className="flex items-start gap-2 text-slate-600">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                       <span className="line-clamp-2">{s.address}</span>
                     </div>
                   )}
@@ -319,7 +319,7 @@ export const Stores: React.FC = () => {
           <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-md shadow-2xl p-6 relative">
             <button 
               onClick={() => setIsCreateOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               <X className="w-5 h-5" />
@@ -407,7 +407,7 @@ export const Stores: React.FC = () => {
           <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-md shadow-2xl p-6 relative">
             <button 
               onClick={() => { setIsCapitalOpen(false); setSelectedStore(null); }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               <X className="w-5 h-5" />
@@ -468,7 +468,7 @@ export const Stores: React.FC = () => {
           <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-md shadow-2xl p-6 relative">
             <button 
               onClick={() => { setIsEditOpen(false); setSelectedStore(null); }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               <X className="w-5 h-5" />

@@ -69,7 +69,7 @@ export const BeginningCash: React.FC = () => {
         <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
           Nhập Tiền Quỹ Đầu Ngày
         </h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <p className="text-slate-500 text-sm mt-1">
           Thiết lập số tiền quỹ két ban đầu khi bắt đầu ca làm việc của chi nhánh ngày hôm nay.
         </p>
       </div>
@@ -90,39 +90,39 @@ export const BeginningCash: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Info Card 1 */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
+        <div className="bg-white/65 border border-slate-200/80 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-110" />
           <div className="p-3 bg-amber-500/10 rounded-2xl w-fit text-amber-500 mb-4">
             <Coins className="w-6 h-6" />
           </div>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Tiền Đầu Ngày Hôm Nay</p>
-          <h2 className="text-2xl font-bold text-slate-100 mt-2">
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Tiền Đầu Ngày Hôm Nay</p>
+          <h2 className="text-2xl font-bold text-slate-800 mt-2">
             {currentSummary ? formatCurrency(currentSummary.beginning_cash) : "Chưa thiết lập"}
           </h2>
           <p className="text-slate-500 text-xs mt-1">Sử dụng để bàn giao ca chốt số liệu</p>
         </div>
 
         {/* Info Card 2 */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
+        <div className="bg-white/65 border border-slate-200/80 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-110" />
           <div className="p-3 bg-orange-500/10 rounded-2xl w-fit text-orange-500 mb-4">
             <Coins className="w-6 h-6" />
           </div>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Số Dư Quỹ Hiện Tại</p>
-          <h2 className="text-2xl font-bold text-slate-100 mt-2">
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Số Dư Quỹ Hiện Tại</p>
+          <h2 className="text-2xl font-bold text-slate-800 mt-2">
             {currentSummary ? formatCurrency(currentSummary.current_cash) : "0 VNĐ"}
           </h2>
           <p className="text-slate-500 text-xs mt-1">Biến động thời gian thực theo thu chi</p>
         </div>
 
         {/* Info Card 3 */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
+        <div className="bg-white/65 border border-slate-200/80 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-110" />
           <div className="p-3 bg-blue-500/10 rounded-2xl w-fit text-blue-500 mb-4">
             <RefreshCw className="w-6 h-6" />
           </div>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Ngày Ghi Nhận</p>
-          <h2 className="text-2xl font-bold text-slate-100 mt-2">
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Ngày Ghi Nhận</p>
+          <h2 className="text-2xl font-bold text-slate-800 mt-2">
             {new Date().toLocaleDateString("vi-VN")}
           </h2>
           <p className="text-slate-500 text-xs mt-1">Mỗi ngày cần cập nhật một lần</p>
@@ -130,8 +130,8 @@ export const BeginningCash: React.FC = () => {
       </div>
 
       {/* Main Set Form */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-lg">
-        <h3 className="text-lg font-bold text-slate-100 mb-6 flex items-center gap-2">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-8 backdrop-blur-lg">
+        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
           <Coins className="w-5 h-5 text-amber-500" />
           Thiết lập Số Dư Đầu Ngày
         </h3>
@@ -139,7 +139,7 @@ export const BeginningCash: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text text-slate-400 font-semibold">Nhập Số Tiền (VNĐ):</span>
+              <span className="label-text text-slate-500 font-semibold">Nhập Số Tiền (VNĐ):</span>
             </label>
             <div className="relative">
               <input
@@ -147,7 +147,7 @@ export const BeginningCash: React.FC = () => {
                 value={beginningCashInput}
                 onChange={(e) => setBeginningCashInput(e.target.value)}
                 placeholder="Nhập số tiền mặt đầu ngày"
-                className="input input-bordered w-full rounded-2xl bg-slate-950 border-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 pl-4 text-slate-100 font-bold"
+                className="input input-bordered w-full rounded-2xl bg-slate-50 border-slate-200/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 pl-4 text-slate-800 font-bold"
                 disabled={loading}
               />
             </div>
@@ -167,7 +167,7 @@ export const BeginningCash: React.FC = () => {
             <button
               type="button"
               onClick={fetchSummary}
-              className="btn btn-outline border-slate-800 hover:bg-slate-900 rounded-2xl text-slate-300 font-semibold"
+              className="btn btn-outline border-slate-200/80 hover:bg-white rounded-2xl text-slate-600 font-semibold"
               disabled={loading}
             >
               Làm Mới

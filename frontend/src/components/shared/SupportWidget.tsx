@@ -10,7 +10,7 @@ export const SupportWidget: React.FC = () => {
         </div>
         <div>
           <h4 className="font-extrabold text-sm text-slate-800">Hỗ Trợ Kỹ Thuật Hệ Thống</h4>
-          <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mt-0.5">Hotline: 0976.862.823</p>
+          <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mt-0.5">Hotline: 0976.862.823</p>
         </div>
       </div>
 

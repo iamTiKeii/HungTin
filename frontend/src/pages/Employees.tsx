@@ -146,18 +146,18 @@ export const Employees: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex justify-between items-center bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <User className="text-amber-500 w-7 h-7" />
             Nhân Sự & Phân Quyền Hệ Thống
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Thiết lập tài khoản giao dịch viên tại các chi nhánh và phân quyền bảo mật riêng biệt.
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetchData} className="btn btn-outline border-slate-700 text-slate-300 btn-sm">
+          <button onClick={fetchData} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
@@ -187,11 +187,11 @@ export const Employees: React.FC = () => {
           <span className="loading loading-spinner loading-lg text-amber-500"></span>
         </div>
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                   <th>Nhân viên</th>
                   <th>Tên đăng nhập</th>
                   <th>Chi nhánh làm việc</th>
@@ -202,13 +202,13 @@ export const Employees: React.FC = () => {
               </thead>
               <tbody>
                 {employees.map((emp) => (
-                  <tr key={emp.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
+                  <tr key={emp.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
                     <td>
-                      <div className="font-bold text-slate-200">{emp.full_name}</div>
+                      <div className="font-bold text-slate-700">{emp.full_name}</div>
                     </td>
                     <td>{emp.username}</td>
                     <td>
-                      <span className="badge badge-outline border-slate-700 text-slate-300 font-bold badge-sm">
+                      <span className="badge badge-outline border-slate-200 text-slate-600 font-bold badge-sm">
                         {emp.store?.name}
                       </span>
                     </td>
@@ -218,14 +218,14 @@ export const Employees: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge font-bold badge-xs uppercase ${emp.status === "active" ? "badge-success" : "badge-neutral text-slate-400"}`}>
+                      <span className={`badge font-bold badge-xs uppercase ${emp.status === "active" ? "badge-success" : "badge-neutral text-slate-500"}`}>
                         {emp.status === "active" ? "Hoạt động" : "Bị khóa"}
                       </span>
                     </td>
                     <td className="text-right flex items-center justify-end gap-2 py-3">
                       <button
                         onClick={() => openPermissionsModal(emp)}
-                        className="btn btn-outline border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 text-amber-500 btn-xs"
+                        className="btn btn-outline border-amber-500/50 hover:border-amber-500 hover:bg-amber-500/10 text-amber-500 btn-xs"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
                         Phân quyền
@@ -258,50 +258,50 @@ export const Employees: React.FC = () => {
       {/* CREATE MODAL */}
       {isCreateOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4">Tạo Tài Khoản Nhân Viên Mới</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Họ và tên *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Họ và tên *</label>
                 <input
                   type="text"
                   placeholder="Lê Văn B"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md focus:border-amber-500 focus:outline-none"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md focus:border-amber-500 focus:outline-none"
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold text-sm">Tên đăng nhập *</label>
+                  <label className="label text-slate-600 font-semibold text-sm">Tên đăng nhập *</label>
                   <input
                     type="text"
                     placeholder="levanb"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md focus:border-amber-500 focus:outline-none"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md focus:border-amber-500 focus:outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold text-sm">Mật khẩu *</label>
+                  <label className="label text-slate-600 font-semibold text-sm">Mật khẩu *</label>
                   <input
                     type="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md focus:border-amber-500 focus:outline-none"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md focus:border-amber-500 focus:outline-none"
                     required
                   />
                 </div>
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Giao chi nhánh làm việc *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Giao chi nhánh làm việc *</label>
                 <select
                   value={storeId}
                   onChange={(e) => setStoreId(e.target.value)}
-                  className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl focus:border-amber-500 focus:outline-none"
+                  className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl focus:border-amber-500 focus:outline-none"
                   required
                 >
                   <option value="">-- Chọn chi nhánh làm việc --</option>
@@ -313,7 +313,7 @@ export const Employees: React.FC = () => {
                 </select>
               </div>
               <div className="modal-action">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy bỏ
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">
@@ -328,13 +328,13 @@ export const Employees: React.FC = () => {
       {/* PERMISSIONS MODAL */}
       {isPermsOpen && selectedEmp && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl max-w-lg">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl max-w-lg">
             <h3 className="font-extrabold text-lg text-amber-500 flex items-center gap-2">
               <Shield className="w-5 h-5 text-amber-500" />
               Thiết Lập Quyền Nhân Sự
             </h3>
-            <p className="text-slate-400 text-xs font-semibold mt-1 mb-4">
-              Nhân viên: <span className="text-slate-200">{selectedEmp.full_name}</span> ({selectedEmp.username}) - {selectedEmp.store.name}
+            <p className="text-slate-500 text-xs font-semibold mt-1 mb-4">
+              Nhân viên: <span className="text-slate-700">{selectedEmp.full_name}</span> ({selectedEmp.username}) - {selectedEmp.store.name}
             </p>
             <form onSubmit={handleSavePermissions} className="space-y-4">
               <div className="space-y-2.5 max-h-80 overflow-y-auto pr-2">
@@ -346,8 +346,8 @@ export const Employees: React.FC = () => {
                       onClick={() => handlePermissionToggle(perm.code)}
                       className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer border transition-all select-none ${
                         isChecked
-                          ? "bg-amber-500/10 border-amber-500/40 text-slate-100 font-medium"
-                          : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400"
+                          ? "bg-amber-500/10 border-amber-500/40 text-slate-800 font-medium"
+                          : "bg-slate-50/60 border-slate-200/80 hover:border-slate-200 text-slate-500"
                       }`}
                     >
                       <input
@@ -357,8 +357,8 @@ export const Employees: React.FC = () => {
                         className="checkbox checkbox-primary border-slate-600 [--chkfg:slate-950] checked:border-amber-500 checked:bg-amber-500 mt-0.5"
                       />
                       <div className="text-xs">
-                        <p className={`font-semibold ${isChecked ? "text-amber-500" : "text-slate-300"}`}>{perm.code}</p>
-                        <p className="text-slate-400 mt-0.5">{perm.label}</p>
+                        <p className={`font-semibold ${isChecked ? "text-amber-500" : "text-slate-600"}`}>{perm.code}</p>
+                        <p className="text-slate-500 mt-0.5">{perm.label}</p>
                       </div>
                     </label>
                   );
@@ -372,7 +372,7 @@ export const Employees: React.FC = () => {
                     setIsPermsOpen(false);
                     setSelectedEmp(null);
                   }}
-                  className="btn btn-outline border-slate-700 text-slate-300 rounded-xl"
+                  className="btn btn-outline border-slate-200 text-slate-600 rounded-xl"
                 >
                   Hủy bỏ
                 </button>

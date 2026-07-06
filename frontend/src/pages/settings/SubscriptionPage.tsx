@@ -86,10 +86,10 @@ export const SubscriptionPage: React.FC = () => {
                 <h3 className="font-extrabold text-lg text-slate-800">{plan.name}</h3>
                 <div className="flex items-baseline gap-1 mt-4">
                   <span className="text-2xl font-black text-slate-800">{plan.price}</span>
-                  <span className="text-xs text-slate-400 font-bold">VND / {plan.duration}</span>
+                  <span className="text-xs text-slate-500 font-bold">VND / {plan.duration}</span>
                 </div>
                 {plan.originalPrice && (
-                  <p className="text-xs text-slate-400 line-through mt-1">
+                  <p className="text-xs text-slate-500 line-through mt-1">
                     Tiết kiệm {(Number(plan.originalPrice.replace(/\./g, "")) - Number(plan.price.replace(/\./g, ""))).toLocaleString("vi-VN")} đ
                   </p>
                 )}
@@ -157,7 +157,7 @@ export const SubscriptionPage: React.FC = () => {
           <div className="modal-box bg-white max-w-md text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
             <button 
               onClick={() => setShowMockPayment(false)}
-              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               x
@@ -171,8 +171,8 @@ export const SubscriptionPage: React.FC = () => {
             <div className="text-center space-y-4">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center">
                 {/* Mock QR payment code */}
-                <div className="w-48 h-48 bg-white border border-slate-200 p-2 rounded-xl shadow-sm flex items-center justify-center font-bold text-slate-300">
-                  <div className="text-center text-xs text-slate-400 p-4">
+                <div className="w-48 h-48 bg-white border border-slate-200 p-2 rounded-xl shadow-sm flex items-center justify-center font-bold text-slate-600">
+                  <div className="text-center text-xs text-slate-500 p-4">
                     <p className="font-mono text-slate-600 font-bold mb-2">QR THANH TOÁN MOCK</p>
                     <p>Quét qua ngân hàng/Ví để kích hoạt gói {plans.find(p => p.id === selectedPlan)?.name}</p>
                     <div className="mt-2 text-amber-500 font-black text-sm">

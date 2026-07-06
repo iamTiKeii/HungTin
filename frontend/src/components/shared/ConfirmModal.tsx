@@ -29,7 +29,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       <div className="modal-box bg-white max-w-sm text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
         <button 
           onClick={onClose}
-          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
           type="button"
           disabled={loading}
         >

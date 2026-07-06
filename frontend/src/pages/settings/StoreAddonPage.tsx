@@ -27,7 +27,7 @@ export const StoreAddonPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-800">Mua Thêm Chi Nhánh Cửa Hàng</h1>
-            <p className="text-slate-400 text-xs mt-0.5">Mở rộng quy mô kinh doanh của chuỗi hệ thống.</p>
+            <p className="text-slate-500 text-xs mt-0.5">Mở rộng quy mô kinh doanh của chuỗi hệ thống.</p>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export const StoreAddonPage: React.FC = () => {
           <div className="modal-box bg-white max-w-md text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
             <button 
               onClick={() => setShowMockPayment(false)}
-              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               x
@@ -133,8 +133,8 @@ export const StoreAddonPage: React.FC = () => {
             <div className="text-center space-y-4">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center">
                 {/* Mock QR payment code */}
-                <div className="w-48 h-48 bg-white border border-slate-200 p-2 rounded-xl shadow-sm flex items-center justify-center font-bold text-slate-300">
-                  <div className="text-center text-xs text-slate-400 p-4">
+                <div className="w-48 h-48 bg-white border border-slate-200 p-2 rounded-xl shadow-sm flex items-center justify-center font-bold text-slate-600">
+                  <div className="text-center text-xs text-slate-500 p-4">
                     <p className="font-mono text-slate-600 font-bold mb-2">QR MUA CHI NHÁNH</p>
                     <p>Quét để mua thêm {storeCount} chi nhánh cửa hàng mới</p>
                     <div className="mt-2 text-amber-500 font-black text-sm">

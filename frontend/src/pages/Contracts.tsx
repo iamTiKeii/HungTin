@@ -230,18 +230,18 @@ export const Contracts: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <FileText className="text-amber-500 w-7 h-7" />
             Hồ Sơ Hợp Đồng Tín Dụng
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Danh mục các hợp đồng tín dụng tại chi nhánh, hỗ trợ đóng góp định kỳ và tất toán.
           </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <button onClick={fetchContracts} className="btn btn-outline border-slate-700 text-slate-300 btn-sm">
+          <button onClick={fetchContracts} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
           
@@ -250,7 +250,7 @@ export const Contracts: React.FC = () => {
               <Plus className="w-4 h-4" />
               Tạo hợp đồng
             </label>
-            <ul tabIndex={0} className="dropdown-content z-[10] menu p-2 shadow-2xl bg-slate-800 border border-slate-700 rounded-box w-52 mt-2">
+            <ul tabIndex={0} className="dropdown-content z-[10] menu p-2 shadow-2xl bg-slate-50 border border-slate-200 rounded-box w-52 mt-2">
               <li>
                 <button onClick={() => setIsPawnOpen(true)}>Cầm đồ (Cầm tài sản)</button>
               </li>
@@ -303,7 +303,7 @@ export const Contracts: React.FC = () => {
           placeholder="Tìm kiếm hợp đồng theo mã code, tên khách hàng..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input input-bordered w-full pl-11 bg-slate-900 border-slate-800 text-slate-100 focus:border-amber-500 focus:outline-none rounded-xl"
+          className="input input-bordered w-full pl-11 bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl"
         />
       </div>
 
@@ -313,12 +313,12 @@ export const Contracts: React.FC = () => {
           <span className="loading loading-spinner loading-lg text-amber-500"></span>
         </div>
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
             {activeTab === "pawn" && (
-              <table className="table w-full text-slate-300">
+              <table className="table w-full text-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                  <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                     <th>Mã HĐ</th>
                     <th>Khách hàng</th>
                     <th>Tên tài sản thế</th>
@@ -332,16 +332,16 @@ export const Contracts: React.FC = () => {
                 </thead>
                 <tbody>
                   {pawnList.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
+                    <tr key={item.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
                       <td className="font-bold text-amber-500">{item.contract_code}</td>
-                      <td className="font-semibold text-slate-200">{item.customer?.full_name}</td>
+                      <td className="font-semibold text-slate-700">{item.customer?.full_name}</td>
                       <td>{item.asset_name}</td>
-                      <td className="font-black text-slate-200">{formatCurrency(item.loan_amount)}</td>
+                      <td className="font-black text-slate-700">{formatCurrency(item.loan_amount)}</td>
                       <td>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</td>
                       <td>{item.loan_days} ngày</td>
                       <td>{item.interest_rate}%</td>
                       <td>
-                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-400"}`}>
+                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-500"}`}>
                           {item.status === "active" ? "Đang chạy" : "Đã đóng"}
                         </span>
                       </td>
@@ -357,9 +357,9 @@ export const Contracts: React.FC = () => {
             )}
 
             {activeTab === "unsecured" && (
-              <table className="table w-full text-slate-300">
+              <table className="table w-full text-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                  <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                     <th>Mã HĐ</th>
                     <th>Khách hàng</th>
                     <th>Số nợ vay gốc</th>
@@ -372,15 +372,15 @@ export const Contracts: React.FC = () => {
                 </thead>
                 <tbody>
                   {unsecuredList.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
+                    <tr key={item.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
                       <td className="font-bold text-amber-500">{item.contract_code}</td>
-                      <td className="font-semibold text-slate-200">{item.customer?.full_name}</td>
-                      <td className="font-black text-slate-200">{formatCurrency(item.loan_amount)}</td>
+                      <td className="font-semibold text-slate-700">{item.customer?.full_name}</td>
+                      <td className="font-black text-slate-700">{formatCurrency(item.loan_amount)}</td>
                       <td>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</td>
                       <td>{item.loan_days} ngày</td>
                       <td>{item.interest_rate}%</td>
                       <td>
-                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-400"}`}>
+                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-500"}`}>
                           {item.status === "active" ? "Đang chạy" : "Đã đóng"}
                         </span>
                       </td>
@@ -396,9 +396,9 @@ export const Contracts: React.FC = () => {
             )}
 
             {activeTab === "installment" && (
-              <table className="table w-full text-slate-300">
+              <table className="table w-full text-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                  <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                     <th>Mã HĐ</th>
                     <th>Khách hàng</th>
                     <th>Tổng trả góp</th>
@@ -411,15 +411,15 @@ export const Contracts: React.FC = () => {
                 </thead>
                 <tbody>
                   {installmentList.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
+                    <tr key={item.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
                       <td className="font-bold text-amber-500">{item.contract_code}</td>
-                      <td className="font-semibold text-slate-200">{item.customer?.full_name}</td>
+                      <td className="font-semibold text-slate-700">{item.customer?.full_name}</td>
                       <td className="font-black text-emerald-500">{formatCurrency(item.repayment_amount)}</td>
-                      <td className="font-black text-slate-200">{formatCurrency(item.disbursed_amount)}</td>
+                      <td className="font-black text-slate-700">{formatCurrency(item.disbursed_amount)}</td>
                       <td>{item.loan_duration} ngày</td>
                       <td>{item.cycle_days} ngày/kỳ</td>
                       <td>
-                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-400"}`}>
+                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-500"}`}>
                           {item.status === "active" ? "Đang chạy" : "Đã đóng"}
                         </span>
                       </td>
@@ -440,7 +440,7 @@ export const Contracts: React.FC = () => {
       {/* PAWN CREATE MODAL */}
       {isPawnOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl max-w-2xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl max-w-2xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4 flex items-center gap-2">
               <Plus className="w-5 h-5" />
               Lập Hợp Đồng Cầm Đồ Mới
@@ -448,11 +448,11 @@ export const Contracts: React.FC = () => {
             <form onSubmit={handleCreatePawn} className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Khách hàng vay *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Khách hàng vay *</label>
                   <select
                     value={pCustomerId}
                     onChange={(e) => setPCustomerId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn khách hàng --</option>
@@ -462,11 +462,11 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Loại tài sản thế chấp *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Loại tài sản thế chấp *</label>
                   <select
                     value={pCommodityId}
                     onChange={(e) => setPCommodityId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn loại hàng hóa --</option>
@@ -479,24 +479,24 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tên tài sản chi tiết *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tên tài sản chi tiết *</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: Yamaha Exciter 150"
                     value={pAssetName}
                     onChange={(e) => setPAssetName(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Số tiền cho vay (VNĐ) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Số tiền cho vay (VNĐ) *</label>
                   <input
                     type="number"
                     placeholder="25000000"
                     value={pLoanAmount}
                     onChange={(e) => setPLoanAmount(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
@@ -504,11 +504,11 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Hình thức đóng lãi *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Hình thức đóng lãi *</label>
                   <select
                     value={pInterestTypeId}
                     onChange={(e) => setPInterestTypeId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Lọc hình thức --</option>
@@ -518,25 +518,25 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tỷ lệ lãi suất (% / kỳ đóng) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tỷ lệ lãi suất (% / kỳ đóng) *</label>
                   <input
                     type="number"
                     placeholder="3"
                     step="0.01"
                     value={pInterestRate}
                     onChange={(e) => setPInterestRate(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Kỳ hạn đóng lãi (ngày/kỳ) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Kỳ hạn đóng lãi (ngày/kỳ) *</label>
                   <input
                     type="number"
                     placeholder="10"
                     value={pPeriodValue}
                     onChange={(e) => setPPeriodValue(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
@@ -544,67 +544,67 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tổng thời hạn hợp đồng (ngày) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tổng thời hạn hợp đồng (ngày) *</label>
                   <input
                     type="number"
                     placeholder="30"
                     value={pLoanDays}
                     onChange={(e) => setPLoanDays(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Ngày lập hợp đồng</label>
+                  <label className="label text-slate-600 font-semibold py-1">Ngày lập hợp đồng</label>
                   <input
                     type="date"
                     value={pLoanDate}
                     onChange={(e) => setPLoanDate(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Biển kiểm soát</label>
+                  <label className="label text-slate-600 font-semibold py-1">Biển kiểm soát</label>
                   <input
                     type="text"
                     placeholder="29A-123.45"
                     value={pLicensePlate}
                     onChange={(e) => setPLicensePlate(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm"
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Số khung xe</label>
+                  <label className="label text-slate-600 font-semibold py-1">Số khung xe</label>
                   <input
                     type="text"
                     placeholder="SK-xxxx"
                     value={pChassisNumber}
                     onChange={(e) => setPChassisNumber(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm"
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Số máy xe</label>
+                  <label className="label text-slate-600 font-semibold py-1">Số máy xe</label>
                   <input
                     type="text"
                     placeholder="SM-xxxx"
                     value={pEngineNumber}
                     onChange={(e) => setPEngineNumber(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Nhân viên thu tiền (Collector) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Nhân viên thu tiền (Collector) *</label>
                   <select
                     value={pCollectorId}
                     onChange={(e) => setPCollectorId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn nhân viên --</option>
@@ -614,11 +614,11 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Cộng tác viên giới thiệu</label>
+                  <label className="label text-slate-600 font-semibold py-1">Cộng tác viên giới thiệu</label>
                   <select
                     value={pCollaboratorId}
                     onChange={(e) => setPCollaboratorId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                   >
                     <option value="">-- Chọn cộng tác viên --</option>
                     {collaborators.map((c) => (
@@ -628,28 +628,28 @@ export const Contracts: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 bg-slate-950/50 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-200/80">
                 <input
                   type="checkbox"
                   checked={pIsUpfront}
                   onChange={(e) => setPIsUpfront(e.target.checked)}
-                  className="checkbox checkbox-primary border-slate-700 checked:border-amber-500 checked:bg-amber-500"
+                  className="checkbox checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
                 />
-                <span className="text-slate-300 font-semibold">Thu tiền lãi đóng trước (Thu lãi kỳ 1 khi nhận tiền vay)</span>
+                <span className="text-slate-600 font-semibold">Thu tiền lãi đóng trước (Thu lãi kỳ 1 khi nhận tiền vay)</span>
               </div>
 
               <div>
-                <label className="label text-slate-300 font-semibold py-1">Ghi chú kèm theo</label>
+                <label className="label text-slate-600 font-semibold py-1">Ghi chú kèm theo</label>
                 <textarea
                   placeholder="Mô tả hiện trạng tài sản khi tiếp nhận..."
                   value={pNotes}
                   onChange={(e) => setPNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-16"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-16"
                 />
               </div>
 
               <div className="modal-action">
-                <button type="button" onClick={() => setIsPawnOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsPawnOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy bỏ
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">
@@ -664,7 +664,7 @@ export const Contracts: React.FC = () => {
       {/* UNSECURED CREATE MODAL */}
       {isUnsecuredOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl max-w-xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl max-w-xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4 flex items-center gap-2">
               <Plus className="w-5 h-5" />
               Lập Hợp Đồng Tín Chấp Mới
@@ -672,11 +672,11 @@ export const Contracts: React.FC = () => {
             <form onSubmit={handleCreateUnsecured} className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Khách hàng vay *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Khách hàng vay *</label>
                   <select
                     value={uCustomerId}
                     onChange={(e) => setUCustomerId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn khách hàng --</option>
@@ -686,11 +686,11 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Mặt hàng tham chiếu (Tùy chọn)</label>
+                  <label className="label text-slate-600 font-semibold py-1">Mặt hàng tham chiếu (Tùy chọn)</label>
                   <select
                     value={uCommodityId}
                     onChange={(e) => setUCommodityId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                   >
                     <option value="">-- Chọn loại hàng hóa --</option>
                     {commodities.map((c) => (
@@ -701,24 +701,24 @@ export const Contracts: React.FC = () => {
               </div>
 
               <div>
-                <label className="label text-slate-300 font-semibold py-1">Số tiền giải ngân vay nợ (VNĐ) *</label>
+                <label className="label text-slate-600 font-semibold py-1">Số tiền giải ngân vay nợ (VNĐ) *</label>
                 <input
                   type="number"
                   placeholder="10000000"
                   value={uLoanAmount}
                   onChange={(e) => setULoanAmount(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Hình thức tính lãi *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Hình thức tính lãi *</label>
                   <select
                     value={uInterestTypeId}
                     onChange={(e) => setUInterestTypeId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Lọc hình thức --</option>
@@ -728,25 +728,25 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tỷ lệ lãi suất (% / kỳ đóng) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tỷ lệ lãi suất (% / kỳ đóng) *</label>
                   <input
                     type="number"
                     placeholder="3"
                     step="0.01"
                     value={uInterestRate}
                     onChange={(e) => setUInterestRate(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Kỳ đóng lãi (ngày) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Kỳ đóng lãi (ngày) *</label>
                   <input
                     type="number"
                     placeholder="10"
                     value={uPeriodValue}
                     onChange={(e) => setUPeriodValue(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
@@ -754,34 +754,34 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tổng thời hạn hợp đồng (ngày) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tổng thời hạn hợp đồng (ngày) *</label>
                   <input
                     type="number"
                     placeholder="30"
                     value={uLoanDays}
                     onChange={(e) => setULoanDays(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Ngày lập hợp đồng</label>
+                  <label className="label text-slate-600 font-semibold py-1">Ngày lập hợp đồng</label>
                   <input
                     type="date"
                     value={uLoanDate}
                     onChange={(e) => setULoanDate(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Nhân viên thu nợ (Collector) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Nhân viên thu nợ (Collector) *</label>
                   <select
                     value={uCollectorId}
                     onChange={(e) => setUCollectorId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn nhân viên --</option>
@@ -791,11 +791,11 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Cộng tác viên giới thiệu</label>
+                  <label className="label text-slate-600 font-semibold py-1">Cộng tác viên giới thiệu</label>
                   <select
                     value={uCollaboratorId}
                     onChange={(e) => setUCollaboratorId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                   >
                     <option value="">-- Chọn cộng tác viên --</option>
                     {collaborators.map((c) => (
@@ -805,28 +805,28 @@ export const Contracts: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 bg-slate-950/50 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-200/80">
                 <input
                   type="checkbox"
                   checked={uIsUpfront}
                   onChange={(e) => setUIsUpfront(e.target.checked)}
-                  className="checkbox checkbox-primary border-slate-700 checked:border-amber-500 checked:bg-amber-500"
+                  className="checkbox checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
                 />
-                <span className="text-slate-300 font-semibold">Thu tiền lãi đóng trước (Thu lãi kỳ 1 khi vay)</span>
+                <span className="text-slate-600 font-semibold">Thu tiền lãi đóng trước (Thu lãi kỳ 1 khi vay)</span>
               </div>
 
               <div>
-                <label className="label text-slate-300 font-semibold py-1">Ghi chú kèm theo</label>
+                <label className="label text-slate-600 font-semibold py-1">Ghi chú kèm theo</label>
                 <textarea
                   placeholder="Ghi chú hồ sơ tín chấp..."
                   value={uNotes}
                   onChange={(e) => setUNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-16"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-16"
                 />
               </div>
 
               <div className="modal-action">
-                <button type="button" onClick={() => setIsUnsecuredOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsUnsecuredOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">
@@ -841,7 +841,7 @@ export const Contracts: React.FC = () => {
       {/* INSTALLMENT CREATE MODAL */}
       {isInstallmentOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl max-w-xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl max-w-xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4 flex items-center gap-2">
               <Plus className="w-5 h-5" />
               Lập Hợp Đồng Trả Góp Mới
@@ -849,11 +849,11 @@ export const Contracts: React.FC = () => {
             <form onSubmit={handleCreateInstallment} className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Khách hàng vay *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Khách hàng vay *</label>
                   <select
                     value={iCustomerId}
                     onChange={(e) => setICustomerId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn khách hàng --</option>
@@ -863,11 +863,11 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Hình thức góp (Hằng ngày/tuần...) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Hình thức góp (Hằng ngày/tuần...) *</label>
                   <select
                     value={iPeriodType}
                     onChange={(e) => setIPeriodType(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="daily">Hằng Ngày</option>
@@ -879,24 +879,24 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Số tiền thực giao cho khách (VNĐ) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Số tiền thực giao cho khách (VNĐ) *</label>
                   <input
                     type="number"
                     placeholder="10000000"
                     value={iDisbursedAmount}
                     onChange={(e) => setIDisbursedAmount(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tổng tiền khách phải trả (VNĐ) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tổng tiền khách phải trả (VNĐ) *</label>
                   <input
                     type="number"
                     placeholder="12000000"
                     value={iRepaymentAmount}
                     onChange={(e) => setIRepaymentAmount(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
@@ -904,45 +904,45 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Tổng số ngày vay *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Tổng số ngày vay *</label>
                   <input
                     type="number"
                     placeholder="40"
                     value={iLoanDuration}
                     onChange={(e) => setILoanDuration(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Kỳ hạn thu góp (ngày/kỳ) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Kỳ hạn thu góp (ngày/kỳ) *</label>
                   <input
                     type="number"
                     placeholder="1"
                     value={iCycleDays}
                     onChange={(e) => setICycleDays(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Ngày lập hợp đồng</label>
+                  <label className="label text-slate-600 font-semibold py-1">Ngày lập hợp đồng</label>
                   <input
                     type="date"
                     value={iLoanDate}
                     onChange={(e) => setILoanDate(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-sm focus:border-amber-500"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Nhân viên thu góp (Collector) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Nhân viên thu góp (Collector) *</label>
                   <select
                     value={iCollectorId}
                     onChange={(e) => setICollectorId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                     required
                   >
                     <option value="">-- Chọn nhân viên --</option>
@@ -952,11 +952,11 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold py-1">Cộng tác viên giới thiệu</label>
+                  <label className="label text-slate-600 font-semibold py-1">Cộng tác viên giới thiệu</label>
                   <select
                     value={iCollaboratorId}
                     onChange={(e) => setICollaboratorId(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
                   >
                     <option value="">-- Chọn cộng tác viên --</option>
                     {collaborators.map((c) => (
@@ -966,28 +966,28 @@ export const Contracts: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 bg-slate-950/50 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-200/80">
                 <input
                   type="checkbox"
                   checked={iIsUpfront}
                   onChange={(e) => setIIsUpfront(e.target.checked)}
-                  className="checkbox checkbox-primary border-slate-700 checked:border-amber-500 checked:bg-amber-500"
+                  className="checkbox checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
                 />
-                <span className="text-slate-300 font-semibold">Thu tiền kỳ đóng góp 1 trước (Khấu trừ kỳ 1 khi giao tiền)</span>
+                <span className="text-slate-600 font-semibold">Thu tiền kỳ đóng góp 1 trước (Khấu trừ kỳ 1 khi giao tiền)</span>
               </div>
 
               <div>
-                <label className="label text-slate-300 font-semibold py-1">Ghi chú kèm theo</label>
+                <label className="label text-slate-600 font-semibold py-1">Ghi chú kèm theo</label>
                 <textarea
                   placeholder="Ghi chú hồ sơ trả góp..."
                   value={iNotes}
                   onChange={(e) => setINotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-16"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-16"
                 />
               </div>
 
               <div className="modal-action">
-                <button type="button" onClick={() => setIsInstallmentOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsInstallmentOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">

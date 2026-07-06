@@ -90,7 +90,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                           <ArrowDown className="w-3.5 h-3.5" />
                         )
                       ) : (
-                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
                       )}
                     </button>
                   ) : (

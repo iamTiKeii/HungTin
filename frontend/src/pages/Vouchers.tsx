@@ -100,18 +100,18 @@ export const Vouchers: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <Receipt className="text-amber-500 w-7 h-7" />
             Quản Lý Phiếu Thu / Phiếu Chi
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Ghi nhận các khoản thu chi hoạt động khác ngoài hợp đồng và in biên nhận K80 cho đối tác.
           </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <button onClick={fetchVouchers} className="btn btn-outline border-slate-700 text-slate-300 btn-sm">
+          <button onClick={fetchVouchers} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
@@ -147,19 +147,19 @@ export const Vouchers: React.FC = () => {
             placeholder="Tìm kiếm theo mã phiếu hoặc tên người nộp/nhận..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full pl-11 bg-slate-900 border-slate-800 text-slate-100 focus:border-amber-500 focus:outline-none rounded-xl"
+            className="input input-bordered w-full pl-11 bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl"
           />
         </div>
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="select select-bordered bg-slate-900 border-slate-800 text-slate-300 rounded-xl"
+          className="select select-bordered bg-white border-slate-200/80 text-slate-600 rounded-xl"
         >
           <option value="">Tất cả loại phiếu</option>
           <option value="receipt">Phiếu Thu (Nhập két)</option>
           <option value="payment">Phiếu Chi (Xuất két)</option>
         </select>
-        <button type="submit" className="btn btn-neutral border-slate-800 text-slate-200 font-bold rounded-xl px-6">
+        <button type="submit" className="btn btn-neutral border-slate-200/80 text-slate-700 font-bold rounded-xl px-6">
           Tìm kiếm
         </button>
       </form>
@@ -170,15 +170,15 @@ export const Vouchers: React.FC = () => {
           <span className="loading loading-spinner loading-lg text-amber-500"></span>
         </div>
       ) : vouchers.length === 0 ? (
-        <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500">
+        <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl text-slate-500">
           Chưa phát sinh phiếu thu chi nào phù hợp bộ lọc
         </div>
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                   <th>Mã phiếu</th>
                   <th>Loại phiếu</th>
                   <th>Đối tác liên quan</th>
@@ -190,23 +190,23 @@ export const Vouchers: React.FC = () => {
               </thead>
               <tbody>
                 {vouchers.map((v) => (
-                  <tr key={v.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
+                  <tr key={v.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
                     <td className="font-bold text-amber-500">{v.voucher_code}</td>
                     <td>
                       <span className={`badge font-bold badge-xs uppercase ${v.type === "receipt" ? "badge-success" : "badge-error"}`}>
                         {v.type === "receipt" ? "Thu" : "Chi"}
                       </span>
                     </td>
-                    <td className="font-bold text-slate-200">{v.partner_name}</td>
+                    <td className="font-bold text-slate-700">{v.partner_name}</td>
                     <td className={`font-black ${v.type === "receipt" ? "text-emerald-500" : "text-red-500"}`}>
                       {formatCurrency(v.amount)}
                     </td>
-                    <td className="text-slate-400 max-w-xs truncate">{v.description}</td>
-                    <td className="text-slate-400 font-semibold">{new Date(v.created_at).toLocaleDateString("vi-VN")}</td>
+                    <td className="text-slate-500 max-w-xs truncate">{v.description}</td>
+                    <td className="text-slate-500 font-semibold">{new Date(v.created_at).toLocaleDateString("vi-VN")}</td>
                     <td className="text-right py-3">
                       <button
                         onClick={() => setActivePrintVoucher(v)}
-                        className="btn btn-outline border-slate-700 hover:bg-slate-800 btn-xs text-slate-300"
+                        className="btn btn-outline border-slate-200 hover:bg-slate-50 btn-xs text-slate-600"
                       >
                         <Printer className="w-3.5 h-3.5" />
                         In K80
@@ -223,55 +223,55 @@ export const Vouchers: React.FC = () => {
       {/* CREATE MODAL */}
       {isCreateOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4">Lập Phiếu Thu / Chi</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold text-sm">Loại chứng từ</label>
+                  <label className="label text-slate-600 font-semibold text-sm">Loại chứng từ</label>
                   <select
                     value={type}
                     onChange={(e: any) => setType(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl focus:border-amber-500"
+                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl focus:border-amber-500"
                   >
                     <option value="receipt">Phiếu Thu (+ két)</option>
                     <option value="payment">Phiếu Chi (- két)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold text-sm">Số tiền mặt (VNĐ) *</label>
+                  <label className="label text-slate-600 font-semibold text-sm">Số tiền mặt (VNĐ) *</label>
                   <input
                     type="number"
                     placeholder="1000000"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
                     required
                   />
                 </div>
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Đối tác nộp/nhận tiền *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Đối tác nộp/nhận tiền *</label>
                 <input
                   type="text"
                   placeholder="Họ tên người nhận/nộp"
                   value={partnerName}
                   onChange={(e) => setPartnerName(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
                   required
                 />
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Nội dung diễn giải chi tiết</label>
+                <label className="label text-slate-600 font-semibold text-sm">Nội dung diễn giải chi tiết</label>
                 <textarea
                   placeholder="Lý do thu/chi..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-20"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-20"
                 />
               </div>
               <div className="modal-action">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy bỏ
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">
@@ -286,10 +286,10 @@ export const Vouchers: React.FC = () => {
       {/* PRINT PREVIEW MODAL */}
       {activePrintVoucher && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl max-w-sm">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
-              <span className="font-extrabold text-sm text-slate-300">Biên nhận in K80</span>
-              <button onClick={() => setActivePrintVoucher(null)} className="btn btn-ghost btn-circle btn-xs text-slate-400">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl max-w-sm">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200/80 mb-4">
+              <span className="font-extrabold text-sm text-slate-600">Biên nhận in K80</span>
+              <button onClick={() => setActivePrintVoucher(null)} className="btn btn-ghost btn-circle btn-xs text-slate-500">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -362,7 +362,7 @@ export const Vouchers: React.FC = () => {
             </div>
 
             <div className="modal-action">
-              <button onClick={() => setActivePrintVoucher(null)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+              <button onClick={() => setActivePrintVoucher(null)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                 Đóng lại
               </button>
               <button onClick={handlePrint} className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-xl gap-1">

@@ -172,7 +172,7 @@ export const CapitalContracts: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
             Hợp Đồng Góp Vốn
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Quản lý dòng vốn góp đầu tư từ đối tác, nhà đầu tư để bổ sung quỹ chi nhánh.
           </p>
         </div>
@@ -197,13 +197,13 @@ export const CapitalContracts: React.FC = () => {
 
       {/* Summary Stat */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group col-span-1">
+        <div className="bg-white/65 border border-slate-200/80 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group col-span-1">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-110" />
           <div className="p-3 bg-amber-500/10 rounded-2xl w-fit text-amber-500 mb-4">
             <Coins className="w-6 h-6" />
           </div>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Tổng vốn góp hoạt động</p>
-          <h2 className="text-3xl font-extrabold text-slate-100 mt-2">
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Tổng vốn góp hoạt động</p>
+          <h2 className="text-3xl font-extrabold text-slate-800 mt-2">
             {formatCurrency(totalCapital)}
           </h2>
           <p className="text-slate-500 text-xs mt-1">Tính trên các hợp đồng đang hoạt động</p>
@@ -211,7 +211,7 @@ export const CapitalContracts: React.FC = () => {
       </div>
 
       {/* Table & Filtering */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg space-y-6">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative flex-1">
             <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -220,14 +220,14 @@ export const CapitalContracts: React.FC = () => {
               placeholder="Tìm kiếm nhà đầu tư..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input input-bordered w-full rounded-2xl bg-slate-950 border-slate-800 pl-12 text-slate-100 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="input input-bordered w-full rounded-2xl bg-slate-50 border-slate-200/80 pl-12 text-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="select select-bordered rounded-2xl bg-slate-950 border-slate-800 text-slate-300 focus:border-amber-500"
+              className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80 text-slate-600 focus:border-amber-500"
             >
               <option value="">Trạng thái (Tất cả)</option>
               <option value="active">Đang hoạt động</option>
@@ -243,9 +243,9 @@ export const CapitalContracts: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800/60 text-slate-400">
+                <tr className="border-b border-slate-200/80/60 text-slate-500">
                   <th>STT</th>
                   <th>Nhà Đầu Tư</th>
                   <th>Số Điện Thoại</th>
@@ -265,11 +265,11 @@ export const CapitalContracts: React.FC = () => {
                   </tr>
                 ) : (
                   contracts.map((c, idx) => (
-                    <tr key={c.id} className="border-b border-slate-800/40 hover:bg-slate-900/20">
+                    <tr key={c.id} className="border-b border-slate-200/40 hover:bg-slate-50/50">
                       <td>{idx + 1}</td>
-                      <td className="font-bold text-slate-100">{c.investor_name}</td>
+                      <td className="font-bold text-slate-800">{c.investor_name}</td>
                       <td>{c.investor_phone || "—"}</td>
-                      <td className="text-amber-400 font-bold">{formatCurrency(c.amount)}</td>
+                      <td className="text-amber-600 font-bold">{formatCurrency(c.amount)}</td>
                       <td>{new Date(c.investment_date).toLocaleDateString("vi-VN")}</td>
                       <td>
                         {c.interest_type ? c.interest_type.name : "Không tính lãi"}
@@ -282,7 +282,7 @@ export const CapitalContracts: React.FC = () => {
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                               : c.status === "completed"
                               ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                              : "bg-slate-800 text-slate-400 border border-slate-700"
+                              : "bg-slate-50 text-slate-500 border border-slate-200"
                           }`}
                         >
                           {c.status === "active" ? "Đang đầu tư" : c.status === "completed" ? "Đã trả xong" : "Đã hủy"}
@@ -291,14 +291,14 @@ export const CapitalContracts: React.FC = () => {
                       <td className="text-right space-x-1.5">
                         <button
                           onClick={() => handleEditInit(c)}
-                          className="btn btn-ghost btn-xs text-slate-400 hover:text-amber-500 rounded-lg p-1.5"
+                          className="btn btn-ghost btn-xs text-slate-500 hover:text-amber-500 rounded-lg p-1.5"
                         >
                           <Edit className="w-4.5 h-4.5" />
                         </button>
                         {c.status !== "cancelled" && (
                           <button
                             onClick={() => handleDelete(c.id)}
-                            className="btn btn-ghost btn-xs text-slate-400 hover:text-red-500 rounded-lg p-1.5"
+                            className="btn btn-ghost btn-xs text-slate-500 hover:text-red-500 rounded-lg p-1.5"
                           >
                             <Trash2 className="w-4.5 h-4.5" />
                           </button>
@@ -316,8 +316,8 @@ export const CapitalContracts: React.FC = () => {
       {/* Create Modal */}
       {isCreateOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl text-slate-200">
-            <h3 className="font-bold text-xl text-slate-100 flex items-center gap-2 mb-6">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 rounded-3xl max-w-2xl text-slate-700">
+            <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2 mb-6">
               <Plus className="w-6 h-6 text-amber-500" />
               Thêm Mới Hợp Đồng Góp Vốn
             </h3>
@@ -326,81 +326,81 @@ export const CapitalContracts: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Tên Nhà Đầu Tư <span className="text-red-500">*</span></span>
+                    <span className="label-text text-slate-500 font-semibold">Tên Nhà Đầu Tư <span className="text-red-500">*</span></span>
                   </label>
                   <input
                     type="text"
                     value={investorName}
                     onChange={(e) => setInvestorName(e.target.value)}
                     required
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Số Số Tiền (VNĐ) <span className="text-red-500">*</span></span>
+                    <span className="label-text text-slate-500 font-semibold">Số Số Tiền (VNĐ) <span className="text-red-500">*</span></span>
                   </label>
                   <input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Số CCCD / Hộ Chiếu</span>
+                    <span className="label-text text-slate-500 font-semibold">Số CCCD / Hộ Chiếu</span>
                   </label>
                   <input
                     type="text"
                     value={investorIdCard}
                     onChange={(e) => setInvestorIdCard(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Số Điện Thoại</span>
+                    <span className="label-text text-slate-500 font-semibold">Số Điện Thoại</span>
                   </label>
                   <input
                     type="text"
                     value={investorPhone}
                     onChange={(e) => setInvestorPhone(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control md:col-span-2">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Địa Chỉ</span>
+                    <span className="label-text text-slate-500 font-semibold">Địa Chỉ</span>
                   </label>
                   <input
                     type="text"
                     value={investorAddress}
                     onChange={(e) => setInvestorAddress(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Ngày Góp Vốn <span className="text-red-500">*</span></span>
+                    <span className="label-text text-slate-500 font-semibold">Ngày Góp Vốn <span className="text-red-500">*</span></span>
                   </label>
                   <input
                     type="date"
                     value={investmentDate}
                     onChange={(e) => setInvestmentDate(e.target.value)}
                     required
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Kế hoạch lãi suất</span>
+                    <span className="label-text text-slate-500 font-semibold">Kế hoạch lãi suất</span>
                   </label>
                   <select
                     value={interestTypeId}
                     onChange={(e) => setInterestTypeId(e.target.value)}
-                    className="select select-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   >
                     <option value="">Không tính lãi</option>
                     {interestTypes.map((t) => (
@@ -417,16 +417,16 @@ export const CapitalContracts: React.FC = () => {
                     onChange={(e) => setIsUpfront(e.target.checked)}
                     className="checkbox checkbox-warning rounded-lg"
                   />
-                  <span className="label-text text-slate-400 font-semibold">Trả lãi trước (Thu tiền lãi ngay lúc giải ngân)</span>
+                  <span className="label-text text-slate-500 font-semibold">Trả lãi trước (Thu tiền lãi ngay lúc giải ngân)</span>
                 </div>
                 <div className="form-control md:col-span-2">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Ghi Chú</span>
+                    <span className="label-text text-slate-500 font-semibold">Ghi Chú</span>
                   </label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="textarea textarea-bordered rounded-2xl bg-slate-950 border-slate-800 h-20"
+                    className="textarea textarea-bordered rounded-2xl bg-slate-50 border-slate-200/80 h-20"
                   />
                 </div>
               </div>
@@ -435,7 +435,7 @@ export const CapitalContracts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="btn btn-outline border-slate-800 text-slate-400 rounded-2xl"
+                  className="btn btn-outline border-slate-200/80 text-slate-500 rounded-2xl"
                 >
                   Hủy bỏ
                 </button>
@@ -454,8 +454,8 @@ export const CapitalContracts: React.FC = () => {
       {/* Edit Modal */}
       {isEditOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl text-slate-200">
-            <h3 className="font-bold text-xl text-slate-100 flex items-center gap-2 mb-6">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 rounded-3xl max-w-2xl text-slate-700">
+            <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2 mb-6">
               <Edit className="w-6 h-6 text-amber-500" />
               Chỉnh Sửa Hợp Đồng Góp Vốn
             </h3>
@@ -464,81 +464,81 @@ export const CapitalContracts: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Tên Nhà Đầu Tư <span className="text-red-500">*</span></span>
+                    <span className="label-text text-slate-500 font-semibold">Tên Nhà Đầu Tư <span className="text-red-500">*</span></span>
                   </label>
                   <input
                     type="text"
                     value={investorName}
                     onChange={(e) => setInvestorName(e.target.value)}
                     required
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Số Số Tiền (VNĐ) <span className="text-red-500">*</span></span>
+                    <span className="label-text text-slate-500 font-semibold">Số Số Tiền (VNĐ) <span className="text-red-500">*</span></span>
                   </label>
                   <input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Số CCCD / Hộ Chiếu</span>
+                    <span className="label-text text-slate-500 font-semibold">Số CCCD / Hộ Chiếu</span>
                   </label>
                   <input
                     type="text"
                     value={investorIdCard}
                     onChange={(e) => setInvestorIdCard(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Số Điện Thoại</span>
+                    <span className="label-text text-slate-500 font-semibold">Số Điện Thoại</span>
                   </label>
                   <input
                     type="text"
                     value={investorPhone}
                     onChange={(e) => setInvestorPhone(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control md:col-span-2">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Địa Chỉ</span>
+                    <span className="label-text text-slate-500 font-semibold">Địa Chỉ</span>
                   </label>
                   <input
                     type="text"
                     value={investorAddress}
                     onChange={(e) => setInvestorAddress(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Ngày Góp Vốn <span className="text-red-500">*</span></span>
+                    <span className="label-text text-slate-500 font-semibold">Ngày Góp Vốn <span className="text-red-500">*</span></span>
                   </label>
                   <input
                     type="date"
                     value={investmentDate}
                     onChange={(e) => setInvestmentDate(e.target.value)}
                     required
-                    className="input input-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Kế hoạch lãi suất</span>
+                    <span className="label-text text-slate-500 font-semibold">Kế hoạch lãi suất</span>
                   </label>
                   <select
                     value={interestTypeId}
                     onChange={(e) => setInterestTypeId(e.target.value)}
-                    className="select select-bordered rounded-2xl bg-slate-950 border-slate-800"
+                    className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   >
                     <option value="">Không tính lãi</option>
                     {interestTypes.map((t) => (
@@ -550,12 +550,12 @@ export const CapitalContracts: React.FC = () => {
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Trạng Thái Hợp Đồng</span>
+                    <span className="label-text text-slate-500 font-semibold">Trạng Thái Hợp Đồng</span>
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="select select-bordered rounded-2xl bg-slate-950 border-slate-800 text-slate-300"
+                    className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80 text-slate-600"
                   >
                     <option value="active">Đang đầu tư (Hoạt động)</option>
                     <option value="completed">Đã tất toán (Trả xong)</option>
@@ -569,16 +569,16 @@ export const CapitalContracts: React.FC = () => {
                     onChange={(e) => setIsUpfront(e.target.checked)}
                     className="checkbox checkbox-warning rounded-lg"
                   />
-                  <span className="label-text text-slate-400 font-semibold">Trả lãi trước</span>
+                  <span className="label-text text-slate-500 font-semibold">Trả lãi trước</span>
                 </div>
                 <div className="form-control md:col-span-2">
                   <label className="label">
-                    <span className="label-text text-slate-400 font-semibold">Ghi Chú</span>
+                    <span className="label-text text-slate-500 font-semibold">Ghi Chú</span>
                   </label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="textarea textarea-bordered rounded-2xl bg-slate-950 border-slate-800 h-20"
+                    className="textarea textarea-bordered rounded-2xl bg-slate-50 border-slate-200/80 h-20"
                   />
                 </div>
               </div>
@@ -587,7 +587,7 @@ export const CapitalContracts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="btn btn-outline border-slate-800 text-slate-400 rounded-2xl"
+                  className="btn btn-outline border-slate-200/80 text-slate-500 rounded-2xl"
                 >
                   Hủy bỏ
                 </button>

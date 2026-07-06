@@ -53,7 +53,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   return (
     <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-sm w-full sm:w-auto text-xs">
       <div className="flex items-center gap-2 w-full sm:w-auto">
-        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+        <Calendar className="w-4 h-4 text-slate-500 shrink-0" />
         <span className="text-slate-500 font-semibold shrink-0">Từ ngày:</span>
         <input
           type="date"
@@ -63,7 +63,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         />
       </div>
 
-      <div className="hidden sm:block text-slate-300 font-bold">|</div>
+      <div className="hidden sm:block text-slate-600 font-bold">|</div>
 
       <div className="flex items-center gap-2 w-full sm:w-auto">
         <span className="text-slate-500 font-semibold shrink-0">Đến ngày:</span>
@@ -75,7 +75,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         />
       </div>
 
-      <div className="hidden md:block text-slate-300 font-bold">|</div>
+      <div className="hidden md:block text-slate-600 font-bold">|</div>
 
       {/* Presets Button Row */}
       <div className="flex gap-1.5 overflow-x-auto w-full sm:w-auto pt-1 sm:pt-0">

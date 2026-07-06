@@ -11,7 +11,7 @@ export const TermsPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-800">Điều Khoản Sử Dụng</h1>
-            <p className="text-slate-400 text-xs mt-0.5">Cập nhật lần cuối: 06/07/2026</p>
+            <p className="text-slate-500 text-xs mt-0.5">Cập nhật lần cuối: 06/07/2026</p>
           </div>
         </div>
 

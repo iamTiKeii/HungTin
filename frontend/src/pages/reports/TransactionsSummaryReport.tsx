@@ -46,20 +46,20 @@ export const TransactionsSummaryReport: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
             Tổng Kết Giao Dịch
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Theo dõi nhật ký thu chi, dòng tiền biến động đầu ngày, cuối ngày và chi tiết sổ cái giao dịch.
           </p>
         </div>
 
         {/* Date Filters */}
-        <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-3 backdrop-blur-md">
+        <div className="flex items-center gap-3 bg-white/65 border border-slate-200/80 rounded-2xl p-3 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-slate-500" />
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
           <span className="text-slate-600 text-sm font-bold">đến</span>
@@ -69,7 +69,7 @@ export const TransactionsSummaryReport: React.FC = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
         </div>
@@ -85,59 +85,59 @@ export const TransactionsSummaryReport: React.FC = () => {
       {/* Grid Summaries */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Tiền Đầu Ngày</p>
-            <h4 className="text-slate-200 font-bold text-sm mt-1.5">{formatCurrency(summary.beginning_cash)}</h4>
+            <h4 className="text-slate-700 font-bold text-sm mt-1.5">{formatCurrency(summary.beginning_cash)}</h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Biến Động Cầm Đồ</p>
             <h4 className={`font-bold text-sm mt-1.5 ${summary.pawn_flow >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {summary.pawn_flow > 0 ? "+" : ""}{formatCurrency(summary.pawn_flow)}
             </h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Biến Động Tín Chấp</p>
             <h4 className={`font-bold text-sm mt-1.5 ${summary.unsecured_flow >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {summary.unsecured_flow > 0 ? "+" : ""}{formatCurrency(summary.unsecured_flow)}
             </h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Biến Động Trả Góp</p>
             <h4 className={`font-bold text-sm mt-1.5 ${summary.installment_flow >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {summary.installment_flow > 0 ? "+" : ""}{formatCurrency(summary.installment_flow)}
             </h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Thu Hoạt Động</p>
             <h4 className="text-emerald-400 font-bold text-sm mt-1.5">+{formatCurrency(summary.receipt_flow)}</h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Chi Hoạt Động</p>
             <h4 className="text-red-400 font-bold text-sm mt-1.5">{formatCurrency(summary.expense_flow)}</h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase">Biến Động Vốn</p>
             <h4 className={`font-bold text-sm mt-1.5 ${summary.capital_flow >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {summary.capital_flow > 0 ? "+" : ""}{formatCurrency(summary.capital_flow)}
             </h4>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center bg-amber-500/5 border-amber-500/20">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center bg-amber-500/5 border-amber-500/20">
             <p className="text-amber-500/80 text-[10px] font-bold uppercase">Tiền Cuối Ngày</p>
-            <h4 className="text-amber-400 font-bold text-sm mt-1.5">{formatCurrency(summary.ending_cash)}</h4>
+            <h4 className="text-amber-600 font-bold text-sm mt-1.5">{formatCurrency(summary.ending_cash)}</h4>
           </div>
         </div>
       )}
 
       {/* Sổ Cái Chi Tiết */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg space-y-4">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <FileText className="w-5 h-5 text-amber-500" />
             Nhật Ký Sổ Cái Giao Dịch Chi Tiết
           </h3>
           <button
             onClick={fetchData}
-            className="btn btn-ghost btn-sm rounded-xl text-slate-400 hover:bg-slate-800 flex items-center gap-1.5"
+            className="btn btn-ghost btn-sm rounded-xl text-slate-500 hover:bg-slate-50 flex items-center gap-1.5"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-amber-500" : ""}`} />
@@ -151,9 +151,9 @@ export const TransactionsSummaryReport: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800/60 text-slate-400">
+                <tr className="border-b border-slate-200/80/60 text-slate-500">
                   <th>Ngày/Giờ</th>
                   <th>Mã HĐ / Số Phiếu</th>
                   <th>Phân Phân Loại</th>
@@ -173,14 +173,14 @@ export const TransactionsSummaryReport: React.FC = () => {
                   </tr>
                 ) : (
                   ledger.map((l, idx) => (
-                    <tr key={idx} className="border-b border-slate-800/40 hover:bg-slate-900/20 text-xs">
+                    <tr key={idx} className="border-b border-slate-200/40 hover:bg-slate-50/50 text-xs">
                       <td>{new Date(l.date).toLocaleString("vi-VN")}</td>
-                      <td className="font-semibold text-slate-200">{l.contract_code}</td>
+                      <td className="font-semibold text-slate-700">{l.contract_code}</td>
                       <td>
                         <span
                           className={`badge badge-sm font-semibold rounded-lg px-2 py-0.5 ${
                             l.type === "Cầm đồ"
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                               : l.type === "Tín chấp"
                               ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
                               : l.type === "Trả góp"
@@ -189,13 +189,13 @@ export const TransactionsSummaryReport: React.FC = () => {
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                               : l.type.includes("Chi")
                               ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                              : "bg-slate-800 text-slate-300"
+                              : "bg-slate-50 text-slate-600"
                           }`}
                         >
                           {l.type}
                         </span>
                       </td>
-                      <td className="font-semibold text-slate-100">{l.customer_name}</td>
+                      <td className="font-semibold text-slate-800">{l.customer_name}</td>
                       <td>{l.employee_name}</td>
                       <td className="text-emerald-400 font-bold">
                         {l.received_amount > 0 ? (
@@ -217,7 +217,7 @@ export const TransactionsSummaryReport: React.FC = () => {
                           "—"
                         )}
                       </td>
-                      <td className="text-slate-400 max-w-xs truncate" title={l.description}>
+                      <td className="text-slate-500 max-w-xs truncate" title={l.description}>
                         {l.description}
                       </td>
                     </tr>

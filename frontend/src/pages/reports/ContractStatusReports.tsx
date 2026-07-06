@@ -96,7 +96,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
             {getTitle()}
           </h1>
-          <p className="text-slate-400 text-sm mt-1">{getSubtext()}</p>
+          <p className="text-slate-500 text-sm mt-1">{getSubtext()}</p>
         </div>
       </div>
 
@@ -108,13 +108,13 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
       )}
 
       {/* Tabs */}
-      <div className="tabs tabs-boxed bg-slate-950 p-1 border border-slate-900 rounded-2xl w-fit flex gap-1">
+      <div className="tabs tabs-boxed bg-slate-50 p-1 border border-slate-900 rounded-2xl w-fit flex gap-1">
         <button
           onClick={() => setActiveTab("pawn")}
           className={`tab tab-lg rounded-xl font-bold px-8 text-xs transition-all duration-200 ${
             activeTab === "pawn"
               ? "bg-amber-500 text-slate-950 shadow-lg"
-              : "text-slate-400 hover:text-slate-200"
+              : "text-slate-500 hover:text-slate-700"
           }`}
         >
           Cầm Đồ
@@ -126,7 +126,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
             className={`tab tab-lg rounded-xl font-bold px-8 text-xs transition-all duration-200 ${
               activeTab === "unsecured"
                 ? "bg-amber-500 text-slate-950 shadow-lg"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
             Tín Chấp
@@ -139,7 +139,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
             className={`tab tab-lg rounded-xl font-bold px-8 text-xs transition-all duration-200 ${
               activeTab === "installment"
                 ? "bg-amber-500 text-slate-950 shadow-lg"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
             Trả Góp
@@ -148,7 +148,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 bg-slate-900/40 border border-slate-800 rounded-2xl p-4">
+      <div className="flex items-center gap-4 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
         <div className="relative flex-1">
           <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
@@ -156,12 +156,12 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
             placeholder="Tìm kiếm mã hợp đồng hoặc tên khách hàng..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input input-bordered w-full rounded-2xl bg-slate-950 border-slate-800 pl-12 text-slate-100 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            className="input input-bordered w-full rounded-2xl bg-slate-50 border-slate-200/80 pl-12 text-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
           />
         </div>
         <button
           onClick={fetchData}
-          className="btn btn-ghost btn-sm rounded-xl text-slate-400 hover:bg-slate-800 flex items-center gap-1.5"
+          className="btn btn-ghost btn-sm rounded-xl text-slate-500 hover:bg-slate-50 flex items-center gap-1.5"
           disabled={loading}
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-amber-500" : ""}`} />
@@ -170,7 +170,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
       </div>
 
       {/* List content */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg">
         {loading ? (
           <div className="flex justify-center py-12">
             <span className="loading loading-spinner loading-lg text-amber-500"></span>
@@ -178,9 +178,9 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
         ) : (
           <div className="overflow-x-auto">
             {activeTab === "pawn" && (
-              <table className="table w-full text-slate-300">
+              <table className="table w-full text-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-800/60 text-slate-400">
+                  <tr className="border-b border-slate-200/80/60 text-slate-500">
                     <th>STT</th>
                     <th>Mã HĐ</th>
                     <th>Khách Hàng</th>
@@ -201,18 +201,18 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                     </tr>
                   ) : (
                     currentList.map((c, idx) => (
-                      <tr key={c.id} className="border-b border-slate-800/40 hover:bg-slate-900/20 text-xs">
+                      <tr key={c.id} className="border-b border-slate-200/40 hover:bg-slate-50/50 text-xs">
                         <td>{idx + 1}</td>
-                        <td className="font-bold text-slate-200">
-                          <Link to={`/contracts/pawn/${c.id}`} className="hover:text-amber-400 flex items-center gap-1">
+                        <td className="font-bold text-slate-700">
+                          <Link to={`/contracts/pawn/${c.id}`} className="hover:text-amber-600 flex items-center gap-1">
                             {c.contract_code}
                             <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                           </Link>
                         </td>
-                        <td className="font-semibold text-slate-100">{c.customer.full_name}</td>
+                        <td className="font-semibold text-slate-800">{c.customer.full_name}</td>
                         <td>{c.asset_name}</td>
                         <td>{new Date(c.loan_date).toLocaleDateString("vi-VN")}</td>
-                        <td className="text-amber-400 font-extrabold">{formatCurrency(c.loan_amount)}</td>
+                        <td className="text-amber-600 font-extrabold">{formatCurrency(c.loan_amount)}</td>
                         <td>{c.interest_rate}% / {c.period_value} ngày ({c.interest_type.name})</td>
                         <td>
                           <span
@@ -224,8 +224,8 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                                 : c.status === "closed"
                                 ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                                 : c.status === "liquidated"
-                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                : "bg-slate-800 text-slate-400 border border-slate-700"
+                                ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                                : "bg-slate-50 text-slate-500 border border-slate-200"
                             }`}
                           >
                             {c.status}
@@ -244,9 +244,9 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
             )}
 
             {activeTab === "unsecured" && (
-              <table className="table w-full text-slate-300">
+              <table className="table w-full text-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-800/60 text-slate-400">
+                  <tr className="border-b border-slate-200/80/60 text-slate-500">
                     <th>STT</th>
                     <th>Mã HĐ</th>
                     <th>Khách Hàng</th>
@@ -267,18 +267,18 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                     </tr>
                   ) : (
                     currentList.map((c, idx) => (
-                      <tr key={c.id} className="border-b border-slate-800/40 hover:bg-slate-900/20 text-xs">
+                      <tr key={c.id} className="border-b border-slate-200/40 hover:bg-slate-50/50 text-xs">
                         <td>{idx + 1}</td>
-                        <td className="font-bold text-slate-200">
-                          <Link to={`/contracts/unsecured/${c.id}`} className="hover:text-amber-400 flex items-center gap-1">
+                        <td className="font-bold text-slate-700">
+                          <Link to={`/contracts/unsecured/${c.id}`} className="hover:text-amber-600 flex items-center gap-1">
                             {c.contract_code}
                             <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                           </Link>
                         </td>
-                        <td className="font-semibold text-slate-100">{c.customer.full_name}</td>
+                        <td className="font-semibold text-slate-800">{c.customer.full_name}</td>
                         <td>{c.commodity?.name || "Tín chấp"}</td>
                         <td>{new Date(c.loan_date).toLocaleDateString("vi-VN")}</td>
-                        <td className="text-amber-400 font-extrabold">{formatCurrency(c.loan_amount)}</td>
+                        <td className="text-amber-600 font-extrabold">{formatCurrency(c.loan_amount)}</td>
                         <td>{c.interest_rate}% / {c.period_value} ngày ({c.interest_type.name})</td>
                         <td>
                           <span
@@ -289,7 +289,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                                 ? "bg-red-500/10 text-red-400 border border-red-500/20"
                                 : c.status === "closed"
                                 ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                                : "bg-slate-800 text-slate-400 border border-slate-700"
+                                : "bg-slate-50 text-slate-500 border border-slate-200"
                             }`}
                           >
                             {c.status}
@@ -308,9 +308,9 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
             )}
 
             {activeTab === "installment" && (
-              <table className="table w-full text-slate-300">
+              <table className="table w-full text-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-800/60 text-slate-400">
+                  <tr className="border-b border-slate-200/80/60 text-slate-500">
                     <th>STT</th>
                     <th>Mã HĐ</th>
                     <th>Khách Hàng</th>
@@ -332,19 +332,19 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                     </tr>
                   ) : (
                     currentList.map((c, idx) => (
-                      <tr key={c.id} className="border-b border-slate-800/40 hover:bg-slate-900/20 text-xs">
+                      <tr key={c.id} className="border-b border-slate-200/40 hover:bg-slate-50/50 text-xs">
                         <td>{idx + 1}</td>
-                        <td className="font-bold text-slate-200">
-                          <Link to={`/contracts/installment/${c.id}`} className="hover:text-amber-400 flex items-center gap-1">
+                        <td className="font-bold text-slate-700">
+                          <Link to={`/contracts/installment/${c.id}`} className="hover:text-amber-600 flex items-center gap-1">
                             {c.contract_code}
                             <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                           </Link>
                         </td>
-                        <td className="font-semibold text-slate-100">{c.customer.full_name}</td>
+                        <td className="font-semibold text-slate-800">{c.customer.full_name}</td>
                         <td>{new Date(c.loan_date).toLocaleDateString("vi-VN")}</td>
                         <td>{c.loan_duration} ngày (Chu kỳ {c.cycle_days} ngày)</td>
-                        <td className="text-amber-400 font-bold">{formatCurrency(c.disbursed_amount)}</td>
-                        <td className="text-slate-100">{formatCurrency(c.repayment_amount)}</td>
+                        <td className="text-amber-600 font-bold">{formatCurrency(c.disbursed_amount)}</td>
+                        <td className="text-slate-800">{formatCurrency(c.repayment_amount)}</td>
                         <td className="text-amber-500/80 font-semibold">
                           {/* We can compute outstanding principal, or use the remaining nợ */}
                           {formatCurrency(Number(c.repayment_amount) - Number(c.debt_amount))}
@@ -358,7 +358,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                                 ? "bg-red-500/10 text-red-400 border border-red-500/20"
                                 : c.status === "closed"
                                 ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                                : "bg-slate-800 text-slate-400 border border-slate-700"
+                                : "bg-slate-50 text-slate-500 border border-slate-200"
                             }`}
                           >
                             {c.status}

@@ -70,9 +70,9 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div className="absolute top-0 right-0 w-24 h-24 bg-slate-500/[0.02] rounded-bl-full transition-all duration-300 group-hover:scale-110" />
       <div className="flex justify-between items-start">
         <div className="space-y-2">
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">{label}</p>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{label}</p>
           <h3 className="text-2xl font-black text-slate-800">{value}</h3>
-          {subText && <p className="text-[10px] text-slate-400 font-semibold">{subText}</p>}
+          {subText && <p className="text-[10px] text-slate-500 font-semibold">{subText}</p>}
         </div>
         <div className={`p-3 rounded-2xl w-fit ${styles.iconBg}`}>
           <Icon className="w-5 h-5 shrink-0" />

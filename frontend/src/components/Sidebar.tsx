@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import axios from "axios";
 
 import {
   FileText,
@@ -27,6 +28,17 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const location = useLocation();
+  const [systemLogo, setSystemLogo] = useState("");
+  const [systemName, setSystemName] = useState("Hưng Tín");
+
+  useEffect(() => {
+    axios.get("/api/settings")
+      .then(res => {
+        setSystemLogo(res.data.system_logo || "");
+        setSystemName(res.data.system_name || "Hưng Tín");
+      })
+      .catch(err => console.error("Error fetching logo in sidebar", err));
+  }, []);
 
   // State to track open sub-menus
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
@@ -108,6 +120,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     >
       {/* Scrollable Navigation Area */}
       <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+        {/* Brand Logo Header */}
+        <div className={`mb-6 flex items-center border-b border-slate-100 pb-4 ${isOpen ? "px-2 gap-3" : "justify-center"}`}>
+          {systemLogo ? (
+            <img src={systemLogo} alt="System Logo" className="w-8 h-8 object-contain rounded-lg shadow-sm" />
+          ) : (
+            <Shield className="w-8 h-8 text-amber-500 animate-pulse shrink-0" />
+          )}
+          {isOpen && (
+            <div className="flex flex-col truncate">
+              <span className="text-sm font-semibold text-slate-800 truncate">{systemName}</span>
+              <span className="text-[10px] text-slate-400 truncate">Hệ thống cầm đồ</span>
+            </div>
+          )}
+        </div>
+
         <ul className="space-y-1">
           {/* Main Navigation Items */}
           {mainNavItems.map((item) => {
@@ -125,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   }`}
                   title={!isOpen ? item.label : undefined}
                 >
-                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-amber-600" : "text-slate-400"}`} />
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-amber-600" : "text-slate-500"}`} />
                   {isOpen && <span>{item.label}</span>}
                 </Link>
               </li>
@@ -145,11 +172,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               type="button"
             >
               <div className="flex items-center gap-3">
-                <Store className="w-5 h-5 shrink-0 text-slate-400" />
+                <Store className="w-5 h-5 shrink-0 text-slate-500" />
                 {isOpen && <span>Quản lý cửa hàng</span>}
               </div>
               {isOpen && (
-                openMenus.storeManage ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
+                openMenus.storeManage ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
               )}
             </button>
 
@@ -232,11 +259,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               type="button"
             >
               <div className="flex items-center gap-3">
-                <Receipt className="w-5 h-5 shrink-0 text-slate-400" />
+                <Receipt className="w-5 h-5 shrink-0 text-slate-500" />
                 {isOpen && <span>Quản lý thu chi</span>}
               </div>
               {isOpen && (
-                openMenus.cashflowManage ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
+                openMenus.cashflowManage ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
               )}
             </button>
 
@@ -277,7 +304,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               }`}
               title={!isOpen ? "Quản lý nguồn vốn" : undefined}
             >
-              <Briefcase className={`w-5 h-5 shrink-0 ${location.pathname === "/contract/capital" ? "text-amber-600" : "text-slate-400"}`} />
+              <Briefcase className={`w-5 h-5 shrink-0 ${location.pathname === "/contract/capital" ? "text-amber-600" : "text-slate-500"}`} />
               {isOpen && <span>Quản lý nguồn vốn</span>}
             </Link>
           </li>
@@ -295,11 +322,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               type="button"
             >
               <div className="flex items-center gap-3">
-                <UserCheck className="w-5 h-5 shrink-0 text-slate-400" />
+                <UserCheck className="w-5 h-5 shrink-0 text-slate-500" />
                 {isOpen && <span>Quản lý nhân viên</span>}
               </div>
               {isOpen && (
-                openMenus.staffManage ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
+                openMenus.staffManage ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
               )}
             </button>
 
@@ -342,11 +369,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               type="button"
             >
               <div className="flex items-center gap-3">
-                <BarChart3 className="w-5 h-5 shrink-0 text-slate-400" />
+                <BarChart3 className="w-5 h-5 shrink-0 text-slate-500" />
                 {isOpen && <span>Báo cáo thống kê</span>}
               </div>
               {isOpen && (
-                openMenus.reports ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
+                openMenus.reports ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
               )}
             </button>
 
@@ -524,7 +551,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             <PhoneCall className="w-5 h-5 text-amber-500 hover:scale-110 cursor-pointer transition-transform" />
           </div>
           <div title="Hạn dùng: 07/04/2027">
-            <Shield className="w-5 h-5 text-slate-400" />
+            <Shield className="w-5 h-5 text-slate-500" />
           </div>
         </div>
       )}

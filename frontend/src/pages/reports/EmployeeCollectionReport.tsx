@@ -45,20 +45,20 @@ export const EmployeeCollectionReport: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
             Thống Kê Thu Tiền Nhân Viên
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Theo dõi hiệu quả thu nợ, thu tiền lãi, đóng trả góp của từng nhân viên chi nhánh theo khoảng thời gian.
           </p>
         </div>
 
         {/* Date Filters */}
-        <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-3 backdrop-blur-md">
+        <div className="flex items-center gap-3 bg-white/65 border border-slate-200/80 rounded-2xl p-3 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-slate-500" />
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
           <span className="text-slate-600 text-sm font-bold">đến</span>
@@ -68,7 +68,7 @@ export const EmployeeCollectionReport: React.FC = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
         </div>
@@ -83,12 +83,12 @@ export const EmployeeCollectionReport: React.FC = () => {
 
       {/* Aggregate Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
+        <div className="bg-white/65 border border-slate-200/80 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-110" />
           <div className="p-3 bg-amber-500/10 rounded-2xl w-fit text-amber-500 mb-4">
             <Coins className="w-6 h-6" />
           </div>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Tổng Thu Tập Thể Nhân Viên</p>
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Tổng Thu Tập Thể Nhân Viên</p>
           <h2 className="text-3xl font-extrabold text-emerald-400 mt-2">
             {formatCurrency(totalCollected)}
           </h2>
@@ -97,15 +97,15 @@ export const EmployeeCollectionReport: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg space-y-4">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Users className="w-5 h-5 text-amber-500" />
             Bảng Doanh Số Thu Tiền Nhân Viên
           </h3>
           <button
             onClick={fetchData}
-            className="btn btn-ghost btn-sm rounded-xl text-slate-400 hover:bg-slate-800 flex items-center gap-1.5"
+            className="btn btn-ghost btn-sm rounded-xl text-slate-500 hover:bg-slate-50 flex items-center gap-1.5"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-amber-500" : ""}`} />
@@ -119,9 +119,9 @@ export const EmployeeCollectionReport: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800/60 text-slate-400">
+                <tr className="border-b border-slate-200/80/60 text-slate-500">
                   <th>STT</th>
                   <th>Nhân Viên Thu Tiền</th>
                   <th>Từ Ngày</th>
@@ -138,9 +138,9 @@ export const EmployeeCollectionReport: React.FC = () => {
                   </tr>
                 ) : (
                   data.map((item, idx) => (
-                    <tr key={item.id} className="border-b border-slate-800/40 hover:bg-slate-900/20">
+                    <tr key={item.id} className="border-b border-slate-200/40 hover:bg-slate-50/50">
                       <td>{idx + 1}</td>
-                      <td className="font-bold text-slate-100">{item.full_name}</td>
+                      <td className="font-bold text-slate-800">{item.full_name}</td>
                       <td>{new Date(item.startDate).toLocaleDateString("vi-VN")}</td>
                       <td>{new Date(item.endDate).toLocaleDateString("vi-VN")}</td>
                       <td className="text-emerald-400 font-extrabold text-right">{formatCurrency(item.total_collected)}</td>
@@ -148,7 +148,7 @@ export const EmployeeCollectionReport: React.FC = () => {
                   ))
                 )}
                 {data.length > 0 && (
-                  <tr className="border-t border-slate-700 bg-slate-900/50 font-bold text-slate-100 text-sm">
+                  <tr className="border-t border-slate-200 bg-white/50 font-bold text-slate-800 text-sm">
                     <td colSpan={4}>Tổng Cộng Doanh Số Thu Két</td>
                     <td className="text-emerald-400 text-right">{formatCurrency(totalCollected)}</td>
                   </tr>

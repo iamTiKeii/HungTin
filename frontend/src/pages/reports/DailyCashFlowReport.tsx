@@ -43,20 +43,20 @@ export const DailyCashFlowReport: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
             Dòng Tiền Theo Ngày
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Báo cáo kiểm toán dòng tiền luân chuyển hàng ngày của chi nhánh: số dư đầu/cuối ngày, phát sinh thu chi và tổng tài sản lưu động.
           </p>
         </div>
 
         {/* Date Filters */}
-        <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-3 backdrop-blur-md">
+        <div className="flex items-center gap-3 bg-white/65 border border-slate-200/80 rounded-2xl p-3 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-slate-500" />
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
           <span className="text-slate-600 text-sm font-bold">đến</span>
@@ -66,7 +66,7 @@ export const DailyCashFlowReport: React.FC = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
         </div>
@@ -80,15 +80,15 @@ export const DailyCashFlowReport: React.FC = () => {
       )}
 
       {/* Main Table */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg space-y-4">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <ArrowRightLeft className="w-5 h-5 text-amber-500" />
             Nhật Ký Dòng Tiền Lũy Kế Hàng Ngày
           </h3>
           <button
             onClick={fetchData}
-            className="btn btn-ghost btn-sm rounded-xl text-slate-400 hover:bg-slate-800 flex items-center gap-1.5"
+            className="btn btn-ghost btn-sm rounded-xl text-slate-500 hover:bg-slate-50 flex items-center gap-1.5"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-amber-500" : ""}`} />
@@ -102,9 +102,9 @@ export const DailyCashFlowReport: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300 text-xs">
+            <table className="table w-full text-slate-600 text-xs">
               <thead>
-                <tr className="border-b border-slate-800/60 text-slate-400">
+                <tr className="border-b border-slate-200/80/60 text-slate-500">
                   <th>Ngày Ghi Nhận</th>
                   <th>Số Dư Đầu Ngày</th>
                   <th>Phát Sinh Cầm Đồ</th>
@@ -127,7 +127,7 @@ export const DailyCashFlowReport: React.FC = () => {
                   </tr>
                 ) : (
                   list.map((item, idx) => (
-                    <tr key={idx} className="border-b border-slate-800/40 hover:bg-slate-900/20">
+                    <tr key={idx} className="border-b border-slate-200/40 hover:bg-slate-50/50">
                       <td className="font-semibold">{new Date(item.date).toLocaleDateString("vi-VN")}</td>
                       <td>{formatCurrency(item.beginning_cash)}</td>
                       <td className={item.pawn_flow >= 0 ? "text-emerald-400" : "text-red-400"}>
@@ -148,7 +148,7 @@ export const DailyCashFlowReport: React.FC = () => {
                       <td className="text-emerald-400 font-bold">{formatCurrency(item.ending_cash)}</td>
                       <td>{formatCurrency(Number(item.lending.pawn) + Number(item.lending.unsecured) + Number(item.lending.installment))}</td>
                       <td>{formatCurrency(item.capital)}</td>
-                      <td className="text-amber-400 font-extrabold text-right">{formatCurrency(item.total_assets)}</td>
+                      <td className="text-amber-600 font-extrabold text-right">{formatCurrency(item.total_assets)}</td>
                     </tr>
                   ))
                 )}

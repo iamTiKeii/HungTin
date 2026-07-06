@@ -269,10 +269,10 @@ export const SettingsPage: React.FC = () => {
                   {systemLogo ? (
                     <img src={systemLogo} alt="System Logo" className="object-contain w-full h-full p-2" />
                   ) : (
-                    <ImageIcon className="w-10 h-10 text-slate-300" />
+                    <ImageIcon className="w-10 h-10 text-slate-600" />
                   )}
                   {logoUploading && (
-                    <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white">
+                    <div className="absolute inset-0 bg-white/65 flex items-center justify-center text-white">
                       <span className="loading loading-spinner loading-md"></span>
                     </div>
                   )}
@@ -289,7 +289,7 @@ export const SettingsPage: React.FC = () => {
                       className="hidden" 
                     />
                   </label>
-                  <p className="text-[10px] text-slate-400 mt-2 text-center">Hỗ trợ JPG, PNG, WEBP (Lưu trên Google Drive)</p>
+                  <p className="text-[10px] text-slate-500 mt-2 text-center">Hỗ trợ JPG, PNG, WEBP (Lưu trên Google Drive)</p>
                 </div>
               </div>
 
@@ -340,7 +340,7 @@ export const SettingsPage: React.FC = () => {
                     placeholder="https://drive.google.com/..."
                     className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 rounded-lg text-xs font-mono"
                   />
-                  <p className="text-[9px] text-slate-400 mt-1">Bạn có thể dán đường dẫn ảnh trực tiếp hoặc tải ảnh ở ô bên trái.</p>
+                  <p className="text-[9px] text-slate-500 mt-1">Bạn có thể dán đường dẫn ảnh trực tiếp hoặc tải ảnh ở ô bên trái.</p>
                 </div>
               </div>
 
@@ -380,7 +380,7 @@ export const SettingsPage: React.FC = () => {
                       </div>
                     )}
                     {avatarUploading && (
-                      <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white">
+                      <div className="absolute inset-0 bg-white/65 flex items-center justify-center text-white">
                         <span className="loading loading-spinner loading-sm"></span>
                       </div>
                     )}
@@ -459,7 +459,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="font-bold text-base text-slate-800 border-b pb-2 mb-4 flex items-center gap-1.5">
                 <span>Thông tin nhận tiền / Tài khoản Ngân hàng</span>
                 <span title="Dùng để nhận lương, thưởng, hoa hồng môi giới định kỳ.">
-                  <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  <HelpCircle className="w-4 h-4 text-slate-500 cursor-help" />
                 </span>
               </h3>
 

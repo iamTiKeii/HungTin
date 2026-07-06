@@ -109,7 +109,7 @@ export const InstallmentWarning: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
         {/* Search */}
         <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
             <Search className="w-4 h-4" />
           </span>
           <input 
@@ -177,7 +177,7 @@ export const InstallmentWarning: React.FC = () => {
             <tbody>
               {list.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-slate-400 text-sm font-semibold">
+                  <td colSpan={10} className="text-center py-10 text-slate-500 text-sm font-semibold">
                     Không có dữ liệu hợp đồng trả góp cần đóng tiền
                   </td>
                 </tr>
@@ -221,7 +221,7 @@ export const InstallmentWarning: React.FC = () => {
           <div className="modal-box bg-white max-w-sm text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
             <button 
               onClick={() => setQuickPayItem(null)}
-              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               x

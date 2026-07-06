@@ -114,7 +114,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
       <div className="modal-box bg-white max-w-md text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
         <button 
           onClick={onClose}
-          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
           type="button"
         >
           <X className="w-5 h-5" />
@@ -186,7 +186,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                       className="w-44 h-44 object-contain border border-white bg-white shadow-sm rounded-lg"
                     />
                     <div className="mt-3 text-center w-full px-4">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">Mã khóa dự phòng (Secret)</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider mb-1">Mã khóa dự phòng (Secret)</span>
                       <div className="flex items-center justify-between gap-1 bg-white border border-slate-200 py-1.5 px-3 rounded-lg text-xs font-mono select-all text-slate-600">
                         <span className="truncate max-w-[200px]">{secret}</span>
                         <button 

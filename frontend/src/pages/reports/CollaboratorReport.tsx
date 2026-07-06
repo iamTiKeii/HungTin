@@ -44,7 +44,7 @@ export const CollaboratorReport: React.FC = () => {
         <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
           Báo Cáo Cộng Tác Viên
         </h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <p className="text-slate-500 text-sm mt-1">
           Theo dõi doanh số giới thiệu khách hàng, số lượng hợp đồng phát sinh và hiệu quả đóng lãi từ mạng lưới cộng tác viên.
         </p>
       </div>
@@ -57,7 +57,7 @@ export const CollaboratorReport: React.FC = () => {
       )}
 
       {/* Table */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg space-y-4">
+      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative flex-1">
             <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -66,12 +66,12 @@ export const CollaboratorReport: React.FC = () => {
               placeholder="Tìm kiếm cộng tác viên bằng tên hoặc mã..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input input-bordered w-full rounded-2xl bg-slate-950 border-slate-800 pl-12 text-slate-100 focus:border-amber-500"
+              className="input input-bordered w-full rounded-2xl bg-slate-50 border-slate-200/80 pl-12 text-slate-800 focus:border-amber-500"
             />
           </div>
           <button
             onClick={fetchData}
-            className="btn btn-ghost btn-sm rounded-xl text-slate-400 hover:bg-slate-800 flex items-center gap-1.5"
+            className="btn btn-ghost btn-sm rounded-xl text-slate-500 hover:bg-slate-50 flex items-center gap-1.5"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-amber-500" : ""}`} />
@@ -85,9 +85,9 @@ export const CollaboratorReport: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800/60 text-slate-400">
+                <tr className="border-b border-slate-200/80/60 text-slate-500">
                   <th>STT</th>
                   <th>Mã CTV</th>
                   <th>Họ Tên CTV</th>
@@ -107,10 +107,10 @@ export const CollaboratorReport: React.FC = () => {
                   </tr>
                 ) : (
                   filteredData.map((item, idx) => (
-                    <tr key={item.id} className="border-b border-slate-800/40 hover:bg-slate-900/20 text-xs">
+                    <tr key={item.id} className="border-b border-slate-200/40 hover:bg-slate-50/50 text-xs">
                       <td>{idx + 1}</td>
-                      <td className="font-semibold text-slate-200">{item.code || "—"}</td>
-                      <td className="font-bold text-slate-100">{item.full_name}</td>
+                      <td className="font-semibold text-slate-700">{item.code || "—"}</td>
+                      <td className="font-bold text-slate-800">{item.full_name}</td>
                       <td>{item.phone || "—"}</td>
                       <td className="font-semibold text-amber-500">{item.contract_count} HĐ</td>
                       <td className="font-bold">{formatCurrency(item.total_disbursed)}</td>
@@ -120,7 +120,7 @@ export const CollaboratorReport: React.FC = () => {
                           className={`badge badge-sm font-semibold rounded-lg px-2.5 py-1 ${
                             item.status === "active"
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-slate-800 text-slate-400 border border-slate-700"
+                              : "bg-slate-50 text-slate-500 border border-slate-200"
                           }`}
                         >
                           {item.status === "active" ? "Đang hợp tác" : "Ngưng hợp tác"}

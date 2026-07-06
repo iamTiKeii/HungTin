@@ -148,7 +148,7 @@ export const Reminders: React.FC = () => {
       {/* Filter Options */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
         <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
             <Search className="w-4 h-4" />
           </span>
           <input 
@@ -192,7 +192,7 @@ export const Reminders: React.FC = () => {
             <tbody>
               {list.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400 text-sm font-semibold">
+                  <td colSpan={9} className="text-center py-10 text-slate-500 text-sm font-semibold">
                     Không có thông báo hẹn giờ nào
                   </td>
                 </tr>
@@ -245,7 +245,7 @@ export const Reminders: React.FC = () => {
           <div className="modal-box bg-white max-w-md text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
             <button 
               onClick={() => setIsOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
               type="button"
             >
               x

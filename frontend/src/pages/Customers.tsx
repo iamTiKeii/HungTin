@@ -95,13 +95,13 @@ export const Customers: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <User className="text-amber-500 w-7 h-7" />
             Hồ Sơ & Danh Sách Khách Hàng
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Tra cứu thông tin khách hàng giao dịch, cảnh báo nợ xấu hoặc đưa vào danh sách đen (Blacklist).
           </p>
         </div>
@@ -139,10 +139,10 @@ export const Customers: React.FC = () => {
             placeholder="Tìm kiếm theo Tên khách hàng, Số điện thoại hoặc CCCD..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full pl-11 bg-slate-900 border-slate-800 text-slate-100 focus:border-amber-500 focus:outline-none rounded-xl"
+            className="input input-bordered w-full pl-11 bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl"
           />
         </div>
-        <button type="submit" className="btn btn-neutral border-slate-800 text-slate-200 font-bold rounded-xl px-6">
+        <button type="submit" className="btn btn-neutral border-slate-200/80 text-slate-700 font-bold rounded-xl px-6">
           Tìm kiếm
         </button>
       </form>
@@ -153,7 +153,7 @@ export const Customers: React.FC = () => {
           <span className="loading loading-spinner loading-lg text-amber-500"></span>
         </div>
       ) : customers.length === 0 ? (
-        <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500">
+        <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl text-slate-500">
           Không tìm thấy hồ sơ khách hàng phù hợp
         </div>
       ) : (
@@ -161,8 +161,8 @@ export const Customers: React.FC = () => {
           {customers.map((cust) => (
             <div
               key={cust.id}
-              className={`bg-slate-900 border rounded-2xl p-6 flex flex-col justify-between shadow-lg relative overflow-hidden transition-all ${
-                cust.status === "blacklist" ? "border-red-500/30 hover:border-red-500/50" : "border-slate-800 hover:border-slate-700"
+              className={`bg-white border rounded-2xl p-6 flex flex-col justify-between shadow-lg relative overflow-hidden transition-all ${
+                cust.status === "blacklist" ? "border-red-500/30 hover:border-red-500/50" : "border-slate-200/80 hover:border-slate-200"
               }`}
             >
               {cust.status === "blacklist" && (
@@ -173,10 +173,10 @@ export const Customers: React.FC = () => {
               )}
 
               <div>
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   {cust.full_name}
                 </h3>
-                <div className="mt-4 space-y-2 text-sm text-slate-400">
+                <div className="mt-4 space-y-2 text-sm text-slate-500">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-slate-500" />
                     <span>SĐT: {cust.phone}</span>
@@ -185,16 +185,16 @@ export const Customers: React.FC = () => {
                     <FileText className="w-4 h-4 text-slate-500" />
                     <span>CCCD: {cust.identity_number}</span>
                   </div>
-                  {cust.address && <p className="text-xs text-slate-400 mt-1">Đ/c: {cust.address}</p>}
+                  {cust.address && <p className="text-xs text-slate-500 mt-1">Đ/c: {cust.address}</p>}
                   {cust.notes && (
-                    <div className="bg-slate-950/50 border border-slate-800/80 p-2 rounded-lg text-xs text-amber-500 mt-2 font-semibold">
+                    <div className="bg-slate-50/50 border border-slate-200/60 p-2 rounded-lg text-xs text-amber-500 mt-2 font-semibold">
                       Ghi chú: {cust.notes}
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-800/60">
+              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-200/80/60">
                 <button
                   onClick={() => handleToggleBlacklist(cust)}
                   className={`btn btn-xs gap-1 flex-1 font-extrabold ${
@@ -222,65 +222,65 @@ export const Customers: React.FC = () => {
       {/* CREATE MODAL */}
       {isCreateOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4">Đăng Ký Hồ Sơ Khách Hàng</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Họ và tên khách hàng *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Họ và tên khách hàng *</label>
                 <input
                   type="text"
                   placeholder="Nguyễn Văn C"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md"
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-300 font-semibold text-sm">Số điện thoại *</label>
+                  <label className="label text-slate-600 font-semibold text-sm">Số điện thoại *</label>
                   <input
                     type="text"
                     placeholder="0901234567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label text-slate-300 font-semibold text-sm">Số CCCD / Hộ chiếu *</label>
+                  <label className="label text-slate-600 font-semibold text-sm">Số CCCD / Hộ chiếu *</label>
                   <input
                     type="text"
                     placeholder="079012345678"
                     value={identityNumber}
                     onChange={(e) => setIdentityNumber(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md"
+                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md"
                     required
                   />
                 </div>
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Địa chỉ liên hệ</label>
+                <label className="label text-slate-600 font-semibold text-sm">Địa chỉ liên hệ</label>
                 <input
                   type="text"
                   placeholder="123 Đường ABC, Phường X, Quận Y"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl input-md"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl input-md"
                 />
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Ghi chú đặc điểm hoặc xếp hạng</label>
+                <label className="label text-slate-600 font-semibold text-sm">Ghi chú đặc điểm hoặc xếp hạng</label>
                 <textarea
                   placeholder="Khách quen / Chậm trễ đóng lãi..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-20"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-20"
                 />
               </div>
               <div className="modal-action">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy bỏ
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">

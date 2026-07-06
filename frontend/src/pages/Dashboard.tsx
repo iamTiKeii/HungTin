@@ -57,7 +57,7 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+      <div className="flex flex-col items-center justify-center p-12 text-slate-500">
         <span className="loading loading-spinner loading-lg text-amber-500 mb-4"></span>
         <p className="font-semibold">Đang cập nhật chỉ số chi nhánh...</p>
       </div>
@@ -71,17 +71,17 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100">
+          <h1 className="text-2xl font-extrabold text-slate-800">
             Xin chào! Chi nhánh: {activeStore?.name}
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Theo dõi trạng thái dòng tiền, lịch thanh toán nợ và hoạt động giao dịch hôm nay.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={fetchDashboardData} className="btn btn-outline border-slate-700 text-slate-300 hover:bg-slate-800 btn-sm">
+          <button onClick={fetchDashboardData} className="btn btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 btn-sm">
             Tải lại dữ liệu
           </button>
         </div>
@@ -90,21 +90,21 @@ export const Dashboard: React.FC = () => {
       {/* Cash fund position indicator Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Beginning cash */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between h-36">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between h-36">
           <div className="flex justify-between items-start">
-            <span className="text-sm font-semibold text-slate-400">Quỹ tiền đầu ngày</span>
-            <span className="p-2 bg-slate-800 rounded-lg text-slate-300"><History className="w-5 h-5" /></span>
+            <span className="text-sm font-semibold text-slate-500">Quỹ tiền đầu ngày</span>
+            <span className="p-2 bg-slate-50 rounded-lg text-slate-600"><History className="w-5 h-5" /></span>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-200 mt-2">{formatCurrency(beginningCash)}</h2>
+            <h2 className="text-2xl font-bold text-slate-700 mt-2">{formatCurrency(beginningCash)}</h2>
             <p className="text-xs text-slate-500 font-semibold mt-1">Chốt đầu phiên giao dịch</p>
           </div>
         </div>
 
         {/* Current cash */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between h-36">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between h-36">
           <div className="flex justify-between items-start">
-            <span className="text-sm font-semibold text-slate-400">Quỹ tiền mặt hiện tại</span>
+            <span className="text-sm font-semibold text-slate-500">Quỹ tiền mặt hiện tại</span>
             <span className="p-2 bg-amber-500/10 rounded-lg text-amber-500"><Wallet className="w-5 h-5" /></span>
           </div>
           <div>
@@ -114,9 +114,9 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Change within day */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between h-36">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between h-36">
           <div className="flex justify-between items-start">
-            <span className="text-sm font-semibold text-slate-400">Chênh lệch trong ngày</span>
+            <span className="text-sm font-semibold text-slate-500">Chênh lệch trong ngày</span>
             <span className={`p-2 rounded-lg ${cashDiff >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
               {cashDiff >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
             </span>
@@ -133,53 +133,53 @@ export const Dashboard: React.FC = () => {
 
       {/* Stats of active contracts */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4">
           <div className="p-3.5 bg-amber-500/10 rounded-xl text-amber-500">
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400">Cầm đồ hoạt động</p>
-            <h3 className="text-xl font-bold text-slate-200 mt-0.5">{pawnCount}</h3>
+            <p className="text-xs font-semibold text-slate-500">Cầm đồ hoạt động</p>
+            <h3 className="text-xl font-bold text-slate-700 mt-0.5">{pawnCount}</h3>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4">
           <div className="p-3.5 bg-blue-500/10 rounded-xl text-blue-500">
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400">Tín chấp hoạt động</p>
-            <h3 className="text-xl font-bold text-slate-200 mt-0.5">{unsecuredCount}</h3>
+            <p className="text-xs font-semibold text-slate-500">Tín chấp hoạt động</p>
+            <h3 className="text-xl font-bold text-slate-700 mt-0.5">{unsecuredCount}</h3>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4">
           <div className="p-3.5 bg-purple-500/10 rounded-xl text-purple-500">
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400">Trả góp hoạt động</p>
-            <h3 className="text-xl font-bold text-slate-200 mt-0.5">{installmentCount}</h3>
+            <p className="text-xs font-semibold text-slate-500">Trả góp hoạt động</p>
+            <h3 className="text-xl font-bold text-slate-700 mt-0.5">{installmentCount}</h3>
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4">
           <div className="p-3.5 bg-red-500/10 rounded-xl text-red-500">
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400">Khách nợ xấu (Blacklist)</p>
-            <h3 className="text-xl font-bold text-slate-200 mt-0.5">{blacklistCount}</h3>
+            <p className="text-xs font-semibold text-slate-500">Khách nợ xấu (Blacklist)</p>
+            <h3 className="text-xl font-bold text-slate-700 mt-0.5">{blacklistCount}</h3>
           </div>
         </div>
       </div>
 
       {/* Recent Ledger History */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-amber-500" />
-            <h2 className="text-lg font-bold text-slate-200">Nhật ký biến động quỹ két hôm nay</h2>
+            <h2 className="text-lg font-bold text-slate-700">Nhật ký biến động quỹ két hôm nay</h2>
           </div>
         </div>
 
@@ -187,9 +187,9 @@ export const Dashboard: React.FC = () => {
           <p className="text-slate-500 text-sm text-center py-6">Chưa phát sinh giao dịch tài chính nào trong ngày</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                   <th>Thời gian</th>
                   <th>Nhân viên</th>
                   <th>Số tiền</th>
@@ -201,19 +201,19 @@ export const Dashboard: React.FC = () => {
                 {cashHistory.map((item) => {
                   const amt = Number(item.amount);
                   return (
-                    <tr key={item.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
-                      <td className="text-slate-400 font-semibold">{new Date(item.created_at).toLocaleTimeString("vi-VN")}</td>
+                    <tr key={item.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
+                      <td className="text-slate-500 font-semibold">{new Date(item.created_at).toLocaleTimeString("vi-VN")}</td>
                       <td className="font-bold">{item.employee?.full_name}</td>
                       <td className={`font-bold ${amt >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                         {amt >= 0 ? "+" : ""}
                         {formatCurrency(amt)}
                       </td>
                       <td>
-                        <span className="badge badge-outline border-slate-700 text-slate-400 font-bold badge-sm uppercase">
+                        <span className="badge badge-outline border-slate-200 text-slate-500 font-bold badge-sm uppercase">
                           {item.type}
                         </span>
                       </td>
-                      <td className="text-slate-400 max-w-xs truncate">{item.description}</td>
+                      <td className="text-slate-500 max-w-xs truncate">{item.description}</td>
                     </tr>
                   );
                 })}

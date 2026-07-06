@@ -64,7 +64,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
       <div className="modal-box bg-white max-w-md text-slate-800 rounded-2xl relative shadow-2xl p-6 border border-slate-100">
         <button 
           onClick={onClose}
-          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-500 hover:text-slate-600"
           type="button"
         >
           <X className="w-5 h-5" />
@@ -94,7 +94,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <span className="label-text text-slate-600 font-bold text-xs">Mật khẩu hiện tại <span className="text-red-500">*</span></span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                 <Lock className="w-4 h-4" />
               </span>
               <input 
@@ -108,7 +108,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-600"
               >
                 {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -121,7 +121,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <span className="label-text text-slate-600 font-bold text-xs">Mật khẩu mới <span className="text-red-500">*</span></span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                 <Lock className="w-4 h-4" />
               </span>
               <input 
@@ -135,7 +135,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-600"
               >
                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -148,7 +148,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <span className="label-text text-slate-600 font-bold text-xs">Xác nhận mật khẩu mới <span className="text-red-500">*</span></span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                 <Lock className="w-4 h-4" />
               </span>
               <input 
@@ -162,7 +162,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-600"
               >
                 {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>

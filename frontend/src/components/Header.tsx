@@ -88,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
               <ChevronDown className="w-3.5 h-3.5" />
             </label>
             <ul tabIndex={0} className="dropdown-content z-[50] menu p-2 shadow-2xl bg-white border border-slate-200 rounded-box w-56 mt-2">
-              <li className="menu-title text-slate-400 text-xs px-2 py-1 font-semibold">Chọn chi nhánh làm việc</li>
+              <li className="menu-title text-slate-500 text-xs px-2 py-1 font-semibold">Chọn chi nhánh làm việc</li>
               {stores.map((s) => (
                 <li key={s.id}>
                   <button
@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Tạo nhanh</span>
           </label>
           <ul tabIndex={0} className="dropdown-content z-[50] menu p-2 shadow-2xl bg-white border border-slate-200 rounded-box w-48 mt-2 text-slate-700">
-            <li className="menu-title text-xs font-semibold text-slate-400 px-3 py-1">Tạo hợp đồng mới</li>
+            <li className="menu-title text-xs font-semibold text-slate-500 px-3 py-1">Tạo hợp đồng mới</li>
             <li>
               <button 
                 onClick={() => navigate("/contract/pawn?action=new")} 
@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </label>
           <ul tabIndex={0} className="dropdown-content z-[50] menu p-2 shadow-2xl bg-white border border-slate-200 rounded-box w-72 mt-2 text-slate-700">
-            <li className="menu-title text-xs font-semibold text-slate-400 px-3 py-1 border-b border-slate-100">Cảnh báo hệ thống</li>
+            <li className="menu-title text-xs font-semibold text-slate-500 px-3 py-1 border-b border-slate-100">Cảnh báo hệ thống</li>
             <li>
               <Link to="/warning/pawn" className="flex items-center justify-between py-2.5 hover:bg-slate-50">
                 <span>Cảnh báo Cầm đồ</span>

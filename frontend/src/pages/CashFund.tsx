@@ -98,23 +98,23 @@ export const CashFund: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <Wallet className="text-amber-500 w-7 h-7" />
             Kiểm Kho & Quản Lý Quỹ Két
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Theo dõi dòng tiền mặt mặt tại chi nhánh: {activeStore?.name}, nạp rút vốn phụ trợ và khóa sổ chốt két.
           </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <button onClick={fetchData} className="btn btn-outline border-slate-700 text-slate-300 btn-sm">
+          <button onClick={fetchData} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setIsAdjustOpen(true)}
-            className="btn btn-outline border-amber-500/30 hover:border-amber-500 text-amber-500 hover:bg-amber-500/10 btn-sm font-semibold flex-1 md:flex-none rounded-xl"
+            className="btn btn-outline border-amber-500/50 hover:border-amber-500 text-amber-500 hover:bg-amber-500/10 btn-sm font-semibold flex-1 md:flex-none rounded-xl"
           >
             Điều chỉnh quỹ két
           </button>
@@ -142,19 +142,19 @@ export const CashFund: React.FC = () => {
       {/* Stats Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Số dư đầu ngày</p>
-              <h2 className="text-2xl font-black text-slate-200 mt-2">{formatCurrency(summary.beginning_cash)}</h2>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Số dư đầu ngày</p>
+              <h2 className="text-2xl font-black text-slate-700 mt-2">{formatCurrency(summary.beginning_cash)}</h2>
             </div>
-            <div className="p-4 bg-slate-800/80 text-slate-400 rounded-xl">
+            <div className="p-4 bg-slate-50/80 text-slate-500 rounded-xl">
               <CalendarRange className="w-8 h-8" />
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Số dư két hiện tại</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Số dư két hiện tại</p>
               <h2 className="text-2xl font-black text-amber-500 mt-2">{formatCurrency(summary.current_cash)}</h2>
             </div>
             <div className="p-4 bg-amber-500/10 text-amber-500 rounded-xl">
@@ -165,10 +165,10 @@ export const CashFund: React.FC = () => {
       )}
 
       {/* History Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-lg">
         <div className="flex items-center gap-2 mb-6">
           <History className="w-5 h-5 text-amber-500" />
-          <h2 className="text-lg font-bold text-slate-200">Nhật ký chi tiết dòng tiền giao dịch</h2>
+          <h2 className="text-lg font-bold text-slate-700">Nhật ký chi tiết dòng tiền giao dịch</h2>
         </div>
 
         {loading ? (
@@ -179,9 +179,9 @@ export const CashFund: React.FC = () => {
           <p className="text-slate-500 text-sm text-center py-12">Chưa phát sinh biến động quỹ két nào</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-300">
+            <table className="table w-full text-slate-600">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-xs">
+                <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
                   <th>Ngày giao dịch</th>
                   <th>Nhân sự thực hiện</th>
                   <th>Lượng giao dịch</th>
@@ -193,9 +193,9 @@ export const CashFund: React.FC = () => {
                 {history.map((log) => {
                   const val = Number(log.amount);
                   return (
-                    <tr key={log.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 text-sm">
-                      <td className="text-slate-400 font-semibold">{new Date(log.created_at).toLocaleString("vi-VN")}</td>
-                      <td className="font-bold text-slate-200">{log.employee?.full_name}</td>
+                    <tr key={log.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
+                      <td className="text-slate-500 font-semibold">{new Date(log.created_at).toLocaleString("vi-VN")}</td>
+                      <td className="font-bold text-slate-700">{log.employee?.full_name}</td>
                       <td className={`font-black flex items-center gap-1 ${val >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                         {val >= 0 ? (
                           <ArrowUpRight className="w-4 h-4 text-emerald-500" />
@@ -206,11 +206,11 @@ export const CashFund: React.FC = () => {
                         {formatCurrency(val)}
                       </td>
                       <td>
-                        <span className="badge badge-outline border-slate-700 text-slate-400 font-bold badge-sm uppercase">
+                        <span className="badge badge-outline border-slate-200 text-slate-500 font-bold badge-sm uppercase">
                           {log.type}
                         </span>
                       </td>
-                      <td className="text-slate-400 max-w-sm truncate">{log.description}</td>
+                      <td className="text-slate-500 max-w-sm truncate">{log.description}</td>
                     </tr>
                   );
                 })}
@@ -223,43 +223,43 @@ export const CashFund: React.FC = () => {
       {/* ADJUSTMENT MODAL */}
       {isAdjustOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl">
+          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
             <h3 className="font-extrabold text-lg text-amber-500 mb-4">Điều Chỉnh Quỹ Két Thủ Công</h3>
             <form onSubmit={handleAdjust} className="space-y-4">
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Loại điều chỉnh</label>
+                <label className="label text-slate-600 font-semibold text-sm">Loại điều chỉnh</label>
                 <select
                   value={actionType}
                   onChange={(e: any) => setActionType(e.target.value)}
-                  className="select select-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl focus:border-amber-500 focus:outline-none"
+                  className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl focus:border-amber-500 focus:outline-none"
                 >
                   <option value="deposit">Nạp tiền mặt vào két (+)</option>
                   <option value="withdraw">Rút tiền mặt khỏi két (-)</option>
                 </select>
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Số tiền mặt (VNĐ) *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Số tiền mặt (VNĐ) *</label>
                 <input
                   type="number"
                   placeholder="20000000"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl"
+                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
                   required
                 />
               </div>
               <div>
-                <label className="label text-slate-300 font-semibold text-sm">Nội dung giải trình *</label>
+                <label className="label text-slate-600 font-semibold text-sm">Nội dung giải trình *</label>
                 <textarea
                   placeholder="Ví dụ: Rút tiền nộp ngân hàng hoặc Thêm quỹ giao dịch..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-800 text-slate-100 rounded-xl h-20"
+                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-20"
                   required
                 />
               </div>
               <div className="modal-action">
-                <button type="button" onClick={() => setIsAdjustOpen(false)} className="btn btn-outline border-slate-700 text-slate-300 rounded-xl">
+                <button type="button" onClick={() => setIsAdjustOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
                   Hủy bỏ
                 </button>
                 <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">

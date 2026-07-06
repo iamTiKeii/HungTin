@@ -46,19 +46,19 @@ export const ShiftHandoverReport: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
             Biên Bản Bàn Giao Ca
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Báo cáo kiểm quỹ két tiền mặt đầu/cuối ca, tài sản thế chấp và hồ sơ đang quản lý tại chi nhánh.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-2 px-3 backdrop-blur-md">
+          <div className="flex items-center gap-2 bg-white/65 border border-slate-200/80 rounded-2xl p-2 px-3 backdrop-blur-md">
             <Calendar className="w-4 h-4 text-slate-500" />
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
+              className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none border-none [color-scheme:dark]"
             />
           </div>
           <button
@@ -92,26 +92,26 @@ export const ShiftHandoverReport: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {/* Cash breakdown */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg print:border-gray-300 print:bg-transparent print:p-4">
-            <h3 className="text-lg font-bold text-slate-100 mb-6 flex items-center gap-2 print:text-black">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg print:border-gray-300 print:bg-transparent print:p-4">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 print:text-black">
               <Coins className="w-5 h-5 text-amber-500 print:text-black" />
               1. Báo Cáo Quỹ Két Tiền Mặt
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
               <div className="space-y-2">
-                <div className="flex justify-between border-b border-slate-800/60 pb-1.5 print:border-gray-200">
-                  <span className="text-slate-400 print:text-gray-600">Tiền quỹ đầu ngày:</span>
-                  <span className="font-bold text-slate-100 print:text-black">{formatCurrency(data.cash.beginning_cash)}</span>
+                <div className="flex justify-between border-b border-slate-200/80/60 pb-1.5 print:border-gray-200">
+                  <span className="text-slate-500 print:text-gray-600">Tiền quỹ đầu ngày:</span>
+                  <span className="font-bold text-slate-800 print:text-black">{formatCurrency(data.cash.beginning_cash)}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/60 pb-1.5 print:border-gray-200">
-                  <span className="text-slate-400 print:text-gray-600">Biến động Cầm đồ:</span>
+                <div className="flex justify-between border-b border-slate-200/80/60 pb-1.5 print:border-gray-200">
+                  <span className="text-slate-500 print:text-gray-600">Biến động Cầm đồ:</span>
                   <span className={`font-bold ${data.cash.pawn_flow >= 0 ? "text-emerald-400 print:text-black" : "text-red-400 print:text-black"}`}>
                     {data.cash.pawn_flow > 0 ? "+" : ""}{formatCurrency(data.cash.pawn_flow)}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/60 pb-1.5 print:border-gray-200">
-                  <span className="text-slate-400 print:text-gray-600">Biến động Tín chấp:</span>
+                <div className="flex justify-between border-b border-slate-200/80/60 pb-1.5 print:border-gray-200">
+                  <span className="text-slate-500 print:text-gray-600">Biến động Tín chấp:</span>
                   <span className={`font-bold ${data.cash.unsecured_flow >= 0 ? "text-emerald-400 print:text-black" : "text-red-400 print:text-black"}`}>
                     {data.cash.unsecured_flow > 0 ? "+" : ""}{formatCurrency(data.cash.unsecured_flow)}
                   </span>
@@ -119,20 +119,20 @@ export const ShiftHandoverReport: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <div className="flex justify-between border-b border-slate-800/60 pb-1.5 print:border-gray-200">
-                  <span className="text-slate-400 print:text-gray-600">Biến động Trả góp:</span>
+                <div className="flex justify-between border-b border-slate-200/80/60 pb-1.5 print:border-gray-200">
+                  <span className="text-slate-500 print:text-gray-600">Biến động Trả góp:</span>
                   <span className={`font-bold ${data.cash.installment_flow >= 0 ? "text-emerald-400 print:text-black" : "text-red-400 print:text-black"}`}>
                     {data.cash.installment_flow > 0 ? "+" : ""}{formatCurrency(data.cash.installment_flow)}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/60 pb-1.5 print:border-gray-200">
-                  <span className="text-slate-400 print:text-gray-600">Biến động Thu Chi khác:</span>
+                <div className="flex justify-between border-b border-slate-200/80/60 pb-1.5 print:border-gray-200">
+                  <span className="text-slate-500 print:text-gray-600">Biến động Thu Chi khác:</span>
                   <span className={`font-bold ${data.cash.voucher_flow >= 0 ? "text-emerald-400 print:text-black" : "text-red-400 print:text-black"}`}>
                     {data.cash.voucher_flow > 0 ? "+" : ""}{formatCurrency(data.cash.voucher_flow)}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/60 pb-1.5 print:border-gray-200">
-                  <span className="text-slate-400 print:text-gray-600">Nguồn vốn đầu tư góp:</span>
+                <div className="flex justify-between border-b border-slate-200/80/60 pb-1.5 print:border-gray-200">
+                  <span className="text-slate-500 print:text-gray-600">Nguồn vốn đầu tư góp:</span>
                   <span className={`font-bold ${data.cash.capital_flow >= 0 ? "text-emerald-400 print:text-black" : "text-red-400 print:text-black"}`}>
                     {data.cash.capital_flow > 0 ? "+" : ""}{formatCurrency(data.cash.capital_flow)}
                   </span>
@@ -141,7 +141,7 @@ export const ShiftHandoverReport: React.FC = () => {
 
               <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 flex flex-col justify-center print:border-gray-300 print:bg-transparent">
                 <p className="text-amber-500/80 text-xs font-semibold print:text-gray-600 uppercase tracking-wider">Tiền quỹ bàn giao cuối ca</p>
-                <h3 className="text-2xl font-black text-amber-400 print:text-black mt-1">
+                <h3 className="text-2xl font-black text-amber-600 print:text-black mt-1">
                   {formatCurrency(data.cash.ending_cash)}
                 </h3>
               </div>
@@ -149,16 +149,16 @@ export const ShiftHandoverReport: React.FC = () => {
           </div>
 
           {/* Active Assets Pawn */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg print:border-gray-300 print:bg-transparent print:p-4">
-            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2 print:text-black">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg print:border-gray-300 print:bg-transparent print:p-4">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 print:text-black">
               <Package className="w-5 h-5 text-amber-500 print:text-black" />
               2. Tài Sản Cầm Cố Đang Lưu Kho
             </h3>
 
             <div className="overflow-x-auto">
-              <table className="table w-full text-slate-300 print:text-black">
+              <table className="table w-full text-slate-600 print:text-black">
                 <thead>
-                  <tr className="border-b border-slate-800/60 text-slate-400 print:border-gray-300 print:text-black text-xs">
+                  <tr className="border-b border-slate-200/80/60 text-slate-500 print:border-gray-300 print:text-black text-xs">
                     <th>Mã HĐ</th>
                     <th>Khách Hàng</th>
                     <th>Tên Tài Sản</th>
@@ -174,7 +174,7 @@ export const ShiftHandoverReport: React.FC = () => {
                     </tr>
                   ) : (
                     data.assets.pawn.map((item: any) => (
-                      <tr key={item.id} className="border-b border-slate-800/30 print:border-gray-200">
+                      <tr key={item.id} className="border-b border-slate-200/80/30 print:border-gray-200">
                         <td className="font-bold">{item.contract_code}</td>
                         <td>{item.customer.full_name}</td>
                         <td className="font-semibold">{item.asset_name}</td>
@@ -190,16 +190,16 @@ export const ShiftHandoverReport: React.FC = () => {
           </div>
 
           {/* Active Assets Unsecured / Installment */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-lg print:border-gray-300 print:bg-transparent print:p-4">
-            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2 print:text-black">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg print:border-gray-300 print:bg-transparent print:p-4">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 print:text-black">
               <UserCheck className="w-5 h-5 text-amber-500 print:text-black" />
               3. Hồ Sơ Tín Chấp & Trả Góp Đang Quản Lý
             </h3>
 
             <div className="overflow-x-auto">
-              <table className="table w-full text-slate-300 print:text-black">
+              <table className="table w-full text-slate-600 print:text-black">
                 <thead>
-                  <tr className="border-b border-slate-800/60 text-slate-400 print:border-gray-300 print:text-black text-xs">
+                  <tr className="border-b border-slate-200/80/60 text-slate-500 print:border-gray-300 print:text-black text-xs">
                     <th>Mã HĐ</th>
                     <th>Khách Hàng</th>
                     <th>Ngày Vay</th>
@@ -210,7 +210,7 @@ export const ShiftHandoverReport: React.FC = () => {
                 </thead>
                 <tbody className="text-xs">
                   {data.assets.unsecured.map((item: any) => (
-                    <tr key={item.id} className="border-b border-slate-800/30 print:border-gray-200">
+                    <tr key={item.id} className="border-b border-slate-200/80/30 print:border-gray-200">
                       <td className="font-bold">{item.contract_code}</td>
                       <td>{item.customer.full_name}</td>
                       <td>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</td>
@@ -220,7 +220,7 @@ export const ShiftHandoverReport: React.FC = () => {
                     </tr>
                   ))}
                   {data.assets.installment.map((item: any, idx: number) => (
-                    <tr key={idx} className="border-b border-slate-800/30 print:border-gray-200">
+                    <tr key={idx} className="border-b border-slate-200/80/30 print:border-gray-200">
                       <td className="font-bold">{item.contract_code}</td>
                       <td>{item.customer_name}</td>
                       <td>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</td>

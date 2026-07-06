@@ -246,7 +246,7 @@ export const StaffPermission: React.FC = () => {
         {/* Left Panel: Employee Selector */}
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 space-y-4 lg:col-span-1">
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
               <Search className="w-4 h-4" />
             </span>
             <input 
@@ -260,9 +260,9 @@ export const StaffPermission: React.FC = () => {
 
           <div className="space-y-1 overflow-y-auto max-h-[400px]">
             {loading ? (
-              <div className="text-center py-4"><span className="loading loading-spinner loading-sm text-slate-400"></span></div>
+              <div className="text-center py-4"><span className="loading loading-spinner loading-sm text-slate-500"></span></div>
             ) : filteredEmployees.length === 0 ? (
-              <p className="text-slate-400 text-xs text-center py-4">Không tìm thấy nhân viên</p>
+              <p className="text-slate-500 text-xs text-center py-4">Không tìm thấy nhân viên</p>
             ) : (
               filteredEmployees.map((emp) => {
                 const isSelected = selectedEmp?.id === emp.id;
@@ -282,7 +282,7 @@ export const StaffPermission: React.FC = () => {
                     </div>
                     <div className="truncate">
                       <p className="text-xs font-semibold">{emp.full_name}</p>
-                      <p className={`text-[10px] ${isSelected ? "text-slate-800" : "text-slate-400"}`}>@{emp.username}</p>
+                      <p className={`text-[10px] ${isSelected ? "text-slate-800" : "text-slate-500"}`}>@{emp.username}</p>
                     </div>
                   </button>
                 );
@@ -298,7 +298,7 @@ export const StaffPermission: React.FC = () => {
               <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                 <div>
                   <h3 className="font-bold text-slate-800">Thiết lập quyền: <span className="text-amber-500 font-extrabold">{selectedEmp.full_name}</span></h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Tài khoản: @{selectedEmp.username}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Tài khoản: @{selectedEmp.username}</p>
                 </div>
                 <button
                   onClick={handleSave}
@@ -347,12 +347,12 @@ export const StaffPermission: React.FC = () => {
                               }`}
                             >
                               <div className="mt-0.5 shrink-0 text-amber-500">
-                                {isChecked ? <CheckSquare className="w-4 h-4 fill-amber-500 text-white" /> : <Square className="w-4 h-4 text-slate-300 bg-white" />}
+                                {isChecked ? <CheckSquare className="w-4 h-4 fill-amber-500 text-white" /> : <Square className="w-4 h-4 text-slate-600 bg-white" />}
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-slate-700">{perm.name}</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{perm.desc}</p>
-                                <span className="inline-block mt-1 font-mono text-[8px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">
+                                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{perm.desc}</p>
+                                <span className="inline-block mt-1 font-mono text-[8px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
                                   {perm.code}
                                 </span>
                               </div>
@@ -366,7 +366,7 @@ export const StaffPermission: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center py-20 text-slate-400 font-semibold">
+            <div className="text-center py-20 text-slate-500 font-semibold">
               Vui lòng chọn nhân viên ở danh sách bên trái để cấu hình phân quyền.
             </div>
           )}
