@@ -38,6 +38,7 @@ import { StaffPermission } from "./pages/StaffPermission";
 import { TermsPage } from "./pages/settings/TermsPage";
 import { SubscriptionPage } from "./pages/settings/SubscriptionPage";
 import { StoreAddonPage } from "./pages/settings/StoreAddonPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 // Warnings
 import { PawnWarning } from "./pages/warnings/PawnWarning";
@@ -444,6 +445,14 @@ function App() {
             element={
               <PrivateLayout>
                 <StoreAddonPage />
+              </PrivateLayout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PrivateLayout>
+                <SettingsPage />
               </PrivateLayout>
             }
           />

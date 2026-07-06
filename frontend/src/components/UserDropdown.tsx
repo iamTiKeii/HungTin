@@ -8,6 +8,7 @@ import {
   FileText, 
   CalendarDays, 
   PlusCircle, 
+  Settings,
   LogOut 
 } from "lucide-react";
 
@@ -107,6 +108,17 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
           >
             <PlusCircle className="w-4 h-4 text-slate-400" />
             <span>Mua thêm cửa hàng</span>
+          </Link>
+        </li>
+
+        {/* 7. Cấu hình hệ thống */}
+        <li>
+          <Link 
+            to="/settings"
+            className="flex items-center gap-2 py-2 text-slate-600 hover:text-slate-900"
+          >
+            <Settings className="w-4 h-4 text-slate-400" />
+            <span>Cấu hình hệ thống</span>
           </Link>
         </li>
 

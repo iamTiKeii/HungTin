@@ -47,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   useEffect(() => {
     const path = location.pathname;
     
-    const storePaths = ["/summary-report-shop", "/shop-detail", "/shop-list", "/category-list", "/cash-fund"];
+    const storePaths = ["/summary-report-shop", "/shop-detail", "/shop-list", "/category-list", "/cash-fund", "/settings"];
     const cashPaths = ["/manage-expense", "/manage-income"];
     const staffPaths = ["/staff", "/staff-permission"];
     const reportPaths = [
@@ -203,6 +203,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                     }`}
                   >
                     Nhập tiền quỹ đầu ngày
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/settings"
+                    className={`block py-1.5 px-3 text-xs rounded transition-all ${
+                      location.pathname === "/settings" ? "text-amber-400 font-bold bg-slate-700/30" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Cấu hình hệ thống
                   </Link>
                 </li>
               </ul>
