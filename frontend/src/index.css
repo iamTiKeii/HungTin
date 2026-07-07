@@ -27,34 +27,8 @@ body {
 /* DaisyUI general component adjustments to fit new radiuses and shadows */
 .modal-box {
   box-shadow: rgba(18, 38, 63, 0.03) 0px 12px 24px 0px !important;
-  border-radius: 4px !important; /* radius.sm */
-}
-
-/* Align button font sizes with design system typography scale */
-.btn-xs {
-  font-size: 11px !important;
-  line-height: 16.5px !important;
-}
-
-.btn-sm {
-  font-size: 11.38px !important;
-  line-height: 17.07px !important;
-}
-
-.btn {
-  font-size: 12px !important;
-  line-height: 18px !important;
-  text-transform: none !important; /* prevent uppercase overrides */
-}
-
-.btn-md {
-  font-size: 12px !important;
-  line-height: 18px !important;
-}
-
-.btn-lg {
-  font-size: 13px !important;
-  line-height: 19.5px !important;
+  border-radius: 4px !important;
+  /* radius.sm */
 }
 
 /* Scrollbar customizations */
@@ -82,9 +56,11 @@ body {
     background: white !important;
     color: black !important;
   }
+
   .no-print {
     display: none !important;
   }
+
   .print-area {
     width: 80mm !important;
     max-width: 80mm !important;
@@ -95,22 +71,28 @@ body {
     color: black !important;
     background: white !important;
   }
+
   .print-header {
     text-align: center;
     margin-bottom: 5px;
   }
+
   .print-divider {
     border-top: 1px dashed black;
     margin: 5px 0;
   }
+
   .print-table {
     width: 100%;
     border-collapse: collapse;
   }
-  .print-table th, .print-table td {
+
+  .print-table th,
+  .print-table td {
     padding: 2px 0;
     text-align: left;
   }
+
   .print-text-right {
     text-align: right !important;
   }
