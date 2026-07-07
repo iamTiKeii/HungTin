@@ -47,6 +47,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
             pawn_contracts: true,
             unsecured_contracts: true,
             installment_contracts: true,
+            capital_contracts: true,
           }
         }
       },
@@ -313,6 +314,14 @@ router.get("/:id/contracts", async (req: AuthenticatedRequest, res: Response) =>
       }
     });
 
+    // Fetch Capital Contracts
+    const capitals = await prisma.capitalContract.findMany({
+      where: { customer_id: customerId },
+      include: {
+        transactions: true,
+      }
+    });
+
     // Map to a unified contract format
     const formatted = [
       ...pawns.map(p => {
@@ -364,6 +373,25 @@ router.get("/:id/contracts", async (req: AuthenticatedRequest, res: Response) =>
           overdue_amount: 0,
           status: i.status,
           statusLabel: i.status === "active" ? "Đang trả góp" : "Đã xong",
+        };
+      }),
+      ...capitals.map(c => {
+        const paidInterest = c.transactions
+          .filter(t => t.type === "interest")
+          .reduce((sum, trans) => sum + Number(trans.amount), 0);
+        return {
+          id: c.id,
+          type: "capital",
+          typeLabel: "Góp vốn",
+          contract_code: `GV-${c.id.slice(-4).toUpperCase()}`,
+          loan_date: c.investment_date,
+          loan_amount: Number(c.amount),
+          debt_amount: Number(c.amount),
+          interest_rate: "Thỏa thuận",
+          paid_interest: paidInterest,
+          overdue_amount: 0,
+          status: c.status,
+          statusLabel: c.status === "active" ? "Đang góp" : "Đã xong",
         };
       })
     ];

@@ -30,6 +30,7 @@ interface Customer {
     pawn_contracts: number;
     unsecured_contracts: number;
     installment_contracts: number;
+    capital_contracts: number;
   };
 }
 
@@ -548,7 +549,8 @@ export const Customers: React.FC = () => {
                   const totalContracts =
                     (c._count?.pawn_contracts || 0) +
                     (c._count?.unsecured_contracts || 0) +
-                    (c._count?.installment_contracts || 0);
+                    (c._count?.installment_contracts || 0) +
+                    (c._count?.capital_contracts || 0);
                   return (
                     <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50/40">
                       <td className="text-center font-medium text-slate-400">{idx + 1}</td>
