@@ -7,10 +7,24 @@ const permission_1 = require("../middleware/permission");
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 router.use(auth_1.authenticateToken);
-// 1. Get all collaborators
+// 1. Get all collaborators (with search and status filters)
 router.get("/", async (req, res) => {
     try {
+        const { search, status } = req.query;
+        const whereClause = {};
+        if (status) {
+            whereClause.status = status;
+        }
+        if (search) {
+            const searchStr = search.trim();
+            whereClause.OR = [
+                { full_name: { contains: searchStr, mode: "insensitive" } },
+                { code: { contains: searchStr, mode: "insensitive" } },
+                { phone: { contains: searchStr, mode: "insensitive" } },
+            ];
+        }
         const collaborators = await prisma.collaborator.findMany({
+            where: whereClause,
             orderBy: { full_name: "asc" },
         });
         return res.json(collaborators);

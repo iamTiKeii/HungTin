@@ -8,10 +8,28 @@ const prisma = new PrismaClient();
 
 router.use(authenticateToken as any);
 
-// 1. Get all collaborators
+// 1. Get all collaborators (with search and status filters)
 router.get("/", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const { search, status } = req.query;
+
+    const whereClause: any = {};
+
+    if (status) {
+      whereClause.status = status as string;
+    }
+
+    if (search) {
+      const searchStr = (search as string).trim();
+      whereClause.OR = [
+        { full_name: { contains: searchStr, mode: "insensitive" } },
+        { code: { contains: searchStr, mode: "insensitive" } },
+        { phone: { contains: searchStr, mode: "insensitive" } },
+      ];
+    }
+
     const collaborators = await prisma.collaborator.findMany({
+      where: whereClause,
       orderBy: { full_name: "asc" },
     });
     return res.json(collaborators);
