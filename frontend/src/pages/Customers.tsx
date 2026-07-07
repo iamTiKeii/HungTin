@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, Search, Edit3, X, Upload, List, AlertOctagon, CheckCircle } from "lucide-react";
+import { Plus, Search, Edit3, X, Upload, List, AlertOctagon, CheckCircle, AlertCircle } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -458,16 +458,18 @@ export const Customers: React.FC = () => {
         </h2>
       </div>
 
-      {/* Toast notifications in top right corner */}
+      {/* Toast notifications in bottom left corner */}
       {(error || success) && (
-        <div className="toast toast-top toast-end z-[9999] mt-16 mr-4 space-y-2">
+        <div className="toast toast-bottom toast-start z-[9999] mb-4 ml-4 space-y-2">
           {success && (
-            <div className="alert alert-success bg-[#0fbc98] text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2 min-w-[280px]">
+            <div className="alert alert-success bg-[#0fbc98] text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
+              <CheckCircle className="w-4 h-4 text-white shrink-0" />
               <span>{success}</span>
             </div>
           )}
           {error && (
-            <div className="alert alert-error bg-red-500 text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2 min-w-[280px]">
+            <div className="alert alert-error bg-red-500 text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
+              <AlertCircle className="w-4 h-4 text-white shrink-0" />
               <span>{error}</span>
             </div>
           )}
