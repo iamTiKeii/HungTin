@@ -1,311 +1,568 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, Search, Trash2, Edit, AlertCircle, Coins } from "lucide-react";
+import { 
+  Plus, 
+  Save, 
+  X,
+  Edit2,
+  Trash2,
+  FileSpreadsheet,
+  Filter,
+  Eye,
+  BookOpen,
+  ChevronsUpDown
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+
+interface InterestType {
+  id: string;
+  code: string;
+  name: string;
+  calculation_method: string;
+  is_principal_included: boolean;
+  notes?: string;
+}
+
+interface CapitalContract {
+  id: string;
+  store_id: string;
+  investor_name: string;
+  investor_id_card?: string;
+  investor_phone?: string;
+  investor_address?: string;
+  amount: number;
+  investment_date: string;
+  interest_type_id?: string;
+  interest_type?: InterestType;
+  is_upfront_interest: boolean;
+  status: string;
+  notes?: string;
+  created_at: string;
+}
+
+interface Customer {
+  id: string;
+  full_name: string;
+  id_card?: string;
+  phone?: string;
+  address?: string;
+}
 
 export const CapitalContracts: React.FC = () => {
   const { activeStore } = useAuth();
   
-  // States
-  const [contracts, setContracts] = useState<any[]>([]);
-  const [interestTypes, setInterestTypes] = useState<any[]>([]);
+  // Data lists
+  const [contracts, setContracts] = useState<CapitalContract[]>([]);
+  const [interestTypes, setInterestTypes] = useState<InterestType[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Filters & Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("active"); // default matches image: "Tất cả hợp đồng đang vay" (which corresponds to active status)
+  
+  // Sorting
+  const [sortField, setSortField] = useState<"investor_name" | "amount" | "investment_date" | "status">("investment_date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const limit = 50;
 
   // Modals
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedId, setSelectedId] = useState("");
 
-  // Form Fields
+  // Customer contract list modal (Image 3)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedInvestorName, setSelectedInvestorName] = useState("");
+
+  // Add/Edit Form state
+  const [investorType, setInvestorType] = useState<"new" | "existing">("new");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  
   const [investorName, setInvestorName] = useState("");
   const [investorIdCard, setInvestorIdCard] = useState("");
   const [investorPhone, setInvestorPhone] = useState("");
   const [investorAddress, setInvestorAddress] = useState("");
-  const [amount, setAmount] = useState("");
+  
+  const [amount, setAmount] = useState("0");
   const [investmentDate, setInvestmentDate] = useState("");
   const [interestTypeId, setInterestTypeId] = useState("");
   const [isUpfront, setIsUpfront] = useState(false);
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("active");
 
+  const [saving, setSaving] = useState(false);
+
   const fetchContracts = async () => {
     if (!activeStore) return;
     try {
       setLoading(true);
       setError("");
-      const res = await axios.get(`/api/contracts/capital?search=${search}&status=${statusFilter}`);
+      // Fetch status Filter logic
+      const res = await axios.get(`/api/contracts/capital?search=&status=${statusFilter === "all" ? "" : statusFilter}`);
       setContracts(res.data);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi khi tải danh sách hợp đồng góp vốn.");
+      setError(err.response?.data?.error || "Không thể tải danh sách hợp đồng góp vốn.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchInterestTypes = async () => {
+  const fetchHelpers = async () => {
     try {
-      const res = await axios.get("/api/contracts/pawn/interest-types");
-      setInterestTypes(res.data);
+      const [interestRes, customerRes] = await Promise.all([
+        axios.get("/api/contracts/pawn/interest-types"),
+        axios.get("/api/customers")
+      ]);
+      setInterestTypes(interestRes.data);
+      setCustomers(customerRes.data.filter((c: any) => c.status === "active"));
     } catch (err) {
-      console.error("Error loading interest types", err);
+      console.error("Error fetching helper options", err);
     }
   };
 
   useEffect(() => {
     fetchContracts();
-    fetchInterestTypes();
-  }, [activeStore, search, statusFilter]);
+  }, [activeStore, statusFilter]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    fetchHelpers();
+  }, []);
+
+  const handleOpenCreate = () => {
+    setIsEditMode(false);
+    setSelectedId("");
+    setInvestorType("new");
+    setSelectedCustomerId("");
+    setInvestorName("");
+    setInvestorIdCard("");
+    setInvestorPhone("");
+    setInvestorAddress("");
+    setAmount("0");
+    // set investment date to today's date formatted as YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0];
+    setInvestmentDate(today);
+    setInterestTypeId("");
+    setIsUpfront(false);
+    setNotes("");
+    setStatus("active");
+    
     setError("");
+    setSuccess("");
+    setIsModalOpen(true);
+  };
 
+  const handleOpenEdit = (c: CapitalContract) => {
+    setIsEditMode(true);
+    setSelectedId(c.id);
+    setInvestorType("new");
+    setSelectedCustomerId("");
+    
+    setInvestorName(c.investor_name);
+    setInvestorIdCard(c.investor_id_card || "");
+    setInvestorPhone(c.investor_phone || "");
+    setInvestorAddress(c.investor_address || "");
+    
+    setAmount(String(c.amount));
+    setInvestmentDate(c.investment_date.split("T")[0]);
+    setInterestTypeId(c.interest_type_id || "");
+    setIsUpfront(c.is_upfront_interest);
+    setNotes(c.notes || "");
+    setStatus(c.status);
+
+    setError("");
+    setSuccess("");
+    setIsModalOpen(true);
+  };
+
+  const handleSelectCustomer = (custId: string) => {
+    setSelectedCustomerId(custId);
+    const selected = customers.find(c => c.id === custId);
+    if (selected) {
+      setInvestorName(selected.full_name);
+      setInvestorIdCard(selected.id_card || "");
+      setInvestorPhone(selected.phone || "");
+      setInvestorAddress(selected.address || "");
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!investorName || !amount || !investmentDate) {
-      setError("Vui lòng điền các trường bắt buộc.");
+      setError("Vui lòng nhập đầy đủ các trường bắt buộc (*)");
       return;
     }
 
     try {
-      await axios.post("/api/contracts/capital", {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
+      const payload = {
         investor_name: investorName,
         investor_id_card: investorIdCard || null,
         investor_phone: investorPhone || null,
         investor_address: investorAddress || null,
-        amount: Number(amount),
+        amount: Number(amount) || 0,
         investment_date: investmentDate,
         interest_type_id: interestTypeId || null,
         is_upfront_interest: isUpfront,
         notes,
-      });
+        status
+      };
 
-      setIsCreateOpen(false);
-      resetForm();
+      if (isEditMode) {
+        await axios.put(`/api/contracts/capital/${selectedId}`, payload);
+        setSuccess("Cập nhật hợp đồng góp vốn thành công!");
+      } else {
+        await axios.post("/api/contracts/capital", payload);
+        setSuccess("Tạo mới hợp đồng góp vốn thành công!");
+      }
+
+      setIsModalOpen(false);
       fetchContracts();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi tạo hợp đồng góp vốn.");
-    }
-  };
-
-  const handleEditInit = (contract: any) => {
-    setSelectedContract(contract);
-    setInvestorName(contract.investor_name);
-    setInvestorIdCard(contract.investor_id_card || "");
-    setInvestorPhone(contract.investor_phone || "");
-    setInvestorAddress(contract.investor_address || "");
-    setAmount(Number(contract.amount).toString());
-    setInvestmentDate(contract.investment_date.split("T")[0]);
-    setInterestTypeId(contract.interest_type_id || "");
-    setIsUpfront(contract.is_upfront_interest);
-    setNotes(contract.notes || "");
-    setStatus(contract.status);
-    setIsEditOpen(true);
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!investorName || !amount || !investmentDate) {
-      setError("Vui lòng điền các trường bắt buộc.");
-      return;
-    }
-
-    try {
-      await axios.put(`/api/contracts/capital/${selectedContract.id}`, {
-        investor_name: investorName,
-        investor_id_card: investorIdCard || null,
-        investor_phone: investorPhone || null,
-        investor_address: investorAddress || null,
-        amount: Number(amount),
-        investment_date: investmentDate,
-        interest_type_id: interestTypeId || null,
-        is_upfront_interest: isUpfront,
-        notes,
-        status,
-      });
-
-      setIsEditOpen(false);
-      resetForm();
-      fetchContracts();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi cập nhật hợp đồng góp vốn.");
+      setError(err.response?.data?.error || "Không thể lưu hợp đồng góp vốn.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn hủy/xóa hợp đồng góp vốn này? Tiền két sẽ được khấu trừ tự động.")) return;
     try {
+      setError("");
+      setSuccess("");
       await axios.delete(`/api/contracts/capital/${id}`);
+      setSuccess("Hủy hợp đồng góp vốn thành công!");
       fetchContracts();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi xóa hợp đồng.");
+      setError(err.response?.data?.error || "Không thể hủy hợp đồng.");
     }
   };
 
-  const resetForm = () => {
-    setInvestorName("");
-    setInvestorIdCard("");
-    setInvestorPhone("");
-    setInvestorAddress("");
-    setAmount("");
-    setInvestmentDate("");
-    setInterestTypeId("");
-    setIsUpfront(false);
-    setNotes("");
-    setStatus("active");
-    setSelectedContract(null);
+  const handleOpenHistory = (name: string) => {
+    setSelectedInvestorName(name);
+    setIsHistoryOpen(true);
   };
 
-  const formatCurrency = (val: any) => {
-    return Number(val || 0).toLocaleString("vi-VN") + " đ";
+  const formatNumber = (val: number) => {
+    return Number(val || 0).toLocaleString("vi-VN");
   };
 
-  const totalCapital = contracts.reduce((sum, c) => sum + (c.status === "active" ? Number(c.amount) : 0), 0);
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "---";
+    const date = new Date(dateStr);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const handleSort = (field: "investor_name" | "amount" | "investment_date" | "status") => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  // Filter local logic
+  const filtered = contracts.filter((c) => {
+    const matchesSearch = 
+      c.investor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.investor_phone && c.investor_phone.includes(searchQuery)) ||
+      (c.investor_id_card && c.investor_id_card.includes(searchQuery));
+    return matchesSearch;
+  });
+
+  // Sorting local logic
+  const sorted = [...filtered].sort((a, b) => {
+    let aVal = a[sortField];
+    let bVal = b[sortField];
+
+    if (sortField === "investment_date") {
+      aVal = new Date(a.investment_date).getTime();
+      bVal = new Date(b.investment_date).getTime();
+    } else if (typeof aVal === "string") {
+      aVal = aVal.toLowerCase();
+      bVal = (bVal as string || "").toLowerCase();
+    } else {
+      aVal = Number(aVal || 0);
+      bVal = Number(bVal || 0);
+    }
+
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Pagination logic
+  const indexOfLastRecord = page * limit;
+  const indexOfFirstRecord = indexOfLastRecord - limit;
+  const currentRecords = sorted.slice(indexOfFirstRecord, indexOfLastRecord);
+
+  // Totals calculations
+  const totalAmountSum = filtered.reduce((sum, c) => sum + (c.status === "active" ? Number(c.amount) : 0), 0);
+  const totalInterestPaidSum = 0; // standard mock value matching the image
+
+  // Client History specific contracts (Image 3)
+  const historyContracts = contracts.filter(c => c.investor_name === selectedInvestorName);
+  const historyTotalAmount = historyContracts.reduce((sum, c) => sum + (c.status === "active" ? Number(c.amount) : 0), 0);
+  const historyActiveCount = historyContracts.filter(c => c.status === "active").length;
+  const historyCompletedCount = historyContracts.filter(c => c.status === "completed").length;
+  const historyCancelledCount = historyContracts.filter(c => c.status === "cancelled").length;
 
   return (
-    <div className="space-y-6 p-2 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-            Hợp Đồng Góp Vốn
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Quản lý dòng vốn góp đầu tư từ đối tác, nhà đầu tư để bổ sung quỹ chi nhánh.
-          </p>
+    <div className="space-y-6 text-slate-800 animate-fade-in max-w-7xl mx-auto font-sans">
+      
+      {/* Title */}
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-slate-800 uppercase mt-2">
+          HỢP ĐỒNG GÓP VỐN
+        </h1>
+      </div>
+
+      {/* Filter / Action bar */}
+      <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="flex-1 flex flex-col sm:flex-row gap-3">
+          
+          {/* Search query box */}
+          <input
+            type="text"
+            placeholder="Tìm theo Mã HĐ, Tên, SĐT, CCCD"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="input input-bordered input-sm bg-white border-slate-200 focus:outline-none focus:border-emerald-500 text-slate-700 text-xs rounded-lg placeholder-slate-350 sm:max-w-md w-full"
+          />
+
+          {/* Status filter dropdown */}
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="select select-bordered select-sm bg-white border-slate-200 focus:outline-none focus:border-emerald-500 text-slate-700 text-xs rounded-lg h-[32px] min-h-[32px] w-full sm:w-56"
+          >
+            <option value="active">Tất cả hợp đồng đang vay</option>
+            <option value="completed">Tất cả hợp đồng đã tất toán</option>
+            <option value="all">Tất cả hợp đồng</option>
+          </select>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setIsCreateOpen(true);
-          }}
-          className="btn btn-warning bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold px-6 rounded-2xl flex items-center gap-2 shadow-lg shadow-amber-500/10"
-        >
-          <Plus className="w-5 h-5" />
-          Thêm Hợp Đồng Góp Vốn
-        </button>
+
+        {/* Buttons Row */}
+        <div className="flex items-center gap-2 shrink-0">
+          
+          {/* Filter Button */}
+          <button
+            onClick={fetchContracts}
+            className="btn btn-outline border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 text-indigo-650 btn-sm rounded-lg text-xs font-semibold px-3 flex items-center gap-1.5 h-[32px] min-h-[32px]"
+            type="button"
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span>Lọc</span>
+          </button>
+
+          {/* Add New Button */}
+          <button
+            onClick={handleOpenCreate}
+            className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white btn-sm rounded-lg font-medium px-4 text-xs h-[32px] min-h-[32px] shadow-sm flex items-center justify-center gap-1"
+            type="button"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Thêm mới</span>
+          </button>
+
+          {/* Export Excel Button */}
+          <button
+            className="btn btn-primary bg-blue-700 hover:bg-blue-800 border-none text-white btn-sm rounded-lg font-medium px-3 text-xs h-[32px] min-h-[32px] shadow-sm flex items-center justify-center gap-1.5"
+            type="button"
+            onClick={() => window.alert("Tính năng Xuất Excel đang được thiết lập!")}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Xuất Excel</span>
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="alert alert-error bg-red-500/10 border-red-500/20 text-red-200 shadow-lg rounded-2xl flex gap-3">
-          <AlertCircle className="w-6 h-6 text-red-400 shrink-0" />
+        <div className="alert alert-error text-xs p-3 rounded-xl border border-red-200 bg-red-50 text-red-800 flex items-start gap-2 shadow-sm">
+          <X className="w-4 h-4 shrink-0 mt-0.5 text-red-650" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Summary Stat */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white/65 border border-slate-200/80 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group col-span-1">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-110" />
-          <div className="p-3 bg-amber-500/10 rounded-2xl w-fit text-amber-500 mb-4">
-            <Coins className="w-6 h-6" />
-          </div>
-          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Tổng vốn góp hoạt động</p>
-          <h2 className="text-3xl font-extrabold text-slate-800 mt-2">
-            {formatCurrency(totalCapital)}
-          </h2>
-          <p className="text-slate-500 text-xs mt-1">Tính trên các hợp đồng đang hoạt động</p>
+      {success && (
+        <div className="alert alert-success text-xs p-3 rounded-xl border border-green-200 bg-green-50 text-green-800 flex items-start gap-2 shadow-sm">
+          <Save className="w-4 h-4 shrink-0 mt-0.5 text-green-650" />
+          <span>{success}</span>
         </div>
-      </div>
+      )}
 
-      {/* Table & Filtering */}
-      <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 backdrop-blur-lg space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm nhà đầu tư..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input input-bordered w-full rounded-2xl bg-slate-50 border-slate-200/80 pl-12 text-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-            />
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80 text-slate-600 focus:border-amber-500"
-            >
-              <option value="">Trạng thái (Tất cả)</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="completed">Đã tất toán</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
-          </div>
-        </div>
-
+      {/* Contracts Main Table List */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <span className="loading loading-spinner loading-lg text-amber-500"></span>
+          <div className="flex justify-center p-16">
+            <span className="loading loading-spinner loading-lg text-emerald-500"></span>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-600">
+            <table className="table w-full text-slate-700">
               <thead>
-                <tr className="border-b border-slate-200/80/60 text-slate-500">
-                  <th>STT</th>
-                  <th>Nhà Đầu Tư</th>
-                  <th>Số Điện Thoại</th>
-                  <th>Số Tiền</th>
-                  <th>Ngày Góp</th>
-                  <th>Loại Lãi Suất</th>
-                  <th>Trạng Thái</th>
-                  <th className="text-right">Chức Năng</th>
+                <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 text-xs font-semibold">
+                  <th className="w-12 text-center text-[11px]">#</th>
+                  
+                  {/* Sortable Investor Name */}
+                  <th 
+                    onClick={() => handleSort("investor_name")}
+                    className="cursor-pointer hover:bg-slate-100/50 py-3 text-[11px]"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Họ và tên</span>
+                      <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </th>
+
+                  <th className="text-[11px] py-3">Ghi chú</th>
+
+                  {/* Sortable Amount */}
+                  <th 
+                    onClick={() => handleSort("amount")}
+                    className="cursor-pointer hover:bg-slate-100/50 py-3 text-[11px]"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Số tiền (VNĐ)</span>
+                      <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </th>
+
+                  {/* Sortable Date */}
+                  <th 
+                    onClick={() => handleSort("investment_date")}
+                    className="cursor-pointer hover:bg-slate-100/50 py-3 text-[11px]"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Ngày góp</span>
+                      <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </th>
+
+                  <th className="text-[11px] py-3">Loại vốn</th>
+                  <th className="text-[11px] py-3">Lãi suất</th>
+                  <th className="text-[11px] py-3">Lãi đã trả</th>
+                  <th className="text-[11px] py-3">Ngày phải đóng lãi</th>
+                  <th className="text-[11px] py-3">Tình trạng</th>
+                  <th className="text-[11px] py-3 text-center">Chức năng</th>
                 </tr>
               </thead>
               <tbody>
-                {contracts.length === 0 ? (
+                {currentRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8 text-slate-500">
-                      Không tìm thấy hợp đồng góp vốn nào.
+                    <td colSpan={11} className="text-center py-16 bg-white text-slate-400 text-xs">
+                      Không có dữ liệu
                     </td>
                   </tr>
                 ) : (
-                  contracts.map((c, idx) => (
-                    <tr key={c.id} className="border-b border-slate-200/40 hover:bg-slate-50/50">
-                      <td>{idx + 1}</td>
-                      <td className="font-bold text-slate-800">{c.investor_name}</td>
-                      <td>{c.investor_phone || "—"}</td>
-                      <td className="text-amber-600 font-bold">{formatCurrency(c.amount)}</td>
-                      <td>{new Date(c.investment_date).toLocaleDateString("vi-VN")}</td>
-                      <td>
-                        {c.interest_type ? c.interest_type.name : "Không tính lãi"}
-                        {c.is_upfront_interest && <span className="badge badge-sm badge-outline badge-warning ml-1">Trả trước</span>}
-                      </td>
-                      <td>
-                        <span
-                          className={`badge badge-sm font-semibold rounded-lg px-2.5 py-1 ${
-                            c.status === "active"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : c.status === "completed"
-                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                              : "bg-slate-50 text-slate-500 border border-slate-200"
-                          }`}
-                        >
-                          {c.status === "active" ? "Đang đầu tư" : c.status === "completed" ? "Đã trả xong" : "Đã hủy"}
-                        </span>
-                      </td>
-                      <td className="text-right space-x-1.5">
-                        <button
-                          onClick={() => handleEditInit(c)}
-                          className="btn btn-ghost btn-xs text-slate-500 hover:text-amber-500 rounded-lg p-1.5"
-                        >
-                          <Edit className="w-4.5 h-4.5" />
-                        </button>
-                        {c.status !== "cancelled" && (
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            className="btn btn-ghost btn-xs text-slate-500 hover:text-red-500 rounded-lg p-1.5"
-                          >
-                            <Trash2 className="w-4.5 h-4.5" />
-                          </button>
-                        )}
-                      </td>
+                  <>
+                    {currentRecords.map((c, index) => {
+                      const displayIndex = indexOfFirstRecord + index + 1;
+                      return (
+                        <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50/50 text-xs">
+                          <td className="text-center font-medium text-slate-450">{displayIndex}</td>
+                          <td className="font-semibold">
+                            {/* Blue link opens the customer's investments details modal (Image 3) */}
+                            <button
+                              onClick={() => handleOpenHistory(c.investor_name)}
+                              className="text-blue-600 hover:underline hover:text-blue-800 font-semibold text-left"
+                              type="button"
+                            >
+                              {c.investor_name}
+                            </button>
+                          </td>
+                          <td className="text-slate-500 max-w-[150px] truncate" title={c.notes}>
+                            {c.notes || "---"}
+                          </td>
+                          <td className="font-bold text-slate-800">{formatNumber(c.amount)}</td>
+                          <td className="text-slate-500">{formatDate(c.investment_date)}</td>
+                          <td className="text-slate-500 font-medium">Đầu tư</td>
+                          <td className="text-slate-500">
+                            {c.interest_type ? c.interest_type.name : "—"}
+                          </td>
+                          <td className="font-bold text-slate-800">0</td>
+                          <td className="text-slate-500">
+                            {c.interest_type ? "Định kỳ" : "Không tính lãi"}
+                          </td>
+                          <td>
+                            <span className={`badge font-medium badge-xs py-2 px-2.5 border-none uppercase rounded-lg ${
+                              c.status === "active" 
+                                ? "bg-blue-500 text-white" 
+                                : c.status === "completed" 
+                                ? "bg-emerald-500 text-white"
+                                : "bg-slate-100 text-slate-500"
+                            }`}>
+                              {c.status === "active" ? "Đang đầu tư" : c.status === "completed" ? "Đã trả xong" : "Đã hủy"}
+                            </span>
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-center justify-center gap-1.5">
+                              
+                              {/* Edit Button */}
+                              <button
+                                onClick={() => handleOpenEdit(c)}
+                                className="btn btn-outline border-sky-200 hover:border-sky-400 hover:bg-sky-50 text-sky-600 btn-xs rounded p-1"
+                                type="button"
+                                title="Chỉnh sửa hợp đồng"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Customer's History details button */}
+                              <button
+                                onClick={() => handleOpenHistory(c.investor_name)}
+                                className="btn btn-outline border-amber-200 hover:border-amber-400 hover:bg-amber-50 text-amber-600 btn-xs rounded p-1"
+                                type="button"
+                                title="Danh sách hợp đồng góp vốn"
+                              >
+                                <BookOpen className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Revert/Cancel Button */}
+                              {c.status !== "cancelled" && (
+                                <button
+                                  onClick={() => handleDelete(c.id)}
+                                  className="btn btn-outline border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 btn-xs rounded p-1"
+                                  type="button"
+                                  title="Hủy hợp đồng"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {/* Totals Row matching Image 1 layout */}
+                    <tr className="bg-amber-50 font-bold text-xs text-red-500 border-none">
+                      <td></td>
+                      <td className="text-red-500 font-bold">Tổng tiền</td>
+                      <td></td>
+                      <td className="text-red-500 font-black">{formatNumber(totalAmountSum)}</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td className="text-red-500 font-black">{formatNumber(totalInterestPaidSum)}</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
                     </tr>
-                  ))
+                  </>
                 )}
               </tbody>
             </table>
@@ -313,295 +570,414 @@ export const CapitalContracts: React.FC = () => {
         )}
       </div>
 
-      {/* Create Modal */}
-      {isCreateOpen && (
+      {/* CREATE & EDIT MODAL (Hợp đồng góp vốn) */}
+      {isModalOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 rounded-3xl max-w-2xl text-slate-700">
-            <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2 mb-6">
-              <Plus className="w-6 h-6 text-amber-500" />
-              Thêm Mới Hợp Đồng Góp Vốn
+          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-2xl shadow-2xl p-6 relative">
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              type="button"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="font-bold text-base text-slate-850 border-b pb-2.5 flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              <span>Hợp đồng góp vốn</span>
             </h3>
-
-            <form onSubmit={handleCreate} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Tên Nhà Đầu Tư <span className="text-red-500">*</span></span>
+            
+            <form onSubmit={handleSave} className="space-y-4 mt-6">
+              <div className="grid grid-cols-12 gap-y-4 items-center">
+                
+                {/* Investor Type selectors: Khách mới vs Khách cũ */}
+                <div className="col-span-3"></div>
+                <div className="col-span-9 flex items-center gap-6 py-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-semibold">
+                    <input
+                      type="radio"
+                      name="investorType"
+                      checked={investorType === "new"}
+                      onChange={() => {
+                        setInvestorType("new");
+                        setInvestorName("");
+                        setInvestorIdCard("");
+                        setInvestorPhone("");
+                        setInvestorAddress("");
+                      }}
+                      className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
+                    />
+                    <span>Khách mới</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-semibold">
+                    <input
+                      type="radio"
+                      name="investorType"
+                      checked={investorType === "existing"}
+                      onChange={() => setInvestorType("existing")}
+                      className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
+                    />
+                    <span>Khách cũ</span>
+                  </label>
+                  
+                  {/* Eye icon next to lookup selection */}
+                  {investorType === "existing" && (
+                    <span title="Chọn từ danh sách khách hàng cũ">
+                      <Eye className="w-4 h-4 text-blue-600 shrink-0 cursor-help" />
+                    </span>
+                  )}
+                </div>
+
+                {/* Name */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
+                  Tên khách hàng <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9">
+                  {investorType === "existing" ? (
+                    <select
+                      value={selectedCustomerId}
+                      onChange={(e) => handleSelectCustomer(e.target.value)}
+                      className="select select-bordered select-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
+                      required
+                    >
+                      <option value="">-- Chọn khách hàng cũ --</option>
+                      {customers.map((c) => (
+                        <option key={c.id} value={c.id}>{c.full_name} ({c.phone || "Không có SĐT"})</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Nhập họ và tên"
+                      value={investorName}
+                      onChange={(e) => setInvestorName(e.target.value)}
+                      className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                      required
+                    />
+                  )}
+                </div>
+
+                {/* CCCD and Phone in a two-column row */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
+                  Số CCCD/Hộ chiếu
+                </div>
+                <div className="col-span-4">
                   <input
                     type="text"
-                    value={investorName}
-                    onChange={(e) => setInvestorName(e.target.value)}
-                    required
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
+                    placeholder="CCCD/Hộ chiếu"
+                    value={investorIdCard}
+                    onChange={(e) => setInvestorIdCard(e.target.value)}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                    disabled={investorType === "existing"}
                   />
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Số Số Tiền (VNĐ) <span className="text-red-500">*</span></span>
-                  </label>
+                <div className="col-span-2 text-right pr-2 text-xs font-semibold text-slate-650">
+                  Số điện thoại
+                </div>
+                <div className="col-span-3">
+                  <input
+                    type="text"
+                    placeholder="Điện thoại"
+                    value={investorPhone}
+                    onChange={(e) => setInvestorPhone(e.target.value)}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                    disabled={investorType === "existing"}
+                  />
+                </div>
+
+                {/* Address */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
+                  Địa chỉ
+                </div>
+                <div className="col-span-9">
+                  <input
+                    type="text"
+                    placeholder="Nhập địa chỉ"
+                    value={investorAddress}
+                    onChange={(e) => setInvestorAddress(e.target.value)}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                    disabled={investorType === "existing"}
+                  />
+                </div>
+
+                {/* Section Header: THÔNG TIN HỢP ĐỒNG */}
+                <div className="col-span-12 flex items-center gap-1.5 text-xs text-blue-700 font-bold tracking-tight uppercase py-2 border-t border-slate-100 mt-2">
+                  <BookOpen className="w-4 h-4 text-blue-700" />
+                  <span>Thông tin hợp đồng</span>
+                </div>
+
+                {/* Investment Capital Amount */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
+                  Số tiền đầu tư <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9 relative">
                   <input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg pr-12 font-bold text-slate-800"
                     required
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-450 font-bold">VNĐ</span>
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Số CCCD / Hộ Chiếu</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorIdCard}
-                    onChange={(e) => setInvestorIdCard(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
+
+                {/* Date of investment */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
+                  Ngày góp <span className="text-red-500">*</span>
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Số Điện Thoại</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorPhone}
-                    onChange={(e) => setInvestorPhone(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control md:col-span-2">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Địa Chỉ</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorAddress}
-                    onChange={(e) => setInvestorAddress(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Ngày Góp Vốn <span className="text-red-500">*</span></span>
-                  </label>
+                <div className="col-span-9">
                   <input
                     type="date"
                     value={investmentDate}
                     onChange={(e) => setInvestmentDate(e.target.value)}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
                     required
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
                   />
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Kế hoạch lãi suất</span>
-                  </label>
+
+                {/* Interest plan types */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-655">
+                  Hình thức lãi <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9 flex items-center gap-6">
                   <select
                     value={interestTypeId}
                     onChange={(e) => setInterestTypeId(e.target.value)}
-                    className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80"
+                    className="select select-bordered select-sm flex-1 bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
                   >
-                    <option value="">Không tính lãi</option>
+                    <option value="">Vốn Đầu tư (không lãi)</option>
                     {interestTypes.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
+                      <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
-                </div>
-                <div className="form-control flex flex-row items-center gap-3 md:col-span-2 mt-2">
-                  <input
-                    type="checkbox"
-                    checked={isUpfront}
-                    onChange={(e) => setIsUpfront(e.target.checked)}
-                    className="checkbox checkbox-warning rounded-lg"
-                  />
-                  <span className="label-text text-slate-500 font-semibold">Trả lãi trước (Thu tiền lãi ngay lúc giải ngân)</span>
-                </div>
-                <div className="form-control md:col-span-2">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Ghi Chú</span>
+
+                  {/* Upfront interest checkbox */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={isUpfront}
+                      onChange={(e) => setIsUpfront(e.target.checked)}
+                      className="checkbox checkbox-xs border-slate-300 rounded checked:bg-emerald-500 checked:border-emerald-500"
+                    />
+                    <span>Thu lãi trước</span>
                   </label>
+                </div>
+
+                {/* Notes */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
+                  Ghi chú
+                </div>
+                <div className="col-span-9">
                   <textarea
+                    placeholder="Ghi chú chi tiết..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="textarea textarea-bordered rounded-2xl bg-slate-50 border-slate-200/80 h-20"
+                    className="textarea textarea-bordered w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-16"
                   />
                 </div>
-              </div>
 
-              <div className="modal-action gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="btn btn-outline border-slate-200/80 text-slate-500 rounded-2xl"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-warning bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-2xl px-6"
-                >
-                  Xác Nhận Tạo
-                </button>
+                {/* Edit Mode Status input */}
+                {isEditMode && (
+                  <>
+                    <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-655">
+                      Trạng thái
+                    </div>
+                    <div className="col-span-9">
+                      <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="select select-bordered select-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
+                      >
+                        <option value="active">Đang đầu tư (Hoạt động)</option>
+                        <option value="completed">Đã trả xong (Tất toán)</option>
+                        <option value="cancelled">Đã hủy/xóa</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {/* Submit button row */}
+                <div className="col-span-3"></div>
+                <div className="col-span-9 pt-4 border-t border-slate-100 mt-4 flex gap-2">
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white btn-sm rounded-lg font-semibold px-6 text-xs shadow-sm shadow-emerald-500/10 gap-1.5"
+                  >
+                    {saving && <span className="loading loading-spinner btn-xs"></span>}
+                    <span>{isEditMode ? "Cập nhật" : "+ Thêm mới"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="btn btn-outline border-slate-200 text-slate-550 btn-sm rounded-lg text-xs"
+                  >
+                    Đóng
+                  </button>
+                </div>
+
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Edit Modal */}
-      {isEditOpen && (
+      {/* HISTORY DETAILS MODAL (Danh sách hợp đồng của khách hàng - Image 3) */}
+      {isHistoryOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 rounded-3xl max-w-2xl text-slate-700">
-            <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2 mb-6">
-              <Edit className="w-6 h-6 text-amber-500" />
-              Chỉnh Sửa Hợp Đồng Góp Vốn
+          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-4xl shadow-2xl p-6 relative">
+            <button 
+              onClick={() => setIsHistoryOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              type="button"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Modal Title */}
+            <h3 className="font-semibold text-slate-850 border-b pb-3 text-sm">
+              Danh sách hợp đồng của khách hàng <span className="text-blue-600 font-bold">{selectedInvestorName}</span>
             </h3>
 
-            <form onSubmit={handleUpdate} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Tên Nhà Đầu Tư <span className="text-red-500">*</span></span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorName}
-                    onChange={(e) => setInvestorName(e.target.value)}
-                    required
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Số Số Tiền (VNĐ) <span className="text-red-500">*</span></span>
-                  </label>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Số CCCD / Hộ Chiếu</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorIdCard}
-                    onChange={(e) => setInvestorIdCard(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Số Điện Thoại</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorPhone}
-                    onChange={(e) => setInvestorPhone(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control md:col-span-2">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Địa Chỉ</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={investorAddress}
-                    onChange={(e) => setInvestorAddress(e.target.value)}
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Ngày Góp Vốn <span className="text-red-500">*</span></span>
-                  </label>
-                  <input
-                    type="date"
-                    value={investmentDate}
-                    onChange={(e) => setInvestmentDate(e.target.value)}
-                    required
-                    className="input input-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Kế hoạch lãi suất</span>
-                  </label>
-                  <select
-                    value={interestTypeId}
-                    onChange={(e) => setInterestTypeId(e.target.value)}
-                    className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80"
-                  >
-                    <option value="">Không tính lãi</option>
-                    {interestTypes.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Trạng Thái Hợp Đồng</span>
-                  </label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="select select-bordered rounded-2xl bg-slate-50 border-slate-200/80 text-slate-600"
-                  >
-                    <option value="active">Đang đầu tư (Hoạt động)</option>
-                    <option value="completed">Đã tất toán (Trả xong)</option>
-                    <option value="cancelled">Đã hủy/xóa</option>
-                  </select>
-                </div>
-                <div className="form-control flex flex-row items-center gap-3 mt-4">
-                  <input
-                    type="checkbox"
-                    checked={isUpfront}
-                    onChange={(e) => setIsUpfront(e.target.checked)}
-                    className="checkbox checkbox-warning rounded-lg"
-                  />
-                  <span className="label-text text-slate-500 font-semibold">Trả lãi trước</span>
-                </div>
-                <div className="form-control md:col-span-2">
-                  <label className="label">
-                    <span className="label-text text-slate-500 font-semibold">Ghi Chú</span>
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="textarea textarea-bordered rounded-2xl bg-slate-50 border-slate-200/80 h-20"
-                  />
-                </div>
+            {/* Overview Metrics Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 text-[11px]">
+              
+              {/* Card 1: Tổng hợp đồng */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">Tổng hợp đồng</div>
+                <div className="font-bold text-slate-800 mt-1">{historyContracts.length}</div>
               </div>
 
-              <div className="modal-action gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="btn btn-outline border-slate-200/80 text-slate-500 rounded-2xl"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-warning bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-2xl px-6"
-                >
-                  Lưu Thay Đổi
-                </button>
+              {/* Card 2: Dư nợ gốc */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">Dư nợ gốc</div>
+                <div className="font-bold text-blue-600 mt-1">{formatNumber(historyTotalAmount)} VNĐ</div>
               </div>
-            </form>
+
+              {/* Card 3: Dư nợ hiện tại */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">Dư nợ hiện tại</div>
+                <div className="font-bold text-blue-600 mt-1">{formatNumber(historyTotalAmount)} VNĐ</div>
+              </div>
+
+              {/* Card 4: Tiền nợ */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">Tiền nợ</div>
+                <div className="font-bold text-blue-600 mt-1">0 VNĐ</div>
+              </div>
+
+              {/* Card 5: Lãi đã trả */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">Lãi đã trả</div>
+                <div className="font-bold text-blue-600 mt-1">0 VNĐ</div>
+              </div>
+
+              {/* Card 6: HĐ đang vay */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">HĐ đang vay</div>
+                <div className="font-bold text-blue-600 mt-1">{historyActiveCount}</div>
+              </div>
+
+              {/* Card 7: HĐ đã kết thúc */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">HĐ đã kết thúc</div>
+                <div className="font-bold text-blue-600 mt-1">{historyCompletedCount}</div>
+              </div>
+
+              {/* Card 8: HĐ chậm thanh toán */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">HĐ chậm thanh toán</div>
+                <div className="font-bold text-amber-500 mt-1">0</div>
+              </div>
+
+              {/* Card 9: HĐ quá hạn */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">HĐ quá hạn</div>
+                <div className="font-bold text-red-500 mt-1">0</div>
+              </div>
+
+              {/* Card 10: HĐ đã xóa */}
+              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                <div className="text-slate-450 font-medium">HĐ đã xóa</div>
+                <div className="font-bold text-slate-450 mt-1">{historyCancelledCount}</div>
+              </div>
+
+            </div>
+
+            {/* Modal Contracts Table */}
+            <div className="mt-6 border border-slate-150 rounded-2xl overflow-hidden">
+              <table className="table w-full text-slate-700 text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 text-[10px] font-semibold">
+                    <th className="w-10 text-center">#</th>
+                    <th>Loại hình</th>
+                    <th>Mã HĐ</th>
+                    <th>Ngày vay</th>
+                    <th>Dư nợ gốc</th>
+                    <th>Dư nợ hiện tại</th>
+                    <th>Lãi suất</th>
+                    <th>Lãi đã trả</th>
+                    <th>Tiền nợ</th>
+                    <th>Tình trạng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyContracts.map((h, i) => (
+                    <tr key={h.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                      <td className="text-center font-medium text-slate-400">{i + 1}</td>
+                      <td className="font-semibold text-slate-800">Nguồn vốn</td>
+                      <td className="font-semibold text-blue-600">NV-{h.id.substring(0,4).toUpperCase()}</td>
+                      <td className="text-slate-500">{formatDate(h.investment_date)}</td>
+                      <td className="font-semibold text-blue-600">{formatNumber(h.amount)}</td>
+                      <td className="font-semibold text-blue-600">{formatNumber(h.amount)}</td>
+                      <td className="text-slate-500">{h.interest_type ? h.interest_type.name : "Không tính lãi"}</td>
+                      <td className="font-semibold text-blue-600">0</td>
+                      <td className="font-semibold text-blue-600">0</td>
+                      <td>
+                        <span className={`badge font-medium badge-xs py-1.5 px-2 border-none rounded uppercase text-[9px] ${
+                          h.status === "active" 
+                            ? "bg-blue-500 text-white" 
+                            : h.status === "completed" 
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {h.status === "active" ? "Đang đầu tư" : h.status === "completed" ? "Đã trả xong" : "Đã hủy"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Totals Row inside the history modal */}
+                  <tr className="bg-amber-50 font-bold text-xs text-slate-800 border-none">
+                    <td></td>
+                    <td className="font-bold">Tổng</td>
+                    <td></td>
+                    <td></td>
+                    <td className="text-blue-600 font-bold">{formatNumber(historyTotalAmount)}</td>
+                    <td className="text-blue-600 font-bold">{formatNumber(historyTotalAmount)}</td>
+                    <td></td>
+                    <td className="text-blue-600 font-bold">0</td>
+                    <td className="text-blue-600 font-bold">0</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Close Button */}
+            <div className="modal-action mt-6">
+              <button
+                type="button"
+                onClick={() => setIsHistoryOpen(false)}
+                className="btn btn-outline border-slate-200 text-slate-550 btn-sm rounded-lg text-xs"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
