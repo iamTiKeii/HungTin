@@ -32,11 +32,40 @@ router.get("/categories/expense", async (req: AuthenticatedRequest, res: Respons
 // 2. Get Receipts (PT) list
 router.get("/receipts", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const { search, startDate, endDate, category_id } = req.query;
+
+    const whereClause: any = {
+      store_id: req.user!.store_id,
+      status: "active",
+    };
+
+    if (category_id) {
+      whereClause.category_id = category_id as string;
+    }
+
+    if (search) {
+      const searchStr = (search as string).trim();
+      whereClause.OR = [
+        { voucher_code: { contains: searchStr, mode: "insensitive" } },
+        { recipient_name: { contains: searchStr, mode: "insensitive" } },
+      ];
+    }
+
+    if (startDate || endDate) {
+      whereClause.voucher_date = {};
+      if (startDate) {
+        whereClause.voucher_date.gte = normalizeToMidnight(startDate as string);
+      }
+      if (endDate) {
+        whereClause.voucher_date.lte = normalizeToMidnight(endDate as string);
+      }
+    }
+
     const receipts = await prisma.receiptVoucher.findMany({
-      where: { store_id: req.user!.store_id },
+      where: whereClause,
       include: {
         category: true,
-        employee: { select: { full_name: true } },
+        employee: { select: { full_name: true, username: true } },
       },
       orderBy: { created_at: "desc" },
     });
@@ -49,11 +78,40 @@ router.get("/receipts", async (req: AuthenticatedRequest, res: Response) => {
 // 3. Get Payments (PC) list
 router.get("/payments", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const { search, startDate, endDate, category_id } = req.query;
+
+    const whereClause: any = {
+      store_id: req.user!.store_id,
+      status: "active",
+    };
+
+    if (category_id) {
+      whereClause.category_id = category_id as string;
+    }
+
+    if (search) {
+      const searchStr = (search as string).trim();
+      whereClause.OR = [
+        { voucher_code: { contains: searchStr, mode: "insensitive" } },
+        { recipient_name: { contains: searchStr, mode: "insensitive" } },
+      ];
+    }
+
+    if (startDate || endDate) {
+      whereClause.voucher_date = {};
+      if (startDate) {
+        whereClause.voucher_date.gte = normalizeToMidnight(startDate as string);
+      }
+      if (endDate) {
+        whereClause.voucher_date.lte = normalizeToMidnight(endDate as string);
+      }
+    }
+
     const payments = await prisma.paymentVoucher.findMany({
-      where: { store_id: req.user!.store_id },
+      where: whereClause,
       include: {
         category: true,
-        employee: { select: { full_name: true } },
+        employee: { select: { full_name: true, username: true } },
       },
       orderBy: { created_at: "desc" },
     });

@@ -1,47 +1,75 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { Plus, Search, Receipt, Printer, RefreshCw, X } from "lucide-react";
+import { Plus, Search, Printer, X, Trash2 } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
+import { useLocation } from "react-router-dom";
 
 interface Voucher {
   id: string;
   voucher_code: string;
-  type: string;
-  partner_name: string;
+  type?: string;
+  recipient_name: string;
+  partner_name?: string;
   amount: number;
+  notes: string;
   description?: string;
+  voucher_date: string;
   created_at: string;
+  category: {
+    name: string;
+  };
   employee?: {
     full_name: string;
+    username: string;
   };
 }
 
 export const Vouchers: React.FC = () => {
+  const location = useLocation();
+  const isExpensePage = location.pathname === "/manage-expense";
+
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // Filters
-  const [typeFilter, setTypeFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [categories, setCategories] = useState<{ id: string; name: string; code: string }[]>([]);
 
   // Create form state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [type, setType] = useState<"receipt" | "payment">("receipt");
   const [partnerName, setPartnerName] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState("0");
   const [description, setDescription] = useState("");
+  const [formCategoryId, setFormCategoryId] = useState("");
+  const [exitAfterSubmit, setExitAfterSubmit] = useState(false);
 
   // Printing state
   const [activePrintVoucher, setActivePrintVoucher] = useState<Voucher | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
+  const getThirtyDaysAgo = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split("T")[0];
+  };
+
   const fetchVouchers = async () => {
     try {
       setLoading(true);
       setError("");
-      const res = await axios.get(`/api/vouchers?type=${typeFilter}&search=${searchQuery}`);
+      const endpoint = isExpensePage ? "/api/vouchers/payments" : "/api/vouchers/receipts";
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("search", searchQuery);
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      if (selectedCategoryId) params.append("category_id", selectedCategoryId);
+
+      const res = await axios.get(`${endpoint}?${params.toString()}`);
       setVouchers(res.data);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách phiếu thu/chi.");
@@ -50,9 +78,28 @@ export const Vouchers: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const endpoint = isExpensePage ? "/api/vouchers/categories/expense" : "/api/vouchers/categories/income";
+      const res = await axios.get(endpoint);
+      setCategories(res.data);
+    } catch (err) {
+      console.error("Error fetching categories", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    // Reset filters when switching pages
+    setSearchQuery("");
+    setStartDate(getThirtyDaysAgo());
+    setEndDate(new Date().toISOString().split("T")[0]);
+    setSelectedCategoryId("");
+  }, [location.pathname]);
+
   useEffect(() => {
     fetchVouchers();
-  }, [typeFilter]);
+  }, [location.pathname, startDate, endDate, selectedCategoryId]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,159 +108,260 @@ export const Vouchers: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partnerName || !amount) {
-      setError("Vui lòng điền các trường bắt buộc");
+    if (!partnerName || !amount || amount === "0" || !formCategoryId) {
+      setError("Vui lòng điền đầy đủ các trường bắt buộc (*)");
       return;
     }
 
     try {
       setError("");
       setSuccess("");
-      const res = await axios.post("/api/vouchers", {
-        type,
-        partnerName,
-        amount: Number(amount),
-        description,
-      });
-      setSuccess(`Đã tạo phiếu ${type === "receipt" ? "thu" : "chi"} thành công!`);
+      const endpoint = isExpensePage ? "/api/vouchers/payments" : "/api/vouchers/receipts";
+      const rawAmount = Number(amount.replace(/\D/g, "")) || 0;
+      
+      const payload = {
+        category_id: formCategoryId,
+        amount: rawAmount,
+        recipient_name: partnerName,
+        notes: description,
+      };
+
+      const res = await axios.post(endpoint, payload);
+      setSuccess(`Đã tạo phiếu ${isExpensePage ? "chi" : "thu"} thành công!`);
+      
+      // Reset form fields
       setPartnerName("");
-      setAmount("");
+      setAmount("0");
       setDescription("");
-      setIsCreateOpen(false);
+      
+      if (exitAfterSubmit) {
+        setIsCreateOpen(false);
+      }
       fetchVouchers();
-      // Auto open print preview for the created voucher
-      setActivePrintVoucher(res.data);
+      
+      // Open print preview
+      setActivePrintVoucher({
+        ...res.data,
+        type: isExpensePage ? "payment" : "receipt"
+      });
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tạo phiếu thu chi.");
     }
   };
 
-  // Printing logic using react-to-print
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa phiếu này? Hành động này sẽ cập nhật lại quỹ tiền mặt.")) return;
+    try {
+      setError("");
+      setSuccess("");
+      const endpoint = isExpensePage ? `/api/vouchers/payments/${id}` : `/api/vouchers/receipts/${id}`;
+      await axios.delete(endpoint);
+      setSuccess("Đã xóa phiếu thành công!");
+      fetchVouchers();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Không thể xóa phiếu.");
+    }
+  };
+
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     onAfterPrint: () => setActivePrintVoucher(null),
   });
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val);
+    return Number(val || 0).toLocaleString("vi-VN");
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return "---";
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  const totalAmount = vouchers.reduce((sum, v) => sum + Number(v.amount || 0), 0);
+
+  const handleOpenCreateModal = () => {
+    setError("");
+    setSuccess("");
+    setPartnerName("");
+    setAmount("0");
+    setDescription("");
+    if (categories.length > 0) {
+      setFormCategoryId(categories[0].id);
+    } else {
+      setFormCategoryId("");
+    }
+    setIsCreateOpen(true);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
-            <Receipt className="text-amber-500 w-7 h-7" />
-            Quản Lý Phiếu Thu / Phiếu Chi
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Ghi nhận các khoản thu chi hoạt động khác ngoài hợp đồng và in biên nhận K80 cho đối tác.
-          </p>
-        </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <button onClick={fetchVouchers} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm font-bold gap-1 rounded-xl flex-1 md:flex-none"
-          >
-            <Plus className="w-4 h-4" />
-            Lập phiếu mới
-          </button>
-        </div>
+    <div className="space-y-4">
+      {/* Title Header */}
+      <div className="flex justify-between items-center py-2">
+        <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+          {isExpensePage ? "Chi hoạt động" : "Thu hoạt động"}
+        </h2>
       </div>
 
       {error && (
-        <div className="alert alert-error bg-red-500/10 border-red-500/30 text-red-200 text-sm rounded-xl">
+        <div className="alert alert-error bg-red-500/10 border-red-500/30 text-red-650 text-xs rounded-xl py-3">
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="alert alert-success bg-emerald-500/10 border-emerald-500/30 text-emerald-200 text-sm rounded-xl">
+        <div className="alert alert-success bg-emerald-500/10 border-emerald-500/30 text-emerald-650 text-xs rounded-xl py-3">
           <span>{success}</span>
         </div>
       )}
 
-      {/* Filters Form */}
-      <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
-            <Search className="w-5 h-5" />
-          </span>
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo mã phiếu hoặc tên người nộp/nhận..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full pl-11 bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl"
-          />
-        </div>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="select select-bordered bg-white border-slate-200/80 text-slate-600 rounded-xl"
-        >
-          <option value="">Tất cả loại phiếu</option>
-          <option value="receipt">Phiếu Thu (Nhập két)</option>
-          <option value="payment">Phiếu Chi (Xuất két)</option>
-        </select>
-        <button type="submit" className="btn btn-neutral border-slate-200/80 text-slate-700 font-bold rounded-xl px-6">
-          Tìm kiếm
-        </button>
-      </form>
+      {/* Filter and Control Bar */}
+      <div className="bg-white border border-slate-150 p-4 rounded-2xl shadow-sm">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3 items-center w-full">
+          {/* Customer search query */}
+          <div className="relative flex-1 w-full md:w-auto">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên KH"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input input-bordered input-sm w-full pl-9 bg-white border-slate-200 text-slate-800 focus:outline-none focus:border-amber-500 text-xs rounded-lg h-[32px]"
+            />
+          </div>
 
-      {/* Vouchers Table */}
+          {/* Date Picker Start */}
+          <div className="relative w-full md:w-40">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-850 text-xs rounded-lg h-[32px]"
+            />
+          </div>
+
+          {/* Date Picker End */}
+          <div className="relative w-full md:w-40">
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-855 text-xs rounded-lg h-[32px]"
+            />
+          </div>
+
+          {/* Voucher Category Select */}
+          <div className="w-full md:w-48">
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="select select-bordered select-sm w-full bg-white border-slate-200 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
+            >
+              <option value="">Tất cả loại phiếu</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Search trigger button (hidden but submits on enter) */}
+          <button type="submit" className="hidden" />
+
+          {/* Add voucher button */}
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="btn btn-primary bg-[#0fbc98] hover:bg-[#0da686] border-none text-white btn-sm text-xs font-bold gap-1 rounded-lg px-4 w-full md:w-auto ml-auto"
+          >
+            <Plus className="w-4 h-4" />
+            Thêm phiếu
+          </button>
+        </form>
+      </div>
+
+      {/* Main Vouchers Table */}
       {loading ? (
-        <div className="flex justify-center p-12">
-          <span className="loading loading-spinner loading-lg text-amber-500"></span>
+        <div className="flex justify-center p-12 bg-white border border-slate-150 rounded-2xl shadow-sm">
+          <span className="loading loading-spinner loading-md text-amber-500"></span>
         </div>
       ) : vouchers.length === 0 ? (
-        <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl text-slate-500">
-          Chưa phát sinh phiếu thu chi nào phù hợp bộ lọc
+        <div className="text-center py-12 bg-white border border-slate-150 rounded-2xl text-slate-400 text-xs shadow-sm">
+          Không có dữ liệu
         </div>
       ) : (
-        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-lg">
+        <div className="bg-white border border-slate-150 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="table w-full text-slate-600">
+            <table className="table w-full text-slate-700 text-xs">
               <thead>
-                <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
-                  <th>Mã phiếu</th>
+                <tr className="bg-slate-50 border-b border-slate-200/85 text-slate-500 text-[10px] font-semibold">
+                  <th className="w-12 text-center">#</th>
+                  <th>Ngày</th>
+                  <th>Khách hàng</th>
                   <th>Loại phiếu</th>
-                  <th>Đối tác liên quan</th>
-                  <th>Số tiền mặt</th>
-                  <th>Nội dung thanh toán</th>
-                  <th>Ngày lập</th>
-                  <th className="text-right">In phiếu</th>
+                  <th>Lý do</th>
+                  <th>Số tiền</th>
+                  <th>Nhân viên</th>
+                  <th className="w-24 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {vouchers.map((v) => (
-                  <tr key={v.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
-                    <td className="font-bold text-amber-500">{v.voucher_code}</td>
-                    <td>
-                      <span className={`badge font-bold badge-xs uppercase ${v.type === "receipt" ? "badge-success" : "badge-error"}`}>
-                        {v.type === "receipt" ? "Thu" : "Chi"}
-                      </span>
+                {vouchers.map((v, idx) => (
+                  <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/40">
+                    <td className="text-center font-medium text-slate-400">{idx + 1}</td>
+                    <td>{formatDateTime(v.created_at)}</td>
+                    <td className="font-semibold text-slate-700">{v.recipient_name || v.partner_name}</td>
+                    <td>{v.category?.name}</td>
+                    <td className="text-slate-500 max-w-xs truncate">{v.notes || v.description || "---"}</td>
+                    <td className={`font-bold ${isExpensePage ? "text-red-500" : "text-emerald-500"}`}>
+                      {isExpensePage ? "-" : "+"}{formatCurrency(v.amount)}
                     </td>
-                    <td className="font-bold text-slate-700">{v.partner_name}</td>
-                    <td className={`font-black ${v.type === "receipt" ? "text-emerald-500" : "text-red-500"}`}>
-                      {formatCurrency(v.amount)}
+                    <td className="text-slate-500">
+                      <div>{v.employee?.full_name}</div>
+                      <div className="text-[10px] text-slate-400 italic">Tk: {v.employee?.username || "Demo01"}</div>
                     </td>
-                    <td className="text-slate-500 max-w-xs truncate">{v.description}</td>
-                    <td className="text-slate-500 font-semibold">{new Date(v.created_at).toLocaleDateString("vi-VN")}</td>
-                    <td className="text-right py-3">
-                      <button
-                        onClick={() => setActivePrintVoucher(v)}
-                        className="btn btn-outline border-slate-200 hover:bg-slate-50 btn-xs text-slate-600"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        In K80
-                      </button>
+                    <td className="text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {/* Print receipt */}
+                        <button
+                          type="button"
+                          onClick={() => setActivePrintVoucher(v)}
+                          className="btn btn-xs btn-ghost border border-blue-100 bg-blue-50/50 hover:bg-blue-100/80 text-blue-600 rounded p-1"
+                          title="In phiếu"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        {/* Cancel / Delete */}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(v.id)}
+                          className="btn btn-xs btn-ghost border border-red-100 bg-red-50/50 hover:bg-red-100/80 text-red-600 rounded p-1"
+                          title="Hủy phiếu"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
+                
+                {/* Yellow footer summary row */}
+                <tr className="bg-amber-50/80 border-t-2 border-amber-250 font-bold text-slate-800 text-xs">
+                  <td colSpan={4} className="text-center py-3"></td>
+                  <td className="text-right py-3 font-extrabold text-slate-700">Tổng tiền</td>
+                  <td className={`py-3 font-extrabold ${isExpensePage ? "text-red-600" : "text-emerald-600"}`}>
+                    {isExpensePage ? "-" : "+"}{formatCurrency(totalAmount)}
+                  </td>
+                  <td colSpan={2}></td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -223,59 +371,118 @@ export const Vouchers: React.FC = () => {
       {/* CREATE MODAL */}
       {isCreateOpen && (
         <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Lập Phiếu Thu / Chi</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label text-slate-600 font-semibold text-sm">Loại chứng từ</label>
+          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-lg p-0 overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-sm text-slate-850">
+                {isExpensePage ? "Nhập phiếu chi tiền" : "Nhập phiếu thu tiền"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className="btn btn-ghost btn-circle btn-xs text-slate-400 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              <div className="grid grid-cols-12 gap-y-4 items-center">
+                {/* Recipient */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                  Người nhận <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9">
+                  <input
+                    type="text"
+                    placeholder="Nhập người nhận"
+                    value={partnerName}
+                    onChange={(e) => setPartnerName(e.target.value)}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
+                    required
+                  />
+                </div>
+
+                {/* Amount */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                  Số tiền <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9 relative">
+                  <input
+                    type="text"
+                    value={Number(amount || 0).toLocaleString("en-US")}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, "");
+                      setAmount(clean || "0");
+                    }}
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg pr-12 font-bold text-slate-805"
+                    required
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-450 font-bold">VNĐ</span>
+                </div>
+
+                {/* Voucher type */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                  Loại phiếu <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9">
                   <select
-                    value={type}
-                    onChange={(e: any) => setType(e.target.value)}
-                    className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl focus:border-amber-500"
+                    value={formCategoryId}
+                    onChange={(e) => setFormCategoryId(e.target.value)}
+                    className="select select-bordered select-sm w-full bg-white border-slate-200 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
+                    required
                   >
-                    <option value="receipt">Phiếu Thu (+ két)</option>
-                    <option value="payment">Phiếu Chi (- két)</option>
+                    <option value="" disabled>Chọn loại phiếu</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div>
-                  <label className="label text-slate-600 font-semibold text-sm">Số tiền mặt (VNĐ) *</label>
-                  <input
-                    type="number"
-                    placeholder="1000000"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
+
+                {/* Reason description */}
+                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600 self-start pt-1.5">
+                  Lý do <span className="text-red-500">*</span>
+                </div>
+                <div className="col-span-9">
+                  <textarea
+                    placeholder="Nhập lý do thu / chi"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="textarea textarea-bordered w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-24"
                     required
                   />
                 </div>
               </div>
-              <div>
-                <label className="label text-slate-600 font-semibold text-sm">Đối tác nộp/nhận tiền *</label>
-                <input
-                  type="text"
-                  placeholder="Họ tên người nhận/nộp"
-                  value={partnerName}
-                  onChange={(e) => setPartnerName(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label text-slate-600 font-semibold text-sm">Nội dung diễn giải chi tiết</label>
-                <textarea
-                  placeholder="Lý do thu/chi..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-200/80 text-slate-800 rounded-xl h-20"
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy bỏ
+
+              {/* Form Buttons */}
+              <div className="flex gap-3 justify-start pt-4 border-t border-slate-100 pl-[25%]">
+                {/* Submit 1: Save & Continue */}
+                <button
+                  type="submit"
+                  onClick={() => setExitAfterSubmit(false)}
+                  className={`btn btn-sm text-xs font-bold gap-1 rounded-lg px-6 ${
+                    isExpensePage
+                      ? "btn-error bg-red-600 hover:bg-red-700 text-white border-none"
+                      : "btn-success bg-[#0fbc98] hover:bg-[#0da686] text-white border-none"
+                  }`}
+                >
+                  {isExpensePage ? "Chi tiền" : "Thu tiền"}
                 </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">
-                  Xác nhận & Lưu
+
+                {/* Submit 2: Save & Exit */}
+                <button
+                  type="submit"
+                  onClick={() => setExitAfterSubmit(true)}
+                  className={`btn btn-outline btn-sm text-xs font-bold gap-1 rounded-lg px-6 ${
+                    isExpensePage
+                      ? "border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-700"
+                      : "border-[#0fbc98] text-[#0fbc98] hover:bg-emerald-50 hover:text-[#0da686] hover:border-[#0da686]"
+                  }`}
+                >
+                  {isExpensePage ? "Chi tiền & Thoát" : "Thu tiền & Thoát"}
                 </button>
               </div>
             </form>
@@ -286,60 +493,64 @@ export const Vouchers: React.FC = () => {
       {/* PRINT PREVIEW MODAL */}
       {activePrintVoucher && (
         <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl max-w-sm">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200/80 mb-4">
-              <span className="font-extrabold text-sm text-slate-600">Biên nhận in K80</span>
-              <button onClick={() => setActivePrintVoucher(null)} className="btn btn-ghost btn-circle btn-xs text-slate-500">
+          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-sm p-4">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-150 mb-4">
+              <span className="font-bold text-xs text-slate-500">Biên nhận in K80</span>
+              <button
+                type="button"
+                onClick={() => setActivePrintVoucher(null)}
+                className="btn btn-ghost btn-circle btn-xs text-slate-400 hover:bg-slate-100"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Thermal Content Container */}
-            <div className="bg-white p-4 text-black border border-slate-300 rounded-lg text-xs leading-relaxed">
+            <div className="bg-white p-4 text-black border border-slate-200 rounded-lg text-xs leading-relaxed font-mono">
               <div ref={printRef} className="print-area">
-                <div className="print-header font-bold" style={{ textAlign: "center" }}>
-                  <p style={{ fontSize: "14px", margin: "2px 0" }}>CẦM ĐỒ HÙNG TÍN</p>
-                  <p style={{ fontSize: "10px", margin: "2px 0", color: "#666" }}>Dịch vụ Tài chính & Tín dụng tiêu dùng</p>
+                <div className="print-header font-bold text-center">
+                  <p className="text-sm margin-0">CẦM ĐỒ HÙNG TÍN</p>
+                  <p className="text-[9px] text-slate-500 font-medium">Dịch vụ Tài chính & Tín dụng tiêu dùng</p>
                 </div>
-                <div className="print-divider" style={{ borderTop: "1px dashed black", margin: "8px 0" }}></div>
+                <div className="print-divider border-t border-dashed border-black my-2"></div>
 
-                <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "12px", margin: "4px 0" }}>
-                  {activePrintVoucher.type === "receipt" ? "PHIẾU THU TIỀN MẶT" : "PHIẾU CHI TIỀN MẶT"}
+                <div className="text-center font-bold text-xs my-1">
+                  {activePrintVoucher.type === "receipt" || !isExpensePage ? "PHIẾU THU TIỀN MẶT" : "PHIẾU CHI TIỀN MẶT"}
                 </div>
-                <div style={{ textAlign: "center", fontSize: "9px", margin: "2px 0" }}>
+                <div className="text-center text-[9px] text-slate-500">
                   Số phiếu: {activePrintVoucher.voucher_code}
                 </div>
 
-                <div style={{ margin: "10px 0" }}>
-                  <table className="print-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <div className="my-3">
+                  <table className="w-full text-[11px] border-collapse">
                     <tbody>
-                      <tr>
-                        <td style={{ padding: "3px 0" }}>Đối tác:</td>
-                        <td className="print-text-right" style={{ textAlign: "right", fontWeight: "bold" }}>
-                          {activePrintVoucher.partner_name}
+                      <tr className="border-b border-slate-100">
+                        <td className="py-1 text-slate-500">Đối tác:</td>
+                        <td className="text-right py-1 font-bold text-slate-900">
+                          {activePrintVoucher.recipient_name || activePrintVoucher.partner_name}
+                        </td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-1 text-slate-500">Số tiền:</td>
+                        <td className="text-right py-1 font-extrabold text-slate-950">
+                          {formatCurrency(activePrintVoucher.amount)} VNĐ
+                        </td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-1 text-slate-500 vertical-align-top">Nội dung:</td>
+                        <td className="text-right py-1 text-slate-700">
+                          {activePrintVoucher.notes || activePrintVoucher.description || "---"}
+                        </td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-1 text-slate-500">Ngày lập:</td>
+                        <td className="text-right py-1 text-slate-700">
+                          {new Date(activePrintVoucher.created_at || activePrintVoucher.voucher_date).toLocaleString("vi-VN")}
                         </td>
                       </tr>
                       <tr>
-                        <td style={{ padding: "3px 0" }}>Số tiền:</td>
-                        <td className="print-text-right" style={{ textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>
-                          {formatCurrency(activePrintVoucher.amount)}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: "3px 0", verticalAlign: "top" }}>Nội dung:</td>
-                        <td className="print-text-right" style={{ textAlign: "right" }}>
-                          {activePrintVoucher.description || "N/A"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: "3px 0" }}>Ngày lập:</td>
-                        <td className="print-text-right" style={{ textAlign: "right" }}>
-                          {new Date(activePrintVoucher.created_at).toLocaleString("vi-VN")}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: "3px 0" }}>Nhân viên:</td>
-                        <td className="print-text-right" style={{ textAlign: "right" }}>
+                        <td className="py-1 text-slate-500">Nhân viên:</td>
+                        <td className="text-right py-1 text-slate-700">
                           {activePrintVoucher.employee?.full_name}
                         </td>
                       </tr>
@@ -347,25 +558,34 @@ export const Vouchers: React.FC = () => {
                   </table>
                 </div>
 
-                <div className="print-divider" style={{ borderTop: "1px dashed black", margin: "8px 0" }}></div>
-                <div style={{ display: "flex", justifyContent: "space-between", textAlign: "center", marginTop: "10px" }}>
+                <div className="print-divider border-t border-dashed border-black my-2"></div>
+                <div className="flex justify-between text-center mt-3 text-[10px] font-sans">
                   <div>
-                    <p style={{ margin: 0 }}>Người giao/nhận</p>
-                    <p style={{ fontSize: "8px", color: "#666", margin: 0 }}>(Ký và ghi rõ họ tên)</p>
+                    <p className="margin-0">Người giao/nhận</p>
+                    <p className="text-[8px] text-slate-400">(Ký và ghi rõ họ tên)</p>
                   </div>
                   <div>
-                    <p style={{ margin: 0 }}>Thủ quỹ lập phiếu</p>
-                    <p style={{ fontSize: "8px", color: "#666", margin: 0 }}>(Ký và ghi rõ họ tên)</p>
+                    <p className="margin-0">Thủ quỹ lập phiếu</p>
+                    <p className="text-[8px] text-slate-400">(Ký và ghi rõ họ tên)</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="modal-action">
-              <button onClick={() => setActivePrintVoucher(null)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
+            {/* Print actions */}
+            <div className="modal-action mt-4">
+              <button
+                type="button"
+                onClick={() => setActivePrintVoucher(null)}
+                className="btn btn-outline border-slate-200 text-slate-600 rounded-lg btn-sm text-xs px-4"
+              >
                 Đóng lại
               </button>
-              <button onClick={handlePrint} className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-lg btn-sm text-xs gap-1"
+              >
                 <Printer className="w-4 h-4" />
                 In nhiệt ngay
               </button>
