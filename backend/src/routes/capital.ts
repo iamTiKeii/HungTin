@@ -31,6 +31,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
       where: whereClause,
       include: {
         interest_type: true,
+        customer: true,
       },
       orderBy: { investment_date: "desc" },
     });
@@ -51,6 +52,7 @@ router.get("/:id", async (req: AuthenticatedRequest, res: Response) => {
       },
       include: {
         interest_type: true,
+        customer: true,
         transactions: {
           orderBy: { created_at: "desc" },
         },
@@ -74,6 +76,7 @@ router.post("/", requirePermission(["FUNDS_MANAGE"]) as any, async (req: Authent
     const employeeId = req.user!.id;
 
     const {
+      customer_id,
       investor_name,
       investor_id_card,
       investor_phone,
@@ -95,9 +98,55 @@ router.post("/", requirePermission(["FUNDS_MANAGE"]) as any, async (req: Authent
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      let finalCustomerId = customer_id || null;
+
+      if (!finalCustomerId) {
+        // Search if active customer exists with same phone or card
+        let existingCustomer = null;
+        if (investor_phone) {
+          existingCustomer = await tx.customer.findFirst({
+            where: { phone: investor_phone, store_id: storeId, status: { not: "blacklist" } }
+          });
+        }
+        if (!existingCustomer && investor_id_card) {
+          existingCustomer = await tx.customer.findFirst({
+            where: { identity_card_number: investor_id_card, store_id: storeId, status: { not: "blacklist" } }
+          });
+        }
+
+        if (existingCustomer) {
+          finalCustomerId = existingCustomer.id;
+        } else if (investor_name) {
+          // Create new customer record
+          const newCust = await tx.customer.create({
+            data: {
+              store_id: storeId,
+              full_name: investor_name,
+              phone: investor_phone || null,
+              address: investor_address || null,
+              identity_card_number: investor_id_card || null,
+              status: "active"
+            }
+          });
+          finalCustomerId = newCust.id;
+        }
+      } else {
+        // Verify customer is not blacklisted
+        const cust = await tx.customer.findUnique({
+          where: { id: finalCustomerId }
+        });
+        if (!cust) {
+          throw new Error("Customer not found");
+        }
+        if (cust.status === "blacklist") {
+          throw new Error("Customer is blacklisted. Cannot create contract.");
+        }
+      }
+
       const contract = await tx.capitalContract.create({
         data: {
           store_id: storeId,
+          customer_id: finalCustomerId,
           investor_name,
           investor_id_card,
           investor_phone,
@@ -139,6 +188,7 @@ router.put("/:id", requirePermission(["FUNDS_MANAGE"]) as any, async (req: Authe
     const contractId = req.params.id;
 
     const {
+      customer_id,
       investor_name,
       investor_id_card,
       investor_phone,
@@ -158,6 +208,61 @@ router.put("/:id", requirePermission(["FUNDS_MANAGE"]) as any, async (req: Authe
 
       if (!existing) {
         throw new Error("Capital contract not found");
+      }
+
+      let finalCustomerId = customer_id;
+      if (finalCustomerId === undefined) {
+        finalCustomerId = existing.customer_id;
+      }
+
+      // If customer_id is explicitly set or changed
+      if (customer_id !== undefined) {
+        if (!finalCustomerId) {
+          // Try to search or match if none is selected
+          let existingCustomer = null;
+          const searchPhone = investor_phone !== undefined ? investor_phone : existing.investor_phone;
+          const searchCard = investor_id_card !== undefined ? investor_id_card : existing.investor_id_card;
+          const searchName = investor_name !== undefined ? investor_name : existing.investor_name;
+
+          if (searchPhone) {
+            existingCustomer = await tx.customer.findFirst({
+              where: { phone: searchPhone, store_id: storeId, status: { not: "blacklist" } }
+            });
+          }
+          if (!existingCustomer && searchCard) {
+            existingCustomer = await tx.customer.findFirst({
+              where: { identity_card_number: searchCard, store_id: storeId, status: { not: "blacklist" } }
+            });
+          }
+
+          if (existingCustomer) {
+            finalCustomerId = existingCustomer.id;
+          } else if (searchName) {
+            // Create a new Customer record
+            const newCust = await tx.customer.create({
+              data: {
+                store_id: storeId,
+                full_name: searchName,
+                phone: searchPhone || null,
+                address: (investor_address !== undefined ? investor_address : existing.investor_address) || null,
+                identity_card_number: searchCard || null,
+                status: "active"
+              }
+            });
+            finalCustomerId = newCust.id;
+          }
+        } else {
+          // Verify customer is not blacklisted
+          const cust = await tx.customer.findUnique({
+            where: { id: finalCustomerId }
+          });
+          if (!cust) {
+            throw new Error("Customer not found");
+          }
+          if (cust.status === "blacklist") {
+            throw new Error("Customer is blacklisted. Cannot update contract.");
+          }
+        }
       }
 
       // Cash Adjustment Logic
@@ -222,6 +327,7 @@ router.put("/:id", requirePermission(["FUNDS_MANAGE"]) as any, async (req: Authe
       const updated = await tx.capitalContract.update({
         where: { id: contractId },
         data: {
+          customer_id: finalCustomerId,
           investor_name: investor_name !== undefined ? investor_name : undefined,
           investor_id_card: investor_id_card !== undefined ? investor_id_card : undefined,
           investor_phone: investor_phone !== undefined ? investor_phone : undefined,

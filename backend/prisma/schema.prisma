@@ -216,6 +216,7 @@ model Customer {
   unsecured_contracts   UnsecuredContract[]
   installment_contracts InstallmentContract[]
   blacklist_records     CustomerBlacklist[]
+  capital_contracts     CapitalContract[]
 
   @@map("customers")
 }
@@ -239,6 +240,8 @@ model CapitalContract {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   store_id            String   @db.Uuid
   store               Store    @relation(fields: [store_id], references: [id])
+  customer_id         String?  @db.Uuid
+  customer            Customer? @relation(fields: [customer_id], references: [id])
   investor_name       String   @db.VarChar(100)
   investor_id_card    String?  @db.VarChar(50)
   investor_phone      String?  @db.VarChar(20)

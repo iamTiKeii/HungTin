@@ -103,6 +103,7 @@ export const CapitalContracts: React.FC = () => {
 
   // Add/Edit Form state
   const [investorType, setInvestorType] = useState<"new" | "existing">("new");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   
@@ -160,6 +161,7 @@ export const CapitalContracts: React.FC = () => {
     setIsEditMode(false);
     setSelectedId("");
     setInvestorType("new");
+    setSelectedCustomerId("");
     setCustomerSearchQuery("");
     setShowSuggestions(false);
     setInvestorName("");
@@ -198,9 +200,11 @@ export const CapitalContracts: React.FC = () => {
 
     if (matchedCustomer) {
       setInvestorType("existing");
+      setSelectedCustomerId(matchedCustomer.id);
       setCustomerSearchQuery(matchedCustomer.full_name);
     } else {
       setInvestorType("new");
+      setSelectedCustomerId("");
       setCustomerSearchQuery("");
     }
     setShowSuggestions(false);
@@ -223,6 +227,7 @@ export const CapitalContracts: React.FC = () => {
   };
 
   const handleSelectCustomer = (custId: string) => {
+    setSelectedCustomerId(custId);
     const selected = customers.find(c => c.id === custId);
     if (selected) {
       setInvestorName(selected.full_name);
@@ -245,6 +250,7 @@ export const CapitalContracts: React.FC = () => {
       setSuccess("");
 
       const payload = {
+        customer_id: investorType === "existing" ? selectedCustomerId : null,
         investor_name: investorName,
         investor_id_card: investorIdCard || null,
         investor_phone: investorPhone || null,
@@ -707,12 +713,7 @@ export const CapitalContracts: React.FC = () => {
                       checked={investorType === "new"}
                       onChange={() => {
                         setInvestorType("new");
-                        setCustomerSearchQuery("");
                         setShowSuggestions(false);
-                        setInvestorName("");
-                        setInvestorIdCard("");
-                        setInvestorPhone("");
-                        setInvestorAddress("");
                       }}
                       className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
                     />
@@ -725,12 +726,7 @@ export const CapitalContracts: React.FC = () => {
                       checked={investorType === "existing"}
                       onChange={() => {
                         setInvestorType("existing");
-                        setCustomerSearchQuery("");
                         setShowSuggestions(false);
-                        setInvestorName("");
-                        setInvestorIdCard("");
-                        setInvestorPhone("");
-                        setInvestorAddress("");
                       }}
                       className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
                     />
@@ -871,9 +867,12 @@ export const CapitalContracts: React.FC = () => {
                 </div>
                 <div className="col-span-9 relative">
                   <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    type="text"
+                    value={Number(amount || 0).toLocaleString("en-US")}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, "");
+                      setAmount(clean || "0");
+                    }}
                     className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg pr-12 font-bold text-slate-800"
                     required
                   />
@@ -1269,10 +1268,13 @@ export const CapitalContracts: React.FC = () => {
                         <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">Số tiền đóng *</div>
                         <div className="col-span-9 relative">
                           <input
-                            type="number"
-                            value={txAmount}
-                            onChange={(e) => setTxAmount(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-850 font-bold text-xs rounded-lg"
+                            type="text"
+                            value={Number(txAmount || 0).toLocaleString("en-US")}
+                            onChange={(e) => {
+                              const clean = e.target.value.replace(/\D/g, "");
+                              setTxAmount(clean || "0");
+                            }}
+                            className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-855 font-bold text-xs rounded-lg"
                             required
                           />
                           <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">VNĐ</span>
@@ -1320,9 +1322,12 @@ export const CapitalContracts: React.FC = () => {
                       <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-605">Số tiền gốc trả trước *</div>
                       <div className="col-span-9 relative">
                         <input
-                          type="number"
-                          value={txAmount}
-                          onChange={(e) => setTxAmount(e.target.value)}
+                          type="text"
+                          value={Number(txAmount || 0).toLocaleString("en-US")}
+                          onChange={(e) => {
+                            const clean = e.target.value.replace(/\D/g, "");
+                            setTxAmount(clean || "0");
+                          }}
                           className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-850 font-bold text-xs rounded-lg"
                           required
                         />
@@ -1412,9 +1417,12 @@ export const CapitalContracts: React.FC = () => {
                       <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">Số tiền vay thêm *</div>
                       <div className="col-span-9 relative">
                         <input
-                          type="number"
-                          value={txAmount}
-                          onChange={(e) => setTxAmount(e.target.value)}
+                          type="text"
+                          value={Number(txAmount || 0).toLocaleString("en-US")}
+                          onChange={(e) => {
+                            const clean = e.target.value.replace(/\D/g, "");
+                            setTxAmount(clean || "0");
+                          }}
                           className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-850 font-bold text-xs rounded-lg"
                           required
                         />
