@@ -55,7 +55,7 @@ interface CapitalContract {
 interface Customer {
   id: string;
   full_name: string;
-  id_card?: string;
+  identity_card_number?: string;
   phone?: string;
   address?: string;
 }
@@ -181,8 +181,26 @@ export const CapitalContracts: React.FC = () => {
   const handleOpenEdit = (c: CapitalContract) => {
     setIsEditMode(true);
     setSelectedId(c.id);
-    setInvestorType("new");
-    setSelectedCustomerId("");
+    
+    // Find matching customer from the list of active customers
+    let matchedCustomer = null;
+    if (c.investor_phone) {
+      matchedCustomer = customers.find(cust => cust.phone === c.investor_phone);
+    }
+    if (!matchedCustomer && c.investor_id_card) {
+      matchedCustomer = customers.find(cust => cust.identity_card_number === c.investor_id_card);
+    }
+    if (!matchedCustomer) {
+      matchedCustomer = customers.find(cust => cust.full_name === c.investor_name);
+    }
+
+    if (matchedCustomer) {
+      setInvestorType("existing");
+      setSelectedCustomerId(matchedCustomer.id);
+    } else {
+      setInvestorType("new");
+      setSelectedCustomerId("");
+    }
     
     setInvestorName(c.investor_name);
     setInvestorIdCard(c.investor_id_card || "");
@@ -206,7 +224,7 @@ export const CapitalContracts: React.FC = () => {
     const selected = customers.find(c => c.id === custId);
     if (selected) {
       setInvestorName(selected.full_name);
-      setInvestorIdCard(selected.id_card || "");
+      setInvestorIdCard(selected.identity_card_number || "");
       setInvestorPhone(selected.phone || "");
       setInvestorAddress(selected.address || "");
     }
@@ -268,6 +286,7 @@ export const CapitalContracts: React.FC = () => {
   };
 
   const handleOpenHistory = (name: string) => {
+    if (!name) return;
     setSelectedInvestorName(name);
     setIsHistoryOpen(true);
   };
@@ -698,9 +717,15 @@ export const CapitalContracts: React.FC = () => {
                   
                   {/* Eye icon next to lookup selection */}
                   {investorType === "existing" && (
-                    <span title="Chọn từ danh sách khách hàng cũ">
-                      <Eye className="w-4 h-4 text-blue-600 shrink-0 cursor-help" />
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenHistory(investorName)}
+                      className={`text-blue-600 hover:text-blue-800 shrink-0 ${!investorName ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                      title="Xem lịch sử hợp đồng của khách"
+                      disabled={!investorName}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
 
