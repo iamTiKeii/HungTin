@@ -42,6 +42,13 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
       where: whereClause,
       include: {
         store: { select: { name: true } },
+        _count: {
+          select: {
+            pawn_contracts: true,
+            unsecured_contracts: true,
+            installment_contracts: true,
+          }
+        }
       },
       orderBy: { full_name: "asc" },
     });
@@ -277,6 +284,96 @@ router.post("/:id/unblacklist", requirePermission(["CUSTOMERS_MANAGE"]) as any, 
 });
 
 // 7. Delete Customer
+// 8. Get Customer's Contracts List
+router.get("/:id/contracts", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const customerId = req.params.id;
+
+    // Fetch Pawn Contracts
+    const pawns = await prisma.pawnContract.findMany({
+      where: { customer_id: customerId },
+      include: {
+        interest_payments: true,
+      }
+    });
+
+    // Fetch Unsecured Contracts
+    const unsecured = await prisma.unsecuredContract.findMany({
+      where: { customer_id: customerId },
+      include: {
+        interest_payments: true,
+      }
+    });
+
+    // Fetch Installment Contracts
+    const installments = await prisma.installmentContract.findMany({
+      where: { customer_id: customerId },
+      include: {
+        payments: true,
+      }
+    });
+
+    // Map to a unified contract format
+    const formatted = [
+      ...pawns.map(p => {
+        const paidInterest = p.interest_payments.reduce((sum, pay) => sum + Number(pay.actual_paid), 0);
+        return {
+          id: p.id,
+          type: "pawn",
+          typeLabel: "Cầm đồ",
+          contract_code: p.contract_code,
+          loan_date: p.loan_date,
+          loan_amount: Number(p.loan_amount),
+          debt_amount: Number(p.debt_amount),
+          interest_rate: `${p.interest_rate}k /1triệu`,
+          paid_interest: paidInterest,
+          overdue_amount: 0,
+          status: p.status,
+          statusLabel: p.status === "active" ? "Đang cầm" : "Đã xong",
+        };
+      }),
+      ...unsecured.map(u => {
+        const paidInterest = u.interest_payments.reduce((sum, pay) => sum + Number(pay.actual_paid), 0);
+        return {
+          id: u.id,
+          type: "unsecured",
+          typeLabel: "Tín chấp",
+          contract_code: u.contract_code,
+          loan_date: u.loan_date,
+          loan_amount: Number(u.initial_loan_amount || u.loan_amount),
+          debt_amount: Number(u.debt_amount),
+          interest_rate: `${u.interest_rate}% /ngày`,
+          paid_interest: paidInterest,
+          overdue_amount: 0,
+          status: u.status,
+          statusLabel: u.status === "active" ? "Đang vay" : "Đã xong",
+        };
+      }),
+      ...installments.map(i => {
+        const paidAmount = i.payments.reduce((sum, pay) => sum + Number(pay.actual_paid), 0);
+        return {
+          id: i.id,
+          type: "installment",
+          typeLabel: "Trả góp",
+          contract_code: i.contract_code,
+          loan_date: i.loan_date,
+          loan_amount: Number(i.disbursed_amount),
+          debt_amount: Number(i.debt_amount),
+          interest_rate: `${Number(i.repayment_amount).toLocaleString("vi-VN")} / kỳ`,
+          paid_interest: paidAmount,
+          overdue_amount: 0,
+          status: i.status,
+          statusLabel: i.status === "active" ? "Đang trả góp" : "Đã xong",
+        };
+      })
+    ];
+
+    return res.json(formatted);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 router.delete("/:id", requirePermission(["CUSTOMERS_MANAGE"]) as any, async (req: AuthenticatedRequest, res: Response) => {
   try {
     await prisma.customer.delete({
