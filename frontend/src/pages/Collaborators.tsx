@@ -20,6 +20,21 @@ export const Collaborators: React.FC = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Auto-dismiss logic for alerts after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("active"); // Default to "Hoạt động" (active) matching Image 1
@@ -221,15 +236,19 @@ export const Collaborators: React.FC = () => {
         </h2>
       </div>
 
-      {error && (
-        <div className="alert alert-error bg-red-500/10 border-red-500/30 text-red-650 text-xs rounded-xl py-3">
-          <span>{error}</span>
-        </div>
-      )}
-
-      {success && (
-        <div className="alert alert-success bg-emerald-500/10 border-emerald-500/30 text-emerald-655 text-xs rounded-xl py-3">
-          <span>{success}</span>
+      {/* Toast notifications in top right corner */}
+      {(error || success) && (
+        <div className="toast toast-top toast-end z-[9999] mt-16 mr-4 space-y-2">
+          {success && (
+            <div className="alert alert-success bg-[#0fbc98] text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2 min-w-[280px]">
+              <span>{success}</span>
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-error bg-red-500 text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2 min-w-[280px]">
+              <span>{error}</span>
+            </div>
+          )}
         </div>
       )}
 
