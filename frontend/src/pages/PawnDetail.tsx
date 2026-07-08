@@ -349,6 +349,37 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     ? `${Number(contract.interest_rate)}k /triệu`
     : `${Number(contract.interest_rate)}% / kỳ`;
 
+  const getAssetDetailsList = () => {
+    if (!contract || !contract.commodity) return null;
+    const parts = contract.commodity.name?.split("|") || [];
+    const attrs = parts[1] ? parts[1].split(",") : [];
+    if (attrs.length === 0) return null;
+
+    const details: { label: string; value: string }[] = [];
+    if (attrs[0] && contract.license_plate) details.push({ label: attrs[0], value: contract.license_plate });
+    if (attrs[1] && contract.chassis_number) details.push({ label: attrs[1], value: contract.chassis_number });
+    if (attrs[2] && contract.engine_number) details.push({ label: attrs[2], value: contract.engine_number });
+
+    if (details.length === 0) return null;
+
+    return (
+      <div className="bg-slate-50 border border-slate-200/65 p-3 rounded-xl text-slate-700 text-xs">
+        <h4 className="font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+          <Anchor className="w-3.5 h-3.5 text-blue-500" />
+          Thông tin tài sản thế chấp
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {details.map((d, i) => (
+            <div key={i} className="flex justify-between md:flex-col border-b md:border-none border-slate-100 pb-1 md:pb-0">
+              <span className="text-slate-400 font-semibold">{d.label}:</span>
+              <span className="font-bold text-slate-800">{d.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Standard modal content structure
   const contentJSX = (
     <div className="space-y-5 text-sm">
@@ -420,6 +451,8 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
           </div>
         </div>
       </div>
+
+      {getAssetDetailsList()}
 
       {/* Reusable Toolbar list tabs of 10 buttons */}
       <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-2">

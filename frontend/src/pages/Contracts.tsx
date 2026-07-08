@@ -234,6 +234,25 @@ export const Contracts: React.FC = () => {
     setIsPawnOpen(true);
   };
 
+  const handleCommodityChange = (commId: string) => {
+    setPCommodityId(commId);
+    setPLicensePlate("");
+    setPChassisNumber("");
+    setPEngineNumber("");
+
+    if (!editingId && commId) {
+      const comm = commodities.find(c => c.id === commId);
+      if (comm) {
+        setPLoanAmount(String(Number(comm.default_amount || 0)));
+        setPInterestRate(String(Number(comm.default_interest_rate || 0)));
+        setPPeriodValue(String(comm.default_period_value || 10));
+        setPLoanDays(String(comm.default_loan_days || 30));
+        setPIsUpfront(!!comm.is_upfront_interest);
+        setPInterestTypeId(comm.interest_type_id || "");
+      }
+    }
+  };
+
   const openEditModal = (item: any) => {
     setEditingId(item.id);
     setPCustomerId(item.customer_id);
@@ -596,7 +615,7 @@ export const Contracts: React.FC = () => {
             >
               <option value="">Loại tài sản</option>
               {commodities.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name.split("|")[0]}</option>
               ))}
             </select>
           </div>
@@ -1090,13 +1109,13 @@ export const Contracts: React.FC = () => {
                     <label className="label font-bold text-slate-600 py-1">Loại tài sản *</label>
                     <select
                       value={pCommodityId}
-                      onChange={(e) => setPCommodityId(e.target.value)}
+                      onChange={(e) => handleCommodityChange(e.target.value)}
                       className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-semibold"
                       required
                     >
                       <option value="">-- Chọn loại hàng hóa --</option>
                       {commodities.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                        <option key={c.id} value={c.id}>{c.name.split("|")[0]} ({c.code})</option>
                       ))}
                     </select>
                   </div>
@@ -1300,46 +1319,65 @@ export const Contracts: React.FC = () => {
                 </div>
               </div>
 
-              {/* SECTION 4: THÔNG TIN TÀI SẢN */}
-              <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
-                <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
-                  <Anchor className="w-3 h-3" />
-                  THÔNG TIN TÀI SẢN
-                </span>
+              {/* SECTION 4: THÔNG TIN TÀI SẢN (DYNAMIC BASED ON COMMODITY CONFIG) */}
+              {(() => {
+                const selectedComm = commodities.find((c) => c.id === pCommodityId);
+                const parts = selectedComm ? selectedComm.name.split("|") : [];
+                const commAttrs = parts[1] ? parts[1].split(",") : [];
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Biển kiểm soát</label>
-                    <input
-                      type="text"
-                      placeholder="Biển số..."
-                      value={pLicensePlate}
-                      onChange={(e) => setPLicensePlate(e.target.value)}
-                      className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                    />
+                if (commAttrs.length === 0) return null;
+
+                return (
+                  <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
+                    <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
+                      <Anchor className="w-3 h-3" />
+                      THÔNG TIN TÀI SẢN
+                    </span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      {commAttrs[0] && (
+                        <div>
+                          <label className="label font-bold text-slate-600 py-1">{commAttrs[0]} *</label>
+                          <input
+                            type="text"
+                            placeholder={`Nhập ${commAttrs[0].toLowerCase()}...`}
+                            value={pLicensePlate}
+                            onChange={(e) => setPLicensePlate(e.target.value)}
+                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
+                            required
+                          />
+                        </div>
+                      )}
+                      {commAttrs[1] && (
+                        <div>
+                          <label className="label font-bold text-slate-600 py-1">{commAttrs[1]} *</label>
+                          <input
+                            type="text"
+                            placeholder={`Nhập ${commAttrs[1].toLowerCase()}...`}
+                            value={pChassisNumber}
+                            onChange={(e) => setPChassisNumber(e.target.value)}
+                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
+                            required
+                          />
+                        </div>
+                      )}
+                      {commAttrs[2] && (
+                        <div className="md:col-span-2">
+                          <label className="label font-bold text-slate-600 py-1">{commAttrs[2]} *</label>
+                          <input
+                            type="text"
+                            placeholder={`Nhập ${commAttrs[2].toLowerCase()}...`}
+                            value={pEngineNumber}
+                            onChange={(e) => setPEngineNumber(e.target.value)}
+                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850"
+                            required
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Số khung</label>
-                    <input
-                      type="text"
-                      placeholder="Số khung..."
-                      value={pChassisNumber}
-                      onChange={(e) => setPChassisNumber(e.target.value)}
-                      className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                    />
-                  </div>
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Số máy</label>
-                    <input
-                      type="text"
-                      placeholder="Số máy..."
-                      value={pEngineNumber}
-                      onChange={(e) => setPEngineNumber(e.target.value)}
-                      className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                    />
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Modal Footer buttons */}
               <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
