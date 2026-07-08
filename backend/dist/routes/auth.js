@@ -64,7 +64,7 @@ router.post("/bootstrap", async (req, res) => {
             return { store, admin };
         });
         const token = jsonwebtoken_1.default.sign({ id: result.admin.id, username: result.admin.username }, JWT_SECRET, {
-            expiresIn: "7d",
+            expiresIn: "12h",
         });
         return res.status(201).json({
             message: "Bootstrap successful",
@@ -107,7 +107,7 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ error: "Invalid password" });
         }
         const token = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username }, JWT_SECRET, {
-            expiresIn: "7d",
+            expiresIn: "12h",
         });
         return res.json({
             message: "Login successful",

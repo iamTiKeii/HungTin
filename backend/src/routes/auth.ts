@@ -71,7 +71,7 @@ router.post("/bootstrap", async (req, res) => {
     });
 
     const token = jwt.sign({ id: result.admin.id, username: result.admin.username }, JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "12h",
     });
 
     return res.status(201).json({
@@ -120,7 +120,7 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign({ id: employee.id, username: employee.username }, JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "12h",
     });
 
     return res.json({

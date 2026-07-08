@@ -84,6 +84,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveStore(null);
   };
 
+  // Auto-logout when API returns 401 or 403 (e.g. token expired after 12h)
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
+
   const switchStore = (store: StoreInfo) => {
     if (user?.permissions.includes("STORES_MANAGE")) {
       setActiveStore(store);

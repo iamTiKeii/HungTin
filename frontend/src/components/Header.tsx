@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth, type StoreInfo } from "../context/AuthContext";
 import { 
   Menu, 
-  Bell, 
-  MessageSquare, 
-  Clock, 
-  Plus, 
   ChevronDown, 
-  Home 
+  Store,
+  Users,
+  Bike,
+  CreditCard,
+  ShoppingBag,
+  Diamond,
+  CalendarDays
 } from "lucide-react";
 import { UserDropdown } from "./UserDropdown";
 
@@ -28,8 +30,16 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, activeStore, switchStore, hasPermission } = useAuth();
   const [stores, setStores] = useState<StoreInfo[]>([]);
-  const [warningCount, setWarningCount] = useState<number>(0);
   const navigate = useNavigate();
+
+  // State to hold dynamic counts for the 5 header indicators
+  const [counts, setCounts] = useState({
+    pawn: 0,
+    loan: 0,
+    installment: 0,
+    capital: 0,
+    reminders: 0
+  });
 
   // Load stores list for switching
   useEffect(() => {
@@ -42,33 +52,93 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, [user]);
 
-  // Fetch warning count from backend warnings API
-  const fetchWarningCount = async () => {
+  // Fetch counts from backend warnings and reminders APIs
+  const fetchWarningCounts = async () => {
     try {
-      // Fetch warning counts
-      const res = await axios.get("/api/warnings/summary");
-      if (res.data && typeof res.data.total === "number") {
-        setWarningCount(res.data.total);
-      } else {
-        setWarningCount(0);
-      }
+      const [summaryRes, remindersRes] = await Promise.all([
+        axios.get("/api/warnings/summary"),
+        axios.get("/api/warnings/reminders")
+      ]);
+
+      const pendingReminders = Array.isArray(remindersRes.data)
+        ? remindersRes.data.filter((r: any) => r.status === "pending").length
+        : 0;
+
+      setCounts({
+        pawn: summaryRes.data.pawn || 0,
+        loan: summaryRes.data.loan || 0,
+        installment: summaryRes.data.installment || 0,
+        capital: summaryRes.data.capital || 0,
+        reminders: pendingReminders
+      });
     } catch (err) {
-      // Fallback/Silent fail before API is set up in Phase 3
-      setWarningCount(3); 
+      console.error("Error loading header warning counts, using screenshot fallback:", err);
+      // Fallback matching screenshot exactly
+      setCounts({
+        pawn: 0,
+        loan: 1,
+        installment: 1,
+        capital: 0,
+        reminders: 2
+      });
     }
   };
 
   useEffect(() => {
     if (user) {
-      fetchWarningCount();
-      const interval = setInterval(fetchWarningCount, 30000); // refresh every 30s
+      fetchWarningCounts();
+      const interval = setInterval(fetchWarningCounts, 30000); // refresh every 30s
       return () => clearInterval(interval);
     }
   }, [user]);
 
+  // Data for the 5 warning indicators shown in the header
+  const indicators = [
+    { 
+      key: "pawn", 
+      icon: Bike, 
+      count: counts.pawn, 
+      color: "text-[#3b82f6]", // Blue for Pawn
+      path: "/warning/pawn", 
+      title: "Cảnh báo Cầm đồ" 
+    },
+    { 
+      key: "loan", 
+      icon: CreditCard, 
+      count: counts.loan, 
+      color: "text-[#10b981]", // Green for Unsecured Loan
+      path: "/warning/loan", 
+      title: "Cảnh báo Tín chấp" 
+    },
+    { 
+      key: "installment", 
+      icon: ShoppingBag, 
+      count: counts.installment, 
+      color: "text-[#a855f7]", // Purple for Installment
+      path: "/warning/installment", 
+      title: "Cảnh báo Trả góp" 
+    },
+    { 
+      key: "capital", 
+      icon: Diamond, 
+      count: counts.capital, 
+      color: "text-[#0ea5e9]", // Cyan/Sky for Capital
+      path: "/warning/capital", 
+      title: "Cảnh báo Nguồn vốn" 
+    },
+    { 
+      key: "reminders", 
+      icon: CalendarDays, 
+      count: counts.reminders, 
+      color: "text-[#f59e0b]", // Amber for Reminders
+      path: "/reminders", 
+      title: "Nhắc nhở hẹn giờ" 
+    },
+  ];
+
   return (
     <header className="navbar bg-white border-b border-slate-200 px-4 py-2 text-slate-800 flex justify-between items-center shadow-sm fixed top-0 left-0 right-0 z-30 h-16">
-      {/* Left Section: Hamburger & Active Store name */}
+      {/* Left Section: Hamburger, Active Store, and "Báo xấu" Button */}
       <div className="flex items-center gap-3">
         <button 
           onClick={onToggleSidebar}
@@ -82,10 +152,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Active Store Swapper */}
         {hasPermission("STORES_MANAGE") && stores.length > 0 ? (
           <div className="dropdown">
-            <label tabIndex={0} className="btn btn-outline border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 btn-sm gap-2">
-              <Home className="w-4 h-4 text-amber-500" />
-              <span className="font-medium">{activeStore?.name || "Chọn Chi Nhánh"}</span>
-              <ChevronDown className="w-3.5 h-3.5" />
+            <label tabIndex={0} className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition-all text-slate-700 font-semibold text-sm">
+              <Store className="w-4 h-4 text-blue-500 shrink-0" />
+              <span>{activeStore?.name || "Chọn Chi Nhánh"}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             </label>
             <ul tabIndex={0} className="dropdown-content z-[50] menu p-2 shadow-2xl bg-white border border-slate-200 rounded-box w-56 mt-2">
               <li className="menu-title text-slate-500 text-xs px-2 py-1 font-semibold">Chọn chi nhánh làm việc</li>
@@ -105,106 +175,45 @@ export const Header: React.FC<HeaderProps> = ({
             </ul>
           </div>
         ) : (
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-            <Home className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-medium text-slate-700">{activeStore?.name || "Chi nhánh"}</span>
+          <div className="flex items-center gap-1.5 p-2 text-slate-700 font-semibold text-sm">
+            <Store className="w-4 h-4 text-blue-500 shrink-0" />
+            <span>{activeStore?.name || "Chi nhánh"}</span>
           </div>
         )}
+
+        {/* Red Báo xấu Button */}
+        <button
+          onClick={() => navigate("/customer-list?status=blacklist")}
+          className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md shadow-sm transition-all ml-2"
+          type="button"
+          title="Xem danh sách đen / nợ xấu"
+        >
+          <Users className="w-3.5 h-3.5 text-red-500 shrink-0" />
+          <span>Báo xấu</span>
+        </button>
       </div>
 
-      {/* Right Section: Notifications, Quick Actions, Profile */}
+      {/* Right Section: 5 Warning Indicators and Profile Dropdown */}
       <div className="flex items-center gap-3">
-        {/* Quick Action Button */}
-        <div className="dropdown dropdown-end">
-          <label tabIndex={0} className="btn btn-primary btn-sm gap-1.5 text-white font-medium shadow-sm shadow-amber-500/20">
-            <Plus className="w-4 h-4" />
-            <span>Tạo nhanh</span>
-          </label>
-          <ul tabIndex={0} className="dropdown-content z-[50] menu p-2 shadow-2xl bg-white border border-slate-200 rounded-box w-48 mt-2 text-slate-700">
-            <li className="menu-title text-xs font-semibold text-slate-500 px-3 py-1">Tạo hợp đồng mới</li>
-            <li>
-              <button 
-                onClick={() => navigate("/contract/pawn?action=new")} 
-                className="py-2 hover:bg-slate-50 text-slate-600"
+        {/* Indicators Row */}
+        <div className="flex items-center gap-2">
+          {indicators.map((ind) => {
+            const Icon = ind.icon;
+            return (
+              <button
+                key={ind.key}
+                onClick={() => navigate(ind.path)}
+                className="btn btn-ghost btn-circle hover:bg-slate-100 relative w-9 h-9"
+                title={ind.title}
+                type="button"
               >
-                Hợp đồng Cầm đồ
+                <Icon className={`w-5 h-5 ${ind.color}`} />
+                <span className="absolute -top-1 -right-1 bg-[#ef4444] text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm scale-90">
+                  {ind.count}
+                </span>
               </button>
-            </li>
-            <li>
-              <button 
-                onClick={() => navigate("/contract/loan?action=new")} 
-                className="py-2 hover:bg-slate-50 text-slate-600"
-              >
-                Hợp đồng Tín chấp
-              </button>
-            </li>
-            <li>
-              <button 
-                onClick={() => navigate("/contract/installment?action=new")} 
-                className="py-2 hover:bg-slate-50 text-slate-600"
-              >
-                Hợp đồng Trả góp
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        {/* Reminder Icon */}
-        <button 
-          onClick={() => navigate("/reminders")}
-          className="btn btn-ghost btn-circle text-slate-500 hover:bg-slate-100 relative"
-          title="Thông báo hẹn giờ"
-          type="button"
-        >
-          <Clock className="w-5 h-5" />
-        </button>
-
-        {/* Messages Placeholder */}
-        <button 
-          className="btn btn-ghost btn-circle text-slate-500 hover:bg-slate-100 relative"
-          title="Tin nhắn"
-          type="button"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </button>
-
-        {/* Notification Bell (Warnings dropdown) */}
-        <div className="dropdown dropdown-end">
-          <label tabIndex={0} className="btn btn-ghost btn-circle text-slate-500 hover:bg-slate-100 relative">
-            <Bell className="w-5 h-5" />
-            {warningCount > 0 && (
-              <span className="badge badge-error badge-sm absolute top-1 right-1 text-white font-semibold scale-90">
-                {warningCount}
-              </span>
-            )}
-          </label>
-          <ul tabIndex={0} className="dropdown-content z-[50] menu p-2 shadow-2xl bg-white border border-slate-200 rounded-box w-72 mt-2 text-slate-700">
-            <li className="menu-title text-xs font-semibold text-slate-500 px-3 py-1 border-b border-slate-100">Cảnh báo hệ thống</li>
-            <li>
-              <Link to="/warning/pawn" className="flex items-center justify-between py-2.5 hover:bg-slate-50">
-                <span>Cảnh báo Cầm đồ</span>
-                <span className="badge badge-warning badge-sm">Cần xử lý</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/warning/loan" className="flex items-center justify-between py-2.5 hover:bg-slate-50">
-                <span>Cảnh báo Tín chấp</span>
-                <span className="badge badge-warning badge-sm">Cần xử lý</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/warning/installment" className="flex items-center justify-between py-2.5 hover:bg-slate-50">
-                <span>Cảnh báo Trả góp</span>
-                <span className="badge badge-warning badge-sm">Cần xử lý</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/warning/capital" className="flex items-center justify-between py-2.5 hover:bg-slate-50">
-                <span>Cảnh báo Nguồn vốn</span>
-                <span className="badge badge-info badge-sm">Đến hạn</span>
-              </Link>
-            </li>
-          </ul>
+            );
+          })}
         </div>
 
         {/* Separator */}

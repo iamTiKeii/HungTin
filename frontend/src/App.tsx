@@ -39,6 +39,7 @@ import { TermsPage } from "./pages/settings/TermsPage";
 import { SubscriptionPage } from "./pages/settings/SubscriptionPage";
 import { StoreAddonPage } from "./pages/settings/StoreAddonPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { Home } from "./pages/Home";
 
 // Warnings
 import { PawnWarning } from "./pages/warnings/PawnWarning";
@@ -106,7 +107,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   if (token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;
@@ -127,9 +128,22 @@ function App() {
             }
           />
 
+          {/* Private default redirect */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
+
+          {/* Home Page */}
+          <Route
+            path="/home"
+            element={
+              <PrivateLayout>
+                <Home />
+              </PrivateLayout>
+            }
+          />
+
           {/* Private dashboard */}
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <PrivateLayout>
                 <Dashboard />

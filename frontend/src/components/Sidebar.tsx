@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import axios from "axios";
 
 import {
   FileText,
@@ -18,8 +17,7 @@ import {
   Shield,
   MessageSquare,
   Send,
-  PhoneCall,
-  LayoutDashboard
+  PhoneCall
 } from "lucide-react";
 
 interface SidebarProps {
@@ -28,17 +26,6 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const location = useLocation();
-  const [systemLogo, setSystemLogo] = useState("");
-  const [systemName, setSystemName] = useState("Hưng Tín");
-
-  useEffect(() => {
-    axios.get("/api/settings")
-      .then(res => {
-        setSystemLogo(res.data.system_logo || "");
-        setSystemName(res.data.system_name || "Hưng Tín");
-      })
-      .catch(err => console.error("Error fetching logo in sidebar", err));
-  }, []);
 
   // State to track open sub-menus
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
@@ -78,13 +65,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     });
   }, [location.pathname]);
 
-  // Main navigation structure
+  // Main navigation structure (matching provided screenshot - Dashboard is removed)
   const mainNavItems = [
-    {
-      path: "/",
-      label: "Bảng Điều Khiển",
-      icon: LayoutDashboard,
-    },
     {
       path: "/contract/pawn",
       label: "Cầm đồ",
@@ -114,23 +96,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 
   return (
     <aside 
-      className={`bg-white text-slate-700 min-h-screen flex flex-col justify-between select-none shrink-0 transition-all duration-300 z-20 pt-16 border-r border-slate-200/80 ${
+      className={`bg-[#242b3d] text-slate-300 min-h-screen flex flex-col justify-between select-none shrink-0 transition-all duration-300 z-20 pt-16 border-r border-[#1a202c]/50 ${
         isOpen ? "w-64" : "w-16"
       }`}
     >
       {/* Scrollable Navigation Area */}
       <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
         {/* Brand Logo Header */}
-        <div className={`mb-6 flex items-center border-b border-slate-100 pb-4 ${isOpen ? "px-2 gap-3" : "justify-center"}`}>
-          {systemLogo ? (
-            <img src={systemLogo} alt="System Logo" className="w-8 h-8 object-contain rounded-lg shadow-sm" />
+        <div className={`mb-6 flex items-center border-b border-slate-800 pb-4 ${isOpen ? "px-2 gap-3" : "justify-center"}`}>
+          {isOpen ? (
+            <div className="flex items-center gap-2">
+              <div className="bg-[#e11d48] bg-gradient-to-r from-amber-500 to-orange-600 transform -skew-x-12 px-4 py-1.5 rounded-sm font-extrabold text-white text-lg tracking-wider shadow-sm shadow-orange-500/20">
+                2GOLD
+              </div>
+            </div>
           ) : (
-            <Shield className="w-8 h-8 text-amber-500 animate-pulse shrink-0" />
-          )}
-          {isOpen && (
-            <div className="flex flex-col truncate">
-              <span className="text-sm font-semibold text-slate-800 truncate">{systemName}</span>
-              <span className="text-[10px] text-slate-400 truncate">Hệ thống cầm đồ</span>
+            <div className="bg-gradient-to-r from-amber-500 to-orange-600 transform -skew-x-12 w-10 h-8 flex items-center justify-center rounded-sm font-extrabold text-white text-xs">
+              2G
             </div>
           )}
         </div>
@@ -147,12 +129,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   to={item.path}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-amber-500/10 text-amber-600"
-                      : "hover:bg-slate-50 hover:text-slate-900 text-slate-600"
+                      ? "bg-[#2b3247] text-white"
+                      : "hover:bg-[#2b3247]/60 hover:text-white text-slate-400"
                   }`}
                   title={!isOpen ? item.label : undefined}
                 >
-                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-amber-600" : "text-slate-500"}`} />
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-amber-500" : "text-slate-400"}`} />
                   {isOpen && <span>{item.label}</span>}
                 </Link>
               </li>
@@ -165,28 +147,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               onClick={() => isOpen && toggleSubMenu("storeManage")}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                 openMenus.storeManage && isOpen
-                  ? "bg-slate-50 text-slate-900"
-                  : "hover:bg-slate-50 hover:text-slate-900 text-slate-600"
+                  ? "bg-[#2b3247] text-white"
+                  : "hover:bg-[#2b3247]/60 hover:text-white text-slate-400"
               }`}
               title={!isOpen ? "Quản lý cửa hàng" : undefined}
               type="button"
             >
               <div className="flex items-center gap-3">
-                <Store className="w-5 h-5 shrink-0 text-slate-500" />
+                <Store className="w-5 h-5 shrink-0 text-slate-400" />
                 {isOpen && <span>Quản lý cửa hàng</span>}
               </div>
               {isOpen && (
-                openMenus.storeManage ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
+                openMenus.storeManage ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
               )}
             </button>
 
             {openMenus.storeManage && isOpen && (
-              <ul className="mt-1 ml-4 border-l border-slate-200 pl-3 space-y-0.5">
+              <ul className="mt-1 ml-4 border-l border-slate-700 pl-3 space-y-0.5">
                 <li>
                   <Link
                     to="/summary-report-shop"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/summary-report-shop" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/summary-report-shop" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Tổng quát chuỗi cửa hàng
@@ -196,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/shop-detail"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/shop-detail" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/shop-detail" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Thông tin chi tiết cửa hàng
@@ -206,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/shop-list"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/shop-list" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/shop-list" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Danh sách cửa hàng
@@ -216,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/category-list"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/category-list" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/category-list" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Cấu hình hàng hóa
@@ -226,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/cash-fund"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/cash-fund" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/cash-fund" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Nhập tiền quỹ đầu ngày
@@ -236,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/settings"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/settings" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/settings" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Cấu hình hệ thống
@@ -252,28 +234,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               onClick={() => isOpen && toggleSubMenu("cashflowManage")}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                 openMenus.cashflowManage && isOpen
-                  ? "bg-slate-50 text-slate-900"
-                  : "hover:bg-slate-50 hover:text-slate-900 text-slate-600"
+                  ? "bg-[#2b3247] text-white"
+                  : "hover:bg-[#2b3247]/60 hover:text-white text-slate-400"
               }`}
               title={!isOpen ? "Quản lý thu chi" : undefined}
               type="button"
             >
               <div className="flex items-center gap-3">
-                <Receipt className="w-5 h-5 shrink-0 text-slate-500" />
+                <Receipt className="w-5 h-5 shrink-0 text-slate-400" />
                 {isOpen && <span>Quản lý thu chi</span>}
               </div>
               {isOpen && (
-                openMenus.cashflowManage ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
+                openMenus.cashflowManage ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
               )}
             </button>
 
             {openMenus.cashflowManage && isOpen && (
-              <ul className="mt-1 ml-4 border-l border-slate-200 pl-3 space-y-0.5">
+              <ul className="mt-1 ml-4 border-l border-slate-700 pl-3 space-y-0.5">
                 <li>
                   <Link
                     to="/manage-expense"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/manage-expense" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/manage-expense" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Chi hoạt động
@@ -283,7 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/manage-income"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/manage-income" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/manage-income" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Thu hoạt động
@@ -299,12 +281,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               to="/contract/capital"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                 location.pathname === "/contract/capital"
-                  ? "bg-amber-500/10 text-amber-600"
-                  : "hover:bg-slate-50 hover:text-slate-900 text-slate-600"
+                  ? "bg-[#2b3247] text-white"
+                  : "hover:bg-[#2b3247]/60 hover:text-white text-slate-400"
               }`}
               title={!isOpen ? "Quản lý nguồn vốn" : undefined}
             >
-              <Briefcase className={`w-5 h-5 shrink-0 ${location.pathname === "/contract/capital" ? "text-amber-600" : "text-slate-500"}`} />
+              <Briefcase className={`w-5 h-5 shrink-0 ${location.pathname === "/contract/capital" ? "text-amber-500" : "text-slate-400"}`} />
               {isOpen && <span>Quản lý nguồn vốn</span>}
             </Link>
           </li>
@@ -315,28 +297,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               onClick={() => isOpen && toggleSubMenu("staffManage")}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                 openMenus.staffManage && isOpen
-                  ? "bg-slate-50 text-slate-900"
-                  : "hover:bg-slate-50 hover:text-slate-900 text-slate-600"
+                  ? "bg-[#2b3247] text-white"
+                  : "hover:bg-[#2b3247]/60 hover:text-white text-slate-400"
               }`}
               title={!isOpen ? "Quản lý nhân viên" : undefined}
               type="button"
             >
               <div className="flex items-center gap-3">
-                <UserCheck className="w-5 h-5 shrink-0 text-slate-500" />
+                <UserCheck className="w-5 h-5 shrink-0 text-slate-400" />
                 {isOpen && <span>Quản lý nhân viên</span>}
               </div>
               {isOpen && (
-                openMenus.staffManage ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
+                openMenus.staffManage ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
               )}
             </button>
 
             {openMenus.staffManage && isOpen && (
-              <ul className="mt-1 ml-4 border-l border-slate-200 pl-3 space-y-0.5">
+              <ul className="mt-1 ml-4 border-l border-slate-700 pl-3 space-y-0.5">
                 <li>
                   <Link
                     to="/staff"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/staff" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/staff" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Danh sách nhân viên
@@ -346,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/staff-permission"
                     className={`block py-1.5 px-3 text-xs rounded-lg transition-all ${
-                      location.pathname === "/staff-permission" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/staff-permission" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Phân quyền nhân viên
@@ -362,28 +344,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               onClick={() => isOpen && toggleSubMenu("reports")}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                 openMenus.reports && isOpen
-                  ? "bg-slate-50 text-slate-900"
-                  : "hover:bg-slate-50 hover:text-slate-900 text-slate-600"
+                  ? "bg-[#2b3247] text-white"
+                  : "hover:bg-[#2b3247]/60 hover:text-white text-slate-400"
               }`}
               title={!isOpen ? "Báo cáo thống kê" : undefined}
               type="button"
             >
               <div className="flex items-center gap-3">
-                <BarChart3 className="w-5 h-5 shrink-0 text-slate-500" />
+                <BarChart3 className="w-5 h-5 shrink-0 text-slate-400" />
                 {isOpen && <span>Báo cáo thống kê</span>}
               </div>
               {isOpen && (
-                openMenus.reports ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
+                openMenus.reports ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
               )}
             </button>
 
             {openMenus.reports && isOpen && (
-              <ul className="mt-1 ml-4 border-l border-slate-200 pl-3 space-y-0.5">
+              <ul className="mt-1 ml-4 border-l border-slate-700 pl-3 space-y-0.5 max-h-60 overflow-y-auto custom-scrollbar">
                 <li>
                   <Link
                     to="/report-balance"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-balance" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-balance" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Tổng kết giao dịch
@@ -393,7 +375,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-profit"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-profit" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-profit" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Tổng kết lợi nhuận
@@ -403,7 +385,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-interest-detail"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-interest-detail" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-interest-detail" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Chi tiết tiền lãi
@@ -413,7 +395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/payment-history"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/payment-history" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/payment-history" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Thống kê thu tiền
@@ -423,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-pawn-holding"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-pawn-holding" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-pawn-holding" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Hợp đồng đang vay
@@ -433,7 +415,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-warehouse-liquidation"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-warehouse-liquidation" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-warehouse-liquidation" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Hợp đồng chờ thanh lý
@@ -443,7 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-pawn-new-repurchase"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-pawn-new-repurchase" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-pawn-new-repurchase" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Hợp đồng tất toán
@@ -453,7 +435,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-pawn-new-liquidation"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-pawn-new-liquidation" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-pawn-new-liquidation" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Hợp đồng đã thanh lý
@@ -463,7 +445,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-contract-cancel"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-contract-cancel" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-contract-cancel" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Hợp đồng đã xóa
@@ -473,7 +455,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-shift-handover"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-shift-handover" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-shift-handover" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Bàn giao ca
@@ -483,7 +465,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-cash-flow-daily"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-cash-flow-daily" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-cash-flow-daily" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Dòng tiền theo ngày
@@ -493,7 +475,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     to="/report-affiliate"
                     className={`block py-1 px-2 text-xs rounded-lg transition-all ${
-                      location.pathname === "/report-affiliate" ? "text-amber-600 font-medium bg-amber-500/5" : "text-slate-500 hover:text-slate-950 hover:bg-slate-50/80"
+                      location.pathname === "/report-affiliate" ? "text-amber-500 font-medium bg-[#2b3247]/40" : "text-slate-400 hover:text-white hover:bg-[#2b3247]/20"
                     }`}
                   >
                     Cộng tác viên
@@ -507,23 +489,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 
       {/* Bottom Support Widget */}
       {isOpen ? (
-        <div className="p-4 mx-3 mb-4 bg-slate-50 rounded-2xl border border-slate-200/60 text-xs flex flex-col gap-2.5">
-          <div className="flex items-center justify-between text-slate-500 font-medium">
+        <div className="p-4 mx-3 mb-4 bg-[#2b3247] rounded-2xl border border-slate-800 text-xs flex flex-col gap-2.5">
+          <div className="flex items-center justify-between text-slate-400 font-medium">
             <span>Hỗ trợ hệ thống:</span>
           </div>
-          <div className="flex items-center gap-2 font-medium text-slate-800">
+          <div className="flex items-center gap-2 font-medium text-white">
             <PhoneCall className="w-3.5 h-3.5 text-amber-500" />
             <span>0976.862.823</span>
           </div>
-          <div className="text-[11px] text-slate-500">
-            Hạn dùng: <span className="text-green-600 font-medium">07/04/2027</span>
+          <div className="text-[11px] text-slate-400">
+            Hạn dùng: <span className="text-green-400 font-medium">07/04/2027</span>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-1">
             <a 
               href="https://t.me/2gold_support" 
               target="_blank" 
               rel="noreferrer" 
-              className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-[11px] font-medium text-slate-700 transition-all text-center shadow-sm"
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-[#20273c] border border-slate-800 hover:bg-[#20273c]/80 rounded-lg text-[11px] font-medium text-slate-300 transition-all text-center shadow-sm"
             >
               <Send className="w-3 h-3 text-[#0088cc]" />
               <span>Telegram</span>
@@ -532,7 +514,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               href="https://zalo.me/0976862823" 
               target="_blank" 
               rel="noreferrer" 
-              className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-[11px] font-medium text-slate-700 transition-all text-center shadow-sm"
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-[#20273c] border border-slate-800 hover:bg-[#20273c]/80 rounded-lg text-[11px] font-medium text-slate-300 transition-all text-center shadow-sm"
             >
               <MessageSquare className="w-3 h-3 text-[#0068ff]" />
               <span>Zalo</span>
@@ -546,12 +528,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           </a>
         </div>
       ) : (
-        <div className="py-4 flex flex-col items-center gap-4 border-t border-slate-200/80">
+        <div className="py-4 flex flex-col items-center gap-4 border-t border-slate-800">
           <div title="SĐT Hỗ trợ: 0976862823">
             <PhoneCall className="w-5 h-5 text-amber-500 hover:scale-110 cursor-pointer transition-transform" />
           </div>
           <div title="Hạn dùng: 07/04/2027">
-            <Shield className="w-5 h-5 text-slate-500" />
+            <Shield className="w-5 h-5 text-slate-400" />
           </div>
         </div>
       )}
