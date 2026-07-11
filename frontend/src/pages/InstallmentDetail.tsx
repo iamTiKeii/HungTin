@@ -7,6 +7,8 @@ import {
   ArrowLeft,
   PhoneCall,
   RefreshCw,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 
 export const InstallmentDetail: React.FC = () => {
@@ -67,6 +69,20 @@ export const InstallmentDetail: React.FC = () => {
   useEffect(() => {
     fetchContractDetails();
   }, [id]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Actions
   const handlePayCycle = async (e: React.FormEvent) => {
@@ -298,15 +314,21 @@ export const InstallmentDetail: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="alert alert-error bg-red-500/10 border-red-500/30 text-red-200 text-sm rounded-xl">
-          <span>{error}</span>
-        </div>
-      )}
-
-      {success && (
-        <div className="alert alert-success bg-emerald-500/10 border-emerald-500/30 text-emerald-200 text-sm rounded-xl">
-          <span>{success}</span>
+      {/* Toast notifications in top right corner */}
+      {(error || success) && (
+        <div className="fixed toast toast-top toast-end z-[99999] mt-16 mr-4 space-y-2">
+          {success && (
+            <div className="alert alert-success bg-[#0fbc98] text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
+              <CheckCircle className="w-4 h-4 text-white shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-error bg-red-500 text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
+              <AlertCircle className="w-4 h-4 text-white shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
       )}
 

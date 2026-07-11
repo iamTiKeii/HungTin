@@ -17,7 +17,9 @@ import {
   History,
   Bell,
   Printer,
-  Save
+  Save,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 
 interface PawnDetailProps {
@@ -71,6 +73,22 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
 
   // Blacklist state
   const [blacklistReason, setBlacklistReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Auto-dismiss alerts after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const fetchContractDetails = async () => {
     try {
@@ -125,10 +143,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
   const formatCurrency = (val: number | string) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(val) || 0);
   };
-
-  // Actions
   const handlePayInterestInline = async (paymentId: string, cycleNum: number) => {
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       const amount = payAmounts[paymentId] || "0";
@@ -144,12 +161,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi đóng lãi kỳ.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleCancelPayInterest = async (paymentId: string, cycleNum: number) => {
     if (!window.confirm(`Hủy giao dịch đóng lãi kỳ ${cycleNum}? Số tiền sẽ bị trừ ra khỏi quỹ két.`)) return;
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/cancel-pay-interest`, { paymentId });
@@ -157,11 +177,14 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi hủy đóng lãi kỳ.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handlePrincipalTx = async (action: "borrow_more" | "pay_down") => {
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       const endpoint = action === "borrow_more" ? "borrow-more" : "pay-down";
@@ -175,12 +198,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi thay đổi nợ gốc.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleExtend = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/extend`, {
@@ -193,12 +219,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi gia hạn hợp đồng.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleRedeem = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/redeem`, {
@@ -212,12 +241,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi tất toán.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleCancelRedeem = async () => {
     if (!window.confirm("Khôi phục hợp đồng cầm đồ về trạng thái hoạt động? Tiền chuộc đã đóng sẽ bị rút ra khỏi quỹ két.")) return;
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/cancel-redeem`);
@@ -225,23 +257,29 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi hủy tất toán.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleStopTimer = async (timerId: string) => {
     try {
+      setSubmitting(true);
       setError("");
       await axios.put(`/api/contracts/pawn/${id}/timers/${timerId}/stop`);
       setSuccess("Đã hủy ngày hẹn đóng.");
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi hủy hẹn.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleRecordDebtSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/record-debt`, {
@@ -253,12 +291,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi ghi nợ.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handlePayDebtSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/pay-debt`, {
@@ -270,6 +311,8 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi thu nợ.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -277,6 +320,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     e.preventDefault();
     if (!reminderContent) return;
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/pawn/${id}/reminders/log`, {
@@ -287,11 +331,14 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi lưu lịch sử nhắc nợ.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleLocalDocUpload = async (file: File, documentType: string) => {
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       const reader = new FileReader();
@@ -307,20 +354,22 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
           fetchContractDetails();
         } catch (err: any) {
           setError(err.response?.data?.error || "Lỗi tải tài liệu lên.");
+        } finally {
+          setSubmitting(false);
         }
       };
       reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
       setError("Không thể đọc tệp tin.");
+      setSubmitting(false);
     }
   };
-
-
 
   const handleSetTimer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       setError("");
       await axios.post(`/api/contracts/pawn/${id}/timers`, {
         reminder_date: timerDate,
@@ -332,24 +381,29 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi đặt lịch hẹn.");
+    } finally {
+      setSubmitting(false);
     }
   };
-
-
 
   const handleDeleteDoc = async (docId: string) => {
     if (!window.confirm("Xóa tài liệu đính kèm này?")) return;
     try {
+      setSubmitting(true);
+      setError("");
       await axios.delete(`/api/contracts/pawn/${id}/documents/${docId}`);
       fetchContractDetails();
     } catch (err) {
       console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleBlacklist = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       setError("");
       setSuccess("");
       await axios.post(`/api/customers/${contract.customer_id}/blacklist`, {
@@ -360,12 +414,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi báo xấu khách hàng.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDeleteContract = async () => {
     if (!window.confirm("CẢNH BÁO: Bạn đang xóa hợp đồng. Hệ thống sẽ tự động tính toán dòng tiền ròng thực tế phát sinh của hợp đồng này và ĐẢO NGƯỢC QUỸ KÉT tương ứng để cân đối sổ sách. Bạn có chắc chắn muốn xóa?")) return;
     try {
+      setSubmitting(true);
       setError("");
       await axios.delete(`/api/contracts/pawn/${id}`);
       if (onClose) {
@@ -375,6 +432,8 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       }
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể xóa hợp đồng.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -534,19 +593,64 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     return new Intl.NumberFormat("en-US").format(rounded) + " VNĐ";
   };
 
+  const renderPrincipalTxHistory = () => {
+    const txs = contract.principal_transactions || [];
+    return (
+      <div className="pt-6 border-t border-slate-100 mt-6 max-w-2xl text-slate-800">
+        <h4 className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wider">Lịch sử biến động gốc (Trả gốc / Vay thêm)</h4>
+        {txs.length === 0 ? (
+          <p className="text-slate-500 text-xs">Chưa có giao dịch biến động gốc nào.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table w-full text-slate-600 text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500">
+                  <th className="w-12 text-center">STT</th>
+                  <th>Thời gian</th>
+                  <th>Loại giao dịch</th>
+                  <th className="text-right">Số tiền</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                {txs.map((tx: any, idx: number) => (
+                  <tr key={tx.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <td className="text-center">{idx + 1}</td>
+                    <td>{new Date(tx.created_at || tx.transaction_date).toLocaleDateString("vi-VN")}</td>
+                    <td>
+                      <span className={`badge badge-xs font-bold text-white px-2 py-0.5 rounded ${tx.type === "pay_down" ? "bg-emerald-500 border-none" : "bg-red-500 border-none"}`}>
+                        {tx.type === "pay_down" ? "Trả bớt gốc" : "Vay thêm gốc"}
+                      </span>
+                    </td>
+                    <td className="text-right font-bold text-slate-800">{formatVND(tx.amount)}</td>
+                    <td>{tx.notes || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const contentJSX = (
     <div className="space-y-5 text-sm">
-      {/* Alert Banner */}
-      {error && (
-        <div className="alert alert-error bg-red-500/10 border border-red-500/30 text-red-700 text-xs rounded-xl py-2 px-3 flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError("")} className="btn btn-ghost btn-circle btn-xs"><X className="w-3.5 h-3.5" /></button>
-        </div>
-      )}
-      {success && (
-        <div className="alert alert-success bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs rounded-xl py-2 px-3 flex items-center justify-between">
-          <span>{success}</span>
-          <button onClick={() => setSuccess("")} className="btn btn-ghost btn-circle btn-xs"><X className="w-3.5 h-3.5" /></button>
+      {/* Toast notifications in top right corner */}
+      {(error || success) && (
+        <div className="fixed toast toast-top toast-end z-[99999] mt-16 mr-4 space-y-2">
+          {success && (
+            <div className="alert alert-success bg-[#0fbc98] text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
+              <CheckCircle className="w-4 h-4 text-white shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-error bg-red-500 text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
+              <AlertCircle className="w-4 h-4 text-white shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -752,76 +856,84 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
 
         {/* TAB 2: Trả bớt gốc */}
         {activeTab === "pay_down" && (
-          <form onSubmit={(e) => { e.preventDefault(); handlePrincipalTx("pay_down"); }} className="max-w-md space-y-4">
-            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Nhận trả bớt gốc</h3>
-            <div>
-              <label className="label font-semibold text-slate-600">Số tiền gốc khách trả bớt *</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  placeholder="Ví dụ: 5000000"
-                  value={principalAmount}
-                  onChange={(e) => setPrincipalAmount(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg"
-                  required
-                />
-                <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold">VNĐ</span>
+          <div className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); handlePrincipalTx("pay_down"); }} className="max-w-md space-y-4">
+              <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Nhận trả bớt gốc</h3>
+              <div>
+                <label className="label font-semibold text-slate-600">Số tiền gốc khách trả bớt *</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="Ví dụ: 5000000"
+                    value={principalAmount}
+                    onChange={(e) => setPrincipalAmount(e.target.value)}
+                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg"
+                    required
+                  />
+                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold">VNĐ</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="label font-semibold text-slate-600">Ghi chú giải trình</label>
-              <textarea
-                placeholder="Nhập lý do trả bớt gốc..."
-                value={principalNotes}
-                onChange={(e) => setPrincipalNotes(e.target.value)}
-                className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white w-full font-bold rounded-lg"
-              disabled={contract.status !== "active"}
-            >
-              Xác nhận trả bớt gốc
-            </button>
-          </form>
+              <div>
+                <label className="label font-semibold text-slate-600">Ghi chú giải trình</label>
+                <textarea
+                  placeholder="Nhập lý do trả bớt gốc..."
+                  value={principalNotes}
+                  onChange={(e) => setPrincipalNotes(e.target.value)}
+                  className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white w-full font-bold rounded-lg"
+                disabled={submitting || contract.status !== "active"}
+              >
+                {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
+                Xác nhận trả bớt gốc
+              </button>
+            </form>
+            {renderPrincipalTxHistory()}
+          </div>
         )}
 
         {/* TAB 3: Vay thêm */}
         {activeTab === "borrow_more" && (
-          <form onSubmit={(e) => { e.preventDefault(); handlePrincipalTx("borrow_more"); }} className="max-w-md space-y-4">
-            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Giải ngân cho vay thêm gốc</h3>
-            <div>
-              <label className="label font-semibold text-slate-600">Số tiền cho vay thêm gốc *</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  placeholder="Ví dụ: 10000000"
-                  value={principalAmount}
-                  onChange={(e) => setPrincipalAmount(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg"
-                  required
-                />
-                <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold">VNĐ</span>
+          <div className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); handlePrincipalTx("borrow_more"); }} className="max-w-md space-y-4">
+              <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Giải ngân cho vay thêm gốc</h3>
+              <div>
+                <label className="label font-semibold text-slate-600">Số tiền cho vay thêm gốc *</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="Ví dụ: 10000000"
+                    value={principalAmount}
+                    onChange={(e) => setPrincipalAmount(e.target.value)}
+                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg"
+                    required
+                  />
+                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold">VNĐ</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="label font-semibold text-slate-600">Ghi chú giải trình</label>
-              <textarea
-                placeholder="Nhập lý do giải ngân vay thêm..."
-                value={principalNotes}
-                onChange={(e) => setPrincipalNotes(e.target.value)}
-                className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-primary bg-red-500 hover:bg-red-600 border-none text-white w-full font-bold rounded-lg"
-              disabled={contract.status !== "active"}
-            >
-              Xác nhận vay thêm gốc
-            </button>
-          </form>
+              <div>
+                <label className="label font-semibold text-slate-600">Ghi chú giải trình</label>
+                <textarea
+                  placeholder="Nhập lý do giải ngân vay thêm..."
+                  value={principalNotes}
+                  onChange={(e) => setPrincipalNotes(e.target.value)}
+                  className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn btn-primary bg-red-500 hover:bg-red-600 border-none text-white w-full font-bold rounded-lg"
+                disabled={submitting || contract.status !== "active"}
+              >
+                {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
+                Xác nhận vay thêm gốc
+              </button>
+            </form>
+            {renderPrincipalTxHistory()}
+          </div>
         )}
 
         {/* TAB 4: Gia hạn */}
@@ -854,8 +966,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
             <button
               type="submit"
               className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 w-full font-extrabold rounded-lg"
-              disabled={contract.status !== "active"}
+              disabled={submitting || contract.status !== "active"}
             >
+              {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
               Xác nhận gia hạn hợp đồng
             </button>
           </form>
@@ -939,16 +1052,20 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                   {contract.status === "active" ? (
                     <button
                       type="submit"
-                      className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white w-28 font-bold rounded-lg text-xs h-9 min-h-[36px]"
+                      className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white w-32 font-bold rounded-lg text-xs h-9 min-h-[36px]"
+                      disabled={submitting}
                     >
+                      {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                       Chuộc đồ
                     </button>
                   ) : (
                     <button
                       type="button"
                       onClick={handleCancelRedeem}
-                      className="btn btn-neutral border-slate-200 text-red-500 hover:bg-red-500/10 w-48 font-bold rounded-lg text-xs h-9 min-h-[36px]"
+                      className="btn btn-neutral border-slate-200 text-red-500 hover:bg-red-500/10 w-52 font-bold rounded-lg text-xs h-9 min-h-[36px]"
+                      disabled={submitting}
                     >
+                      {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                       Hủy tất toán (Mở lại HĐ)
                     </button>
                   )}
@@ -990,8 +1107,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                   <button
                     type="submit"
                     className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
-                    disabled={contract.status !== "active"}
+                    disabled={submitting || contract.status !== "active"}
                   >
+                    {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                     Ghi nợ
                   </button>
                 </div>
@@ -1027,8 +1145,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                   <button
                     type="submit"
                     className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
-                    disabled={contract.status !== "active"}
+                    disabled={submitting || contract.status !== "active"}
                   >
+                    {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                     Thanh toán
                   </button>
                 </div>
@@ -1173,7 +1292,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                     <button
                       type="submit"
                       className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white font-bold rounded-lg text-xs h-8 min-h-[32px] px-6"
+                      disabled={submitting}
                     >
+                      {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                       Lưu lại
                     </button>
                   </div>
@@ -1338,7 +1459,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                   <button
                     type="submit"
                     className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
+                    disabled={submitting}
                   >
+                    {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                     Tạo hẹn giờ
                   </button>
                   {(() => {
@@ -1348,8 +1471,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                         type="button"
                         onClick={() => activeTimer && handleStopTimer(activeTimer.id)}
                         className={`btn btn-outline border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-bold rounded-lg text-xs h-9 min-h-[36px] px-6`}
-                        disabled={!activeTimer}
+                        disabled={submitting || !activeTimer}
                       >
+                        {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                         Dừng hẹn giờ
                       </button>
                     );
@@ -1477,7 +1601,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                 <button
                   type="submit"
                   className="btn btn-primary bg-red-600 hover:bg-red-700 border-none text-white font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
+                  disabled={submitting}
                 >
+                  {submitting ? <span className="loading loading-spinner loading-xs mr-1"></span> : null}
                   Xác nhận báo xấu
                 </button>
               </div>
