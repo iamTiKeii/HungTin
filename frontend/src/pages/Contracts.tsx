@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import axios from "axios";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -19,7 +20,8 @@ import {
   BookOpen, 
   Coins,
   X,
-  Car
+  Car,
+  Printer
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { PawnDetail } from "./PawnDetail";
@@ -28,6 +30,19 @@ export const Contracts: React.FC = () => {
   const { activeStore } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Print & Excel states
+  const [isPrintTemplateModalOpen, setIsPrintTemplateModalOpen] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState<"interest" | "negotiated">(() => (localStorage.getItem("pawn_print_template") as any) || "interest");
+  const [tempTemplate, setTempTemplate] = useState<"interest" | "negotiated">("interest");
+  const [activePrintContract, setActivePrintContract] = useState<any | null>(null);
+  const [allStores, setAllStores] = useState<any[]>([]);
+
+  const printContractRef = useRef<HTMLDivElement>(null);
+  const handlePrintContractTrigger = useReactToPrint({
+    content: () => printContractRef.current,
+    onAfterPrint: () => setActivePrintContract(null),
+  });
 
   const activeTab = location.pathname.includes("/loan")
     ? "unsecured"
@@ -153,20 +168,208 @@ export const Contracts: React.FC = () => {
     }
   };
 
+  const convertNumberToVietnameseWords = (amount: number): string => {
+    if (amount === 0) return "Không đồng";
+    const units = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+    const placeValues = ["", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ"];
+
+    const readThreeDigits = (num: number, showZeroHundred: boolean): string => {
+      let hundred = Math.floor(num / 100);
+      let ten = Math.floor((num % 100) / 10);
+      let unit = num % 10;
+      let res = "";
+
+      if (hundred > 0 || showZeroHundred) {
+        res += units[hundred] + " trăm ";
+      }
+
+      if (ten > 0) {
+        if (ten === 1) res += "mười ";
+        else res += units[ten] + " mươi ";
+      } else if (hundred > 0 && unit > 0) {
+        res += "lẻ ";
+      }
+
+      if (unit > 0) {
+        if (ten > 1 && unit === 1) res += "mốt";
+        else if (ten > 0 && unit === 5) res += "lăm";
+        else if (ten === 0 && unit === 5) res += "năm";
+        else res += units[unit];
+      }
+      return res.trim();
+    };
+
+    let numStr = String(Math.floor(amount));
+    while (numStr.length % 3 !== 0) {
+      numStr = "0" + numStr;
+    }
+
+    let groups: string[] = [];
+    for (let i = 0; i < numStr.length; i += 3) {
+      groups.push(numStr.substring(i, i + 3));
+    }
+
+    let result = "";
+    let started = false;
+
+    for (let i = 0; i < groups.length; i++) {
+      let val = Number(groups[i]);
+      let placeIdx = groups.length - 1 - i;
+
+      if (val > 0) {
+        let groupText = readThreeDigits(val, started);
+        result += groupText + " " + placeValues[placeIdx] + " ";
+        started = true;
+      }
+    }
+
+    result = result.trim();
+    if (result.length > 0) {
+      result = result.charAt(0).toUpperCase() + result.slice(1);
+    }
+    return result + " đồng";
+  };
+
+  const handleExportExcel = () => {
+    let headers: string[] = [];
+    let rows: any[][] = [];
+    let filename = "Danh_Sach_Hop_Dong";
+
+    if (activeTab === "pawn") {
+      filename = "Hop_Dong_Cam_Do";
+      headers = [
+        "Mã HĐ", "Khách hàng", "SĐT Khách hàng", "Mã TS", "Tài sản", 
+        "Tiền cầm (VNĐ)", "Ngày cầm", "Lãi đã đóng (VNĐ)", "Tiền nợ (VNĐ)", 
+        "Lãi đến hôm nay (VNĐ)", "Ngày phải đóng", "Trạng thái"
+      ];
+      rows = filteredPawnList.map((item) => {
+        const nextPayDate = getNextPaymentDate(item);
+        const accruedInt = getAccruedInterest(item);
+        const paidInt = getPaidInterest(item);
+        return [
+          item.contract_code,
+          item.customer?.full_name || "",
+          item.customer?.phone || "",
+          item.commodity?.code || "",
+          item.asset_name || "",
+          Number(item.loan_amount || 0),
+          item.loan_date ? new Date(item.loan_date).toLocaleDateString("vi-VN") : "",
+          paidInt,
+          Number(item.debt_amount || 0),
+          accruedInt,
+          nextPayDate ? nextPayDate.toLocaleDateString("vi-VN") : "",
+          item.status === "active" ? "Đang cầm" : "Đã tất toán"
+        ];
+      });
+    } else if (activeTab === "unsecured") {
+      filename = "Hop_Dong_Tin_Chap";
+      headers = [
+        "Mã HĐ", "Khách hàng", "SĐT Khách hàng", "Số nợ vay gốc (VNĐ)", 
+        "Mốc vay", "Hạn vay (Ngày)", "Lãi suất (%)", "Trạng thái"
+      ];
+      rows = unsecuredList.map((item) => [
+        item.contract_code,
+        item.customer?.full_name || "",
+        item.customer?.phone || "",
+        Number(item.loan_amount || 0),
+        item.loan_date ? new Date(item.loan_date).toLocaleDateString("vi-VN") : "",
+        item.loan_days || 0,
+        Number(item.interest_rate || 0),
+        item.status === "active" ? "Đang chạy" : "Đã đóng"
+      ]);
+    } else {
+      filename = "Hop_Dong_Tra_Gop";
+      headers = [
+        "Mã HĐ", "Khách hàng", "SĐT Khách hàng", "Tổng tiền vay (VNĐ)", 
+        "Ngày vay", "Kỳ trả", "Số tiền trả mỗi kỳ (VNĐ)", "Trạng thái"
+      ];
+      rows = installmentList.map((item) => [
+        item.contract_code,
+        item.customer?.full_name || "",
+        item.customer?.phone || "",
+        Number(item.loan_amount || 0),
+        item.loan_date ? new Date(item.loan_date).toLocaleDateString("vi-VN") : "",
+        `${item.period_value} ngày`,
+        Number(item.period_amount || 0),
+        item.status === "active" ? "Đang chạy" : "Đã đóng"
+      ]);
+    }
+
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Sheet1</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <meta charset="utf-8">
+        <style>
+          table { border-collapse: collapse; }
+          th { background-color: #1abc9c; color: white; font-weight: bold; border: 1px solid #ddd; padding: 8px; text-align: left; }
+          td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .number { text-align: right; mso-number-format: "#,##0"; }
+          .text { mso-number-format: "\\@"; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <thead>
+            <tr>
+              ${headers.map(h => `<th>${h}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                ${row.map(val => {
+                  const isNum = typeof val === "number";
+                  const formatted = isNum ? val : String(val).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                  return `<td class="${isNum ? "number" : "text"}">${formatted}</td>`;
+                }).join("")}
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}_${new Date().toISOString().split("T")[0]}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const fetchHelpers = async () => {
     try {
-      const [custs, collabs, emps, comms, pawnInt] = await Promise.all([
+      const [custs, collabs, emps, comms, pawnInt, storesRes] = await Promise.all([
         axios.get("/api/customers"),
         axios.get("/api/collaborators"),
         axios.get("/api/employees"),
         axios.get("/api/commodities"),
         axios.get("/api/contracts/pawn/interest-types"),
+        axios.get("/api/stores")
       ]);
       setCustomers(custs.data.filter((c: any) => c.status === "active"));
       setCollaborators(collabs.data);
       setEmployees(emps.data.filter((e: any) => e.status === "active"));
       setCommodities(comms.data);
       setInterestTypes(pawnInt.data);
+      setAllStores(storesRes.data);
     } catch (err) {
       console.error("Error fetching helper options", err);
     }
@@ -653,13 +856,13 @@ export const Contracts: React.FC = () => {
               </label>
               <ul tabIndex={0} className="dropdown-content z-[10] menu p-1.5 shadow-2xl bg-white border border-slate-200 rounded-xl w-52 mt-1">
                 <li>
-                  <button onClick={() => window.print()} className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
+                  <button onClick={() => { setTempTemplate(activeTemplate); setIsPrintTemplateModalOpen(true); }} className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
                     <BookOpen className="w-3.5 h-3.5 text-blue-500" />
                     Chọn mẫu hợp đồng in
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => window.print()} className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
+                  <button onClick={handleExportExcel} className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
                     <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
                     Xuất Excel
                   </button>
@@ -793,6 +996,12 @@ export const Contracts: React.FC = () => {
                                   <button onClick={() => { setSelectedDetailId(item.id); setDetailDefaultTab("timer"); }} className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
                                     <Clock className="w-3.5 h-3.5 text-amber-500" />
                                     Hẹn giờ
+                                  </button>
+                                </li>
+                                <li>
+                                  <button onClick={() => setActivePrintContract(item)} className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
+                                    <Printer className="w-3.5 h-3.5 text-emerald-500" />
+                                    In hợp đồng
                                   </button>
                                 </li>
                                 <li>
@@ -1809,6 +2018,395 @@ export const Contracts: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* PRINT CONFIG MODAL */}
+      {isPrintTemplateModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-5xl p-6 relative">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+              <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-slate-800" />
+                Chọn mẫu hợp đồng in
+              </h3>
+              <button onClick={() => setIsPrintTemplateModalOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4">
+              {/* Template 1: Mẫu lãi suất */}
+              <div 
+                onClick={() => setTempTemplate("interest")}
+                className={`border-2 rounded-2xl p-4 cursor-pointer transition-all bg-slate-50/50 hover:bg-slate-55 flex flex-col justify-between ${
+                  tempTemplate === "interest" ? "border-blue-600 bg-blue-50/10" : "border-slate-200"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-3 select-none">
+                  <input
+                    type="radio"
+                    checked={tempTemplate === "interest"}
+                    onChange={() => setTempTemplate("interest")}
+                    className="radio radio-primary radio-sm pointer-events-none"
+                  />
+                  <span className="font-bold text-slate-800 text-xs">Hợp đồng mẫu lãi suất</span>
+                </div>
+
+                {/* Scaled Preview Frame */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden h-[360px] overflow-y-auto bg-white p-6 shadow-inner text-[8px] leading-normal font-serif text-black text-left pointer-events-none select-none">
+                  <table className="w-full mb-3 border-collapse">
+                    <tbody>
+                      <tr>
+                        <td className="w-1/2 text-center align-top">
+                          <div className="font-bold text-[9px] uppercase">CẦM ĐỒ THỰC NGUYỄN</div>
+                          <div>Hotline: <strong>0354856176</strong></div>
+                          <div>Mã Giao Dịch: <strong>CĐ-151</strong></div>
+                        </td>
+                        <td className="w-1/2 text-center align-top">
+                          <div className="font-bold text-[10px] uppercase">HỢP ĐỒNG CẦM ĐỒ</div>
+                          <div className="italic text-[8px]">(Kiêm phiếu chi tiền mặt)</div>
+                          <div>Ngày: <strong>24-02-2020</strong></div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">BÊN CHO VAY</div>
+                  <div>Bên nhận cầm: <strong className="uppercase">CẦM ĐỒ THỰC NGUYỄN</strong></div>
+                  <div>Người đại diện: <strong>Thực</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Điện thoại: <strong>0354856176</strong></div>
+                  <div>Địa chỉ: <strong>62 lò đúc</strong></div>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">BÊN VAY</div>
+                  <div>Họ và tên khách: <strong>HHHH</strong></div>
+                  <div>Số CMND/CCCD: <strong>212345678</strong> &nbsp;&nbsp;&nbsp; Ngày cấp: <strong>15/08/2015</strong> &nbsp;&nbsp;&nbsp; Nơi cấp: <strong>Hà Nội</strong></div>
+                  <div>Số điện thoại: <strong>0987654321</strong></div>
+                  <div>Địa chỉ: <strong>Hà Nội</strong></div>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">THÔNG TIN TÀI SẢN &amp; GIẤY TỜ KÈM THEO</div>
+                  <div>Loại tài sản: <strong>Xe máy</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chi tiết tài sản: <strong>SH 150i</strong></div>
+                  <div>Số tiền vay: <strong>10,000,000 VNĐ</strong> (Bằng chữ: <em>Mười triệu đồng</em>)</div>
+                  <div>Thời hạn vay: Từ ngày: <strong>01/10/2019</strong> đến ngày: <strong>07/10/2019</strong></div>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">CAM KẾT CỦA BÊN VAY</div>
+                  <ol className="list-decimal pl-3 space-y-0.5 text-justify">
+                    <li>Tự nguyện chi trả lệ phí: <strong>0.3%/T</strong>, tính theo số ngày thực tế vay.</li>
+                    <li>Tôi cam kết tài sản thuộc quyền sở hữu hợp pháp của tôi và các giấy tờ đã xuất trình là bản gốc do các cơ quan quản lý nhà nước cấp. Nếu sai, tôi hoàn toàn chịu trách nhiệm trước pháp luật.</li>
+                    <li>Tôi cam kết trả gốc và lệ phí đúng hạn. Hết thời hạn trên, tôi không đến chuộc lại tài sản hoặc trả lệ phí để kéo dài thêm thời hạn thì tài sản trên sẽ thuộc quyền sở hữu của Bên cho vay. Bên cho vay không có nghĩa vụ thông báo với Bên vay.</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Template 2: Mẫu thỏa thuận */}
+              <div 
+                onClick={() => setTempTemplate("negotiated")}
+                className={`border-2 rounded-2xl p-4 cursor-pointer transition-all bg-slate-50/50 hover:bg-slate-55 flex flex-col justify-between ${
+                  tempTemplate === "negotiated" ? "border-blue-600 bg-blue-50/10" : "border-slate-200"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-3 select-none">
+                  <input
+                    type="radio"
+                    checked={tempTemplate === "negotiated"}
+                    onChange={() => setTempTemplate("negotiated")}
+                    className="radio radio-primary radio-sm pointer-events-none"
+                  />
+                  <span className="font-bold text-slate-800 text-xs">Hợp đồng mẫu lãi thỏa thuận</span>
+                </div>
+
+                {/* Scaled Preview Frame */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden h-[360px] overflow-y-auto bg-white p-6 shadow-inner text-[8px] leading-normal font-serif text-black text-left pointer-events-none select-none">
+                  <table className="w-full mb-3 border-collapse">
+                    <tbody>
+                      <tr>
+                        <td className="w-1/2 text-center align-top">
+                          <div className="font-bold text-[9px] uppercase">CẦM ĐỒ THỰC NGUYỄN</div>
+                          <div>Hotline: <strong>0354856176</strong></div>
+                          <div>Mã Giao Dịch: <strong>CĐ-151</strong></div>
+                        </td>
+                        <td className="w-1/2 text-center align-top">
+                          <div className="font-bold text-[10px] uppercase">HỢP ĐỒNG CẦM ĐỒ</div>
+                          <div className="italic text-[8px]">(Kiêm phiếu chi tiền mặt)</div>
+                          <div>Ngày: <strong>24-02-2020</strong></div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">BÊN CHO VAY</div>
+                  <div>Bên nhận cầm: <strong className="uppercase">CẦM ĐỒ THỰC NGUYỄN</strong></div>
+                  <div>Người đại diện: <strong>Thực</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Điện thoại: <strong>0354856176</strong></div>
+                  <div>Địa chỉ: <strong>62 lò đúc</strong></div>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">BÊN VAY</div>
+                  <div>Họ và tên khách: <strong>HHHH</strong></div>
+                  <div>Số CMND/CCCD: <strong>212345678</strong> &nbsp;&nbsp;&nbsp; Ngày cấp: <strong>15/08/2015</strong> &nbsp;&nbsp;&nbsp; Nơi cấp: <strong>Hà Nội</strong></div>
+                  <div>Số điện thoại: <strong>0987654321</strong></div>
+                  <div>Địa chỉ: <strong>Hà Nội</strong></div>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">THÔNG TIN TÀI SẢN &amp; GIẤY TỜ KÈM THEO</div>
+                  <div>Loại tài sản: <strong>Xe máy</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chi tiết tài sản: <strong>SH 150i</strong></div>
+                  <div>Số tiền vay: <strong>10,000,000 VNĐ</strong> (Bằng chữ: <em>Mười triệu đồng</em>)</div>
+                  <div>Thời hạn vay: Từ ngày: <strong>01/10/2019</strong> đến ngày: <strong>07/10/2019</strong></div>
+
+                  <div className="font-bold border-b border-black text-[9px] mt-2 mb-1">CAM KẾT CỦA BÊN VAY</div>
+                  <ol className="list-decimal pl-3 space-y-0.5 text-justify">
+                    <li>Tự nguyện chi trả lệ phí: <strong>Thỏa thuận</strong>.</li>
+                    <li>Tôi cam kết tài sản thuộc quyền sở hữu hợp pháp của tôi và các giấy tờ đã xuất trình là bản gốc do các cơ quan quản lý nhà nước cấp. Nếu sai, tôi hoàn toàn chịu trách nhiệm trước pháp luật.</li>
+                    <li>Tôi cam kết trả gốc và lệ phí đúng hạn. Hết thời hạn trên, tôi không đến chuộc lại tài sản hoặc trả lệ phí để kéo dài thêm thời hạn thì tài sản trên sẽ thuộc quyền sở hữu của Bên cho vay. Bên cho vay không có nghĩa vụ thông báo với Bên vay.</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-4">
+              <button
+                type="button"
+                onClick={() => setIsPrintTemplateModalOpen(false)}
+                className="btn btn-outline border-slate-200 text-slate-600 rounded-lg btn-sm text-xs px-4"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("pawn_print_template", tempTemplate);
+                  setActiveTemplate(tempTemplate);
+                  setIsPrintTemplateModalOpen(false);
+                }}
+                className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white font-bold rounded-lg btn-sm text-xs px-5"
+              >
+                Lưu cấu hình
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRINT CONTRACT PREVIEW MODAL */}
+      {activePrintContract && (() => {
+        const storeDetails = allStores.find((s) => s.id === activeStore?.id) || {
+          name: activeStore?.name || "CẦM ĐỒ THỰC NGUYỄN",
+          phone: "0354856176",
+          address: "62 lò đúc",
+          notes: ""
+        };
+        let rep = "Thực";
+        try {
+          const notesObj = JSON.parse(storeDetails.notes || "{}");
+          rep = notesObj.representative || "Thực";
+        } catch {
+          rep = storeDetails.notes || "Thực";
+        }
+
+        const customerName = activePrintContract.customer?.full_name || "";
+        const customerPhone = activePrintContract.customer?.phone || "";
+        const customerCard = activePrintContract.customer?.identity_card_number || "";
+        const customerAddress = activePrintContract.customer?.address || "";
+        const customerCardDate = activePrintContract.customer?.identity_card_date
+          ? new Date(activePrintContract.customer.identity_card_date).toLocaleDateString("vi-VN")
+          : "";
+        const customerCardPlace = activePrintContract.customer?.identity_card_place || "";
+
+        const loanStartDateStr = activePrintContract.loan_date
+          ? new Date(activePrintContract.loan_date).toLocaleDateString("vi-VN")
+          : "";
+        const loanEndDateStr = activePrintContract.loan_date && activePrintContract.loan_days
+          ? new Date(new Date(activePrintContract.loan_date).getTime() + (activePrintContract.loan_days * 24 * 60 * 60 * 1000)).toLocaleDateString("vi-VN")
+          : "";
+
+        const assetType = activePrintContract.commodity?.name?.split("|")[0] || "Tài sản";
+        const assetDetailParts = [
+          activePrintContract.asset_name,
+          activePrintContract.license_plate ? `Biển kiểm soát: ${activePrintContract.license_plate}` : "",
+          activePrintContract.chassis_number ? `Số khung: ${activePrintContract.chassis_number}` : "",
+          activePrintContract.engine_number ? `Số máy: ${activePrintContract.engine_number}` : ""
+        ].filter(Boolean);
+        const assetDetailStr = assetDetailParts.join(", ");
+
+        const amountNumber = Number(activePrintContract.loan_amount || 0);
+        const loanAmountStr = formatCurrency(amountNumber).replace("₫", "");
+        const loanAmountTextStr = convertNumberToVietnameseWords(amountNumber);
+
+        return (
+          <div className="modal modal-open">
+            <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-3xl p-6 relative">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+                <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-slate-800" />
+                  Xem trước bản in hợp đồng
+                </h3>
+                <button onClick={() => setActivePrintContract(null)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Paper Preview area with standard design */}
+              <div className="bg-slate-100 p-4 border border-slate-200 rounded-xl max-h-[480px] overflow-y-auto">
+                <div className="bg-white p-10 shadow-lg text-black font-serif text-[11px] leading-relaxed text-left" style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}>
+                  <div ref={printContractRef}>
+                    <style dangerouslySetInnerHTML={{__html: `
+                      @media print {
+                        body { background: none; padding: 0; margin: 0; }
+                        .print-contract-container { width: 100% !important; padding: 0 !important; margin: 0 !important; }
+                      }
+                    `}} />
+                    <div className="print-contract-container">
+                      <table className="w-full mb-6 border-collapse">
+                        <tbody>
+                          <tr>
+                            <td className="w-[45%] text-center align-top">
+                              <div className="font-bold text-[12px] uppercase">CẦM ĐỒ {storeDetails.name}</div>
+                              <div className="text-[9px] mt-1">Hotline: <strong>{storeDetails.phone}</strong></div>
+                              <div className="text-[9px]">Mã Giao Dịch: <strong>{activePrintContract.contract_code}</strong></div>
+                            </td>
+                            <td className="w-[55%] text-center align-top">
+                              <div className="font-bold text-[13px] uppercase">HỢP ĐỒNG CẦM ĐỒ</div>
+                              <div className="italic text-[9px]">(Kiêm phiếu chi tiền mặt)</div>
+                              <div className="text-[9px] mt-1">Ngày: <strong>{loanStartDateStr}</strong></div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Bên cho vay */}
+                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">BÊN CHO VAY</div>
+                      <table className="w-full border-collapse mb-3 text-[10px]">
+                        <tbody>
+                          <tr>
+                            <td className="font-bold w-[120px] py-0.5">Bên nhận cầm:</td>
+                            <td className="font-bold uppercase py-0.5">{storeDetails.name}</td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Người đại diện:</td>
+                            <td className="py-0.5">
+                              <div className="flex justify-between">
+                                <span>{rep}</span>
+                                <span>Điện thoại: <strong>{storeDetails.phone}</strong></span>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Địa chỉ:</td>
+                            <td className="py-0.5">{storeDetails.address}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Bên vay */}
+                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">BÊN VAY (BÊN CẦM TÀI SẢN)</div>
+                      <table className="w-full border-collapse mb-3 text-[10px]">
+                        <tbody>
+                          <tr>
+                            <td className="font-bold w-[120px] py-0.5">Họ và tên khách:</td>
+                            <td className="font-bold py-0.5">{customerName}</td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Số CMND/CCCD:</td>
+                            <td className="py-0.5">
+                              <div className="flex justify-between">
+                                <span>{customerCard}</span>
+                                <span>Ngày cấp: {customerCardDate}</span>
+                                <span>Nơi cấp: {customerCardPlace}</span>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Số điện thoại:</td>
+                            <td className="py-0.5">{customerPhone}</td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Địa chỉ:</td>
+                            <td className="py-0.5">{customerAddress}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Thông tin tài sản */}
+                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">THÔNG TIN TÀI SẢN &amp; GIẤY TỜ KÈM THEO</div>
+                      <table className="w-full border-collapse mb-3 text-[10px]">
+                        <tbody>
+                          <tr>
+                            <td className="font-bold w-[120px] py-0.5">Loại tài sản:</td>
+                            <td className="py-0.5">
+                              <div className="flex justify-between">
+                                <span>{assetType}</span>
+                                <span>Chi tiết tài sản: <strong>{assetDetailStr}</strong></span>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Số tiền vay:</td>
+                            <td className="py-0.5">
+                              <span className="font-bold">{loanAmountStr} VNĐ</span>
+                              <span className="ml-2">(Bằng chữ: <em>{loanAmountTextStr}</em>)</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold py-0.5">Thời hạn vay:</td>
+                            <td className="py-0.5">Từ ngày: <strong>{loanStartDateStr}</strong> đến ngày: <strong>{loanEndDateStr}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Cam kết */}
+                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">CAM KẾT CỦA BÊN VAY</div>
+                      <ol className="list-decimal pl-4 space-y-1 text-justify text-[10px]">
+                        {activeTemplate === "interest" ? (
+                          <li>Tự nguyện chi trả lệ phí: <strong>{activePrintContract.interest_rate}%/T</strong>, tính theo số ngày thực tế vay.</li>
+                        ) : (
+                          <li>Tự nguyện chi trả lệ phí: <strong>Thỏa thuận</strong>.</li>
+                        )}
+                        <li>Tôi cam kết tài sản thuộc quyền sở hữu hợp pháp của tôi và các giấy tờ đã xuất trình là bản gốc do các cơ quan quản lý nhà nước cấp. Nếu sai, tôi hoàn toàn chịu trách nhiệm trước pháp luật.</li>
+                        <li>Tôi cam kết trả gốc và lệ phí đúng hạn. Hết thời hạn trên, tôi không đến chuộc lại tài sản hoặc trả lệ phí để kéo dài thêm thời hạn thì tài sản trên sẽ thuộc quyền sở hữu của Bên cho vay. Bên cho vay không có nghĩa vụ thông báo với Bên vay. Lúc đó, Hợp đồng này có giá trị như giấy bán tài sản của tôi. Bên cho vay được toàn quyền thanh lý để thu hồi vốn và toàn bộ số tiền thu được từ việc thanh lý.</li>
+                        <li>Tôi thực hiện việc lập Hợp đồng này trong trạng thái tinh thần hoàn toàn minh mẫn, đã đọc kỹ và hiểu toàn bộ trách nhiệm và nghĩa vụ trả nợ vay số tiền trên. Tôi cam kết thực hiện tất cả các nội dung trong Hợp đồng này, ký tên và điểm chỉ dưới đây để làm bằng chứng.</li>
+                      </ol>
+
+                      {/* Signatures */}
+                      <table className="w-full mt-6 text-center border-collapse text-[10px]">
+                        <tbody>
+                          <tr className="font-bold">
+                            <td className="w-1/3">THẨM ĐỊNH</td>
+                            <td className="w-1/3">TRƯỞNG PGDTT</td>
+                            <td className="w-1/3">NGƯỜI VAY</td>
+                          </tr>
+                          <tr className="text-[9px] italic text-slate-500">
+                            <td>(Ký và ghi rõ họ tên)</td>
+                            <td>(Ký và ghi rõ họ tên)</td>
+                            <td>(Ký, ghi rõ họ tên và điểm chỉ)</td>
+                          </tr>
+                          <tr>
+                            <td className="pt-16"></td>
+                            <td className="pt-16"></td>
+                            <td className="pt-16 font-bold">{customerName}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer buttons */}
+              <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setActivePrintContract(null)}
+                  className="btn btn-outline border-slate-200 text-slate-600 rounded-lg btn-sm text-xs px-4"
+                >
+                  Đóng lại
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrintContractTrigger}
+                  className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-lg btn-sm text-xs px-5 flex items-center gap-1.5"
+                >
+                  <Printer className="w-4 h-4" />
+                  In hợp đồng ngay
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
