@@ -59,18 +59,15 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
   const [redeemNotes, setRedeemNotes] = useState("");
 
   // Debt state
-  const [debtAction, setDebtAction] = useState<"record_debt" | "pay_debt">("record_debt");
-  const [debtAmount, setDebtAmount] = useState("");
-  const [debtNotes, setDebtNotes] = useState("");
+  const [recordDebtAmount, setRecordDebtAmount] = useState("");
+  const [payDebtAmount, setPayDebtAmount] = useState("");
+  const [reminderContent, setReminderContent] = useState("");
 
   // Timer state
   const [timerDate, setTimerDate] = useState("");
   const [timerNotes, setTimerNotes] = useState("");
 
-  // Document upload state
-  const [docType, setDocType] = useState("id_card");
-  const [docUrl, setDocUrl] = useState("");
-  const [docFileName, setDocFileName] = useState("");
+
 
   // Blacklist state
   const [blacklistReason, setBlacklistReason] = useState("");
@@ -242,24 +239,84 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     }
   };
 
-  const handleDebtAction = async (e: React.FormEvent) => {
+  const handleRecordDebtSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError("");
       setSuccess("");
-      const endpoint = debtAction === "record_debt" ? "record-debt" : "pay-debt";
-      await axios.post(`/api/contracts/pawn/${id}/${endpoint}`, {
-        amount: Number(debtAmount),
-        notes: debtNotes,
+      await axios.post(`/api/contracts/pawn/${id}/record-debt`, {
+        amount: Number(recordDebtAmount),
+        notes: "",
       });
-      setSuccess(`Giao dịch ${debtAction === "record_debt" ? "ghi nợ" : "thu nợ"} thành công!`);
-      setDebtAmount("");
-      setDebtNotes("");
+      setSuccess("Giao dịch ghi nợ thành công!");
+      setRecordDebtAmount("");
       fetchContractDetails();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi thao tác nợ.");
+      setError(err.response?.data?.error || "Lỗi ghi nợ.");
     }
   };
+
+  const handlePayDebtSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setError("");
+      setSuccess("");
+      await axios.post(`/api/contracts/pawn/${id}/pay-debt`, {
+        amount: Number(payDebtAmount),
+        notes: "",
+      });
+      setSuccess("Giao dịch thu nợ thành công!");
+      setPayDebtAmount("");
+      fetchContractDetails();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Lỗi thu nợ.");
+    }
+  };
+
+  const handleAddReminderLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reminderContent) return;
+    try {
+      setError("");
+      setSuccess("");
+      await axios.post(`/api/contracts/pawn/${id}/reminders/log`, {
+        content: reminderContent,
+      });
+      setSuccess("Lưu lịch sử nhắc nợ thành công!");
+      setReminderContent("");
+      fetchContractDetails();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Lỗi lưu lịch sử nhắc nợ.");
+    }
+  };
+
+  const handleLocalDocUpload = async (file: File, documentType: string) => {
+    try {
+      setError("");
+      setSuccess("");
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Url = reader.result as string;
+        try {
+          await axios.post(`/api/contracts/pawn/${id}/documents`, {
+            document_type: documentType,
+            image_url: base64Url,
+            file_name: file.name,
+          });
+          setSuccess(`Upload ảnh đính kèm thành công!`);
+          fetchContractDetails();
+        } catch (err: any) {
+          setError(err.response?.data?.error || "Lỗi tải tài liệu lên.");
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setError("Không thể đọc tệp tin.");
+    }
+  };
+
+
 
   const handleSetTimer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,22 +335,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     }
   };
 
-  const handleUploadDoc = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!docUrl) return;
-    try {
-      await axios.post(`/api/contracts/pawn/${id}/documents`, {
-        document_type: docType,
-        image_url: docUrl,
-        file_name: docFileName || "Tài liệu hợp đồng",
-      });
-      setDocUrl("");
-      setDocFileName("");
-      fetchContractDetails();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+
 
   const handleDeleteDoc = async (docId: string) => {
     if (!window.confirm("Xóa tài liệu đính kèm này?")) return;
@@ -508,20 +550,20 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
         </div>
       )}
 
-      {/* Grid summary stats matching Image 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200/60 p-4 rounded-xl text-slate-700">
-        <div className="space-y-2">
-          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
-            <span className="text-slate-400 font-medium">Khách hàng:</span>
+      {/* Grid summary stats matching screenshot */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200/60 p-4 rounded-xl text-slate-700 text-xs">
+        <div className="space-y-2 md:border-r md:border-slate-200/50 md:pr-6">
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
+            <span className="text-red-500 font-bold">Tên khách:</span>
             <Link to={`/customer-list`} className="text-red-500 font-bold hover:underline">
               {contract.customer?.full_name}
             </Link>
           </div>
-          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
             <span className="text-slate-400 font-medium">Tiền cầm:</span>
-            <span className="font-bold text-slate-800">{formatCurrency(contract.loan_amount)}</span>
+            <span className="font-bold text-slate-800">{formatVND(contract.loan_amount)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
             <span className="text-slate-400 font-medium">Vay từ ngày:</span>
             <span className="font-bold text-slate-800">
               {new Date(contract.loan_date).toLocaleDateString("vi-VN")} → {
@@ -529,7 +571,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
               }
             </span>
           </div>
-          <div className="flex justify-between border-t border-slate-200/50 pt-1.5">
+          <div className="flex justify-between">
             <span className="text-slate-400 font-medium">Ngày trả lãi gần nhất:</span>
             <span className="font-semibold text-slate-600">
               {lastPaid ? new Date(lastPaid.paid_date).toLocaleDateString("vi-VN") : "Chưa đóng lãi kỳ nào"}
@@ -537,26 +579,32 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+        <div className="space-y-2 md:pl-2">
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
             <span className="text-slate-400 font-medium">Lãi suất:</span>
             <span className="font-bold text-slate-800">{rateLabel}</span>
           </div>
-          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
             <span className="text-slate-400 font-medium">Tiền lãi đã đóng:</span>
             <span className="font-bold text-slate-800">
-              {formatCurrency(contract.interest_payments?.filter((p: any) => p.is_paid).reduce((sum: number, p: any) => sum + Number(p.actual_paid || 0), 0))}
+              {formatVND(contract.interest_payments?.filter((p: any) => p.is_paid).reduce((sum: number, p: any) => sum + Number(p.actual_paid || 0), 0))}
             </span>
           </div>
-          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
-            <span className="text-slate-400 font-medium">Nợ cũ KH / HĐ:</span>
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
+            <span className="text-red-500 font-bold">Nợ cũ KH:</span>
             <span className="font-bold text-red-500">
-              {formatCurrency(contract.customer?.debt_amount || 0)} / {formatCurrency(contract.debt_amount)}
+              {formatVND(contract.customer?.debt_amount || 0)}
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between border-b border-slate-200/30 pb-1">
+            <span className="text-red-500 font-bold">Nợ cũ HĐ:</span>
+            <span className="font-bold text-red-500">
+              {formatVND(contract.debt_amount)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
             <span className="text-slate-400 font-medium">Trạng thái:</span>
-            <span className={`badge badge-sm text-xs font-bold text-white bg-blue-500 border-none px-2 rounded`}>
+            <span className={`badge badge-sm text-[10px] font-bold text-white bg-blue-500 border-none px-2 rounded-md`}>
               {contract.status === "active" ? "Đang cầm" : "Đã tất toán"}
             </span>
           </div>
@@ -912,62 +960,82 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
 
         {/* TAB 6: Nợ */}
         {activeTab === "debt" && (
-          <div className="space-y-6">
-            <form onSubmit={handleDebtAction} className="max-w-md space-y-4 border-b border-slate-100 pb-6">
-              <h3 className="font-bold text-slate-800">Quản lý nợ tích lũy</h3>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-xs text-slate-700">
-                  <input
-                    type="radio"
-                    name="debt_action"
-                    checked={debtAction === "record_debt"}
-                    onChange={() => setDebtAction("record_debt")}
-                    className="radio radio-primary"
-                  />
-                  <span>Ghi nhận nợ mới</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-xs text-slate-700">
-                  <input
-                    type="radio"
-                    name="debt_action"
-                    checked={debtAction === "pay_debt"}
-                    onChange={() => setDebtAction("pay_debt")}
-                    className="radio radio-primary"
-                  />
-                  <span>Khách trả nợ cũ</span>
-                </label>
-              </div>
-              <div>
-                <label className="label font-semibold text-slate-600">Số tiền công nợ *</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    placeholder="Ví dụ: 500000"
-                    value={debtAmount}
-                    onChange={(e) => setDebtAmount(e.target.value)}
-                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg"
-                    required
-                  />
-                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold">VNĐ</span>
+          <div className="space-y-6 max-w-2xl">
+            {/* Form 1: Khách hàng nợ lãi - Trả tiền thừa */}
+            <form onSubmit={handleRecordDebtSubmit} className="space-y-4 border-b border-slate-100 pb-6 text-slate-800">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                <Coins className="w-4 h-4 text-amber-500" />
+                Khách hàng nợ lãi - Trả tiền thừa
+              </h4>
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4 text-right font-bold text-slate-600">Số tiền nợ lại <span className="text-red-500">*</span></div>
+                <div className="col-span-8">
+                  <div className="relative w-full max-w-md flex items-center">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={recordDebtAmount}
+                      onChange={(e) => setRecordDebtAmount(e.target.value)}
+                      disabled={contract.status !== "active"}
+                      className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg text-xs h-9 pr-14"
+                      required
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold bg-slate-50 border-l border-slate-200 rounded-r-lg px-2 text-[10px]">VNĐ</span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="label font-semibold text-slate-600">Ghi chú diễn giải</label>
-                <textarea
-                  placeholder="Nhập ghi chú nợ..."
-                  value={debtNotes}
-                  onChange={(e) => setDebtNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none"
-                />
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4"></div>
+                <div className="col-span-8">
+                  <button
+                    type="submit"
+                    className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
+                    disabled={contract.status !== "active"}
+                  >
+                    Ghi nợ
+                  </button>
+                </div>
               </div>
-              <button
-                type="submit"
-                className="btn btn-primary bg-[#9c27b0] hover:bg-[#7b1fa2] border-none text-white w-full font-bold rounded-lg"
-              >
-                Cập nhật công nợ
-              </button>
             </form>
 
+            {/* Form 2: Khách hàng trả nợ */}
+            <form onSubmit={handlePayDebtSubmit} className="space-y-4 pb-6 text-slate-800">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                <Coins className="w-4 h-4 text-emerald-500" />
+                Khách hàng trả nợ
+              </h4>
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4 text-right font-bold text-slate-600">Số tiền trả nợ <span className="text-red-500">*</span></div>
+                <div className="col-span-8">
+                  <div className="relative w-full max-w-md flex items-center">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={payDebtAmount}
+                      onChange={(e) => setPayDebtAmount(e.target.value)}
+                      disabled={contract.status !== "active"}
+                      className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg text-xs h-9 pr-14"
+                      required
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-bold bg-slate-50 border-l border-slate-200 rounded-r-lg px-2 text-[10px]">VNĐ</span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4"></div>
+                <div className="col-span-8">
+                  <button
+                    type="submit"
+                    className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
+                    disabled={contract.status !== "active"}
+                  >
+                    Thanh toán
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Lịch sử nợ */}
             <div>
               <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-wider">Lịch sử công nợ phụ</h4>
               {contract.debt_history?.length === 0 ? (
@@ -988,11 +1056,11 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                         <tr key={d.id} className="border-b border-slate-100">
                           <td>{new Date(d.created_at).toLocaleDateString("vi-VN")}</td>
                           <td>
-                            <span className={`badge badge-xs font-bold ${d.type === "record" ? "badge-error" : "badge-success"}`}>
+                            <span className={`badge badge-xs font-bold ${d.type === "record" ? "badge-error text-white" : "badge-success text-white"}`}>
                               {d.type === "record" ? "Ghi nợ" : "Thu nợ"}
                             </span>
                           </td>
-                          <td className="font-bold">{formatCurrency(d.amount)}</td>
+                          <td className="font-bold">{formatVND(d.amount)}</td>
                           <td>{d.notes}</td>
                         </tr>
                       ))}
@@ -1007,59 +1075,69 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
         {/* TAB 7: Chứng từ */}
         {activeTab === "docs" && (
           <div className="space-y-6">
-            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Hồ sơ ảnh chứng từ đính kèm</h3>
-            <form onSubmit={handleUploadDoc} className="max-w-md space-y-4 bg-slate-50 p-4 border border-slate-200 rounded-lg">
+            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider">Hồ sơ ảnh chứng từ đính kèm</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Box 1: Upload ảnh khách hàng */}
               <div>
-                <label className="label font-semibold text-slate-600">Loại tài liệu</label>
-                <select
-                  value={docType}
-                  onChange={(e) => setDocType(e.target.value)}
-                  className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg focus:outline-none"
-                >
-                  <option value="id_card">Ảnh CCCD/Hộ chiếu</option>
-                  <option value="asset_photo">Ảnh chụp tài sản</option>
-                  <option value="contract_photo">Ảnh hồ sơ ký tên</option>
-                  <option value="other">Tài liệu khác</option>
-                </select>
+                <h4 className="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-blue-500" />
+                  Upload ảnh khách hàng
+                </h4>
+                <label className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors min-h-[140px]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleLocalDocUpload(e.target.files[0], "id_card");
+                      }
+                    }}
+                  />
+                  <div className="bg-slate-100 p-2.5 rounded-full text-slate-500 mb-2">
+                    <Upload className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <span className="font-bold text-slate-700 text-[11px]">Thả tệp vào đây hoặc nhấp để tải lên.</span>
+                  <span className="text-slate-400 text-[10px] mt-0.5">Chỉ cho phép ảnh</span>
+                </label>
               </div>
-              <div>
-                <label className="label font-semibold text-slate-600">Tên tài liệu / Tên file *</label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Anh_chup_xe_Honda_SH"
-                  value={docFileName}
-                  onChange={(e) => setDocFileName(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg focus:outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label font-semibold text-slate-600">Đường dẫn ảnh (URL) *</label>
-                <input
-                  type="text"
-                  placeholder="https://imgur.com/example.png"
-                  value={docUrl}
-                  onChange={(e) => setDocUrl(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg focus:outline-none"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn btn-primary bg-slate-700 hover:bg-slate-800 border-none text-white w-full font-bold rounded-lg gap-1.5"
-              >
-                <Upload className="w-4 h-4" />
-                Upload đính kèm
-              </button>
-            </form>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Box 2: Upload ảnh chứng từ hợp đồng */}
+              <div>
+                <h4 className="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-blue-500" />
+                  Upload ảnh chứng từ hợp đồng
+                </h4>
+                <label className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors min-h-[140px]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleLocalDocUpload(e.target.files[0], "contract_photo");
+                      }
+                    }}
+                  />
+                  <div className="bg-slate-100 p-2.5 rounded-full text-slate-500 mb-2">
+                    <Upload className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <span className="font-bold text-slate-700 text-[11px]">Thả tệp vào đây hoặc nhấp để tải lên.</span>
+                  <span className="text-slate-400 text-[10px] mt-0.5">Chỉ cho phép ảnh</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
               {contract.documents?.map((doc: any) => (
                 <div key={doc.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm relative group bg-white">
                   <img src={doc.image_url} alt={doc.file_name} className="w-full h-32 object-cover" />
-                  <div className="p-2">
+                  <div className="p-2 bg-slate-50/50 border-t border-slate-100">
                     <p className="font-bold text-xs truncate text-slate-700">{doc.file_name}</p>
-                    <p className="text-[10px] text-slate-500 uppercase mt-0.5">{doc.document_type}</p>
+                    <p className="text-[10px] text-slate-500 uppercase mt-0.5 font-semibold">
+                      {doc.document_type === "id_card" ? "CCCD/Hộ chiếu" : doc.document_type === "contract_photo" ? "Ảnh chứng từ HĐ" : "Tài liệu khác"}
+                    </p>
                   </div>
                   <button
                     onClick={() => handleDeleteDoc(doc.id)}
@@ -1077,29 +1155,145 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
 
         {/* TAB 8: Lịch sử */}
         {activeTab === "history" && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Nhật ký giao dịch hệ thống</h3>
-            <div className="overflow-x-auto">
-              <table className="table w-full text-slate-600 text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th>Thời gian</th>
-                    <th>Nhân viên lập</th>
-                    <th>Nghiệp vụ thực hiện</th>
-                    <th>Ghi chú biến động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contract.transaction_ledgers?.map((led: any) => (
-                    <tr key={led.id} className="border-b border-slate-100">
-                      <td>{new Date(led.created_at).toLocaleString("vi-VN")}</td>
-                      <td>{led.employee?.full_name || "Hệ thống"}</td>
-                      <td className="font-bold text-slate-700">{led.action_type}</td>
-                      <td>{led.notes}</td>
+          <div className="space-y-6">
+            {/* Lịch sử nhắc nợ */}
+            <div className="bg-slate-50/50 border border-slate-200/60 p-4 rounded-xl space-y-4">
+              <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Lịch sử nhắc nợ</h4>
+              <form onSubmit={handleAddReminderLog} className="space-y-3 max-w-xl">
+                <div className="grid grid-cols-12 gap-3 items-start">
+                  <div className="col-span-3 text-right font-bold text-slate-600 pt-1 text-xs">Nội dung nhắc nợ <span className="text-red-500">*</span></div>
+                  <div className="col-span-9 space-y-2">
+                    <textarea
+                      placeholder="Nhập nội dung nhắc nợ"
+                      value={reminderContent}
+                      onChange={(e) => setReminderContent(e.target.value)}
+                      className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-16 focus:outline-none text-xs"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white font-bold rounded-lg text-xs h-8 min-h-[32px] px-6"
+                    >
+                      Lưu lại
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <div className="overflow-x-auto pt-2">
+                <table className="table w-full text-slate-600 text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500">
+                      <th className="w-12 text-center">STT</th>
+                      <th>Thời gian</th>
+                      <th>Người thao tác</th>
+                      <th>Nội dung</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {!contract.debt_reminders || contract.debt_reminders.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center py-6 text-slate-400">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-xs">Không có dữ liệu</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      contract.debt_reminders.map((rem: any, idx: number) => (
+                        <tr key={rem.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                          <td className="text-center">{idx + 1}</td>
+                          <td>{new Date(rem.created_at).toLocaleString("vi-VN")}</td>
+                          <td className="font-semibold text-slate-700">{rem.employee?.full_name || "Giao dịch viên"}</td>
+                          <td>{rem.content}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Lịch sử thao tác */}
+            <div className="bg-slate-50/50 border border-slate-200/60 p-4 rounded-xl space-y-4">
+              <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-2">
+                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Lịch sử thao tác</h4>
+                <span className="text-[10px] text-red-500 font-semibold italic">
+                  * Lưu ý : Tiền khác đã được cộng vào tiền ghi có / ghi nợ
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="table w-full text-slate-600 text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500">
+                      <th className="w-12 text-center">STT</th>
+                      <th>Thời gian</th>
+                      <th>Giao dịch viên</th>
+                      <th className="text-right">Số tiền ghi nợ</th>
+                      <th className="text-right">Số tiền ghi có</th>
+                      <th>Nội dung</th>
+                      <th>Ghi chú</th>
+                      <th className="text-right">Tiền khác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!contract.transaction_ledgers || contract.transaction_ledgers.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="text-center py-6 text-slate-400">
+                          Không có dữ liệu thao tác
+                        </td>
+                      </tr>
+                    ) : (
+                      <>
+                        {contract.transaction_ledgers.map((led: any, idx: number) => (
+                          <tr key={led.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                            <td className="text-center">{idx + 1}</td>
+                            <td>{new Date(led.created_at).toLocaleString("vi-VN")}</td>
+                            <td>{led.employee?.full_name || "Hệ thống"}</td>
+                            <td className="text-right font-bold text-red-500">
+                              {Number(led.debit_amount) > 0 ? formatVND(led.debit_amount) : "-"}
+                            </td>
+                            <td className="text-right font-bold text-blue-600">
+                              {Number(led.credit_amount) > 0 ? formatVND(led.credit_amount) : "-"}
+                            </td>
+                            <td className="font-bold text-slate-700">{led.content || led.action_type}</td>
+                            <td>{led.notes || "-"}</td>
+                            <td className="text-right text-slate-500">
+                              {Number(led.other_amount) > 0 ? formatVND(led.other_amount) : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                        {/* Summary Row */}
+                        <tr className="bg-slate-100/50 font-bold border-t-2 border-slate-300">
+                          <td colSpan={3} className="text-right text-slate-700 uppercase text-[10px] tracking-wider">Tổng tiền</td>
+                          <td className="text-right text-red-500">
+                            {formatVND(contract.transaction_ledgers.reduce((sum: number, led: any) => sum + Number(led.debit_amount || 0), 0))}
+                          </td>
+                          <td className="text-right text-blue-600">
+                            {formatVND(contract.transaction_ledgers.reduce((sum: number, led: any) => sum + Number(led.credit_amount || 0), 0))}
+                          </td>
+                          <td colSpan={2}></td>
+                          <td className="text-right text-slate-700">
+                            {formatVND(contract.transaction_ledgers.reduce((sum: number, led: any) => sum + Number(led.other_amount || 0), 0))}
+                          </td>
+                        </tr>
+                        {/* Difference Row */}
+                        <tr className="bg-slate-100/50 font-bold">
+                          <td colSpan={3} className="text-right text-slate-700 uppercase text-[10px] tracking-wider">Chênh lệch</td>
+                          <td colSpan={2} className="text-center text-red-500">
+                            {formatVND(
+                              contract.transaction_ledgers.reduce((sum: number, led: any) => sum + Number(led.credit_amount || 0), 0) -
+                              contract.transaction_ledgers.reduce((sum: number, led: any) => sum + Number(led.debit_amount || 0), 0)
+                            )}
+                          </td>
+                          <td colSpan={3}></td>
+                        </tr>
+                      </>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -1107,106 +1301,187 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
         {/* TAB 9: Hẹn giờ */}
         {activeTab === "timer" && (
           <div className="space-y-6">
-            <form onSubmit={handleSetTimer} className="max-w-md space-y-4 border-b border-slate-100 pb-6">
-              <h3 className="font-bold text-slate-800">Đặt lịch hẹn đóng lãi / trả nợ</h3>
-              <div>
-                <label className="label font-semibold text-slate-600">Thời gian hẹn đóng *</label>
-                <input
-                  type="datetime-local"
-                  value={timerDate}
-                  onChange={(e) => setTimerDate(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg"
-                  required
-                />
+            <form onSubmit={handleSetTimer} className="max-w-xl space-y-4 border-b border-slate-100 pb-6 text-slate-800">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                <Bell className="w-4 h-4 text-rose-500" />
+                Hẹn ngày khách đóng tiền
+              </h4>
+
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-3 text-right font-bold text-slate-600 text-xs">Ngày hẹn <span className="text-red-500">*</span></div>
+                <div className="col-span-9">
+                  <input
+                    type="date"
+                    value={timerDate}
+                    onChange={(e) => setTimerDate(e.target.value)}
+                    className="input input-bordered w-full max-w-xs bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg text-xs h-9"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label className="label font-semibold text-slate-600">Nội dung nhắc nhở *</label>
-                <textarea
-                  placeholder="Nhập nội dung hẹn nợ..."
-                  value={timerNotes}
-                  onChange={(e) => setTimerNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none"
-                  required
-                />
+
+              <div className="grid grid-cols-12 gap-4 items-start">
+                <div className="col-span-3 text-right font-bold text-slate-600 pt-1.5 text-xs">Ghi chú</div>
+                <div className="col-span-9">
+                  <textarea
+                    placeholder="Nhập ghi chú hẹn giờ"
+                    value={timerNotes}
+                    onChange={(e) => setTimerNotes(e.target.value)}
+                    className="textarea textarea-bordered w-full max-w-md bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-lg text-xs h-16"
+                  />
+                </div>
               </div>
-              <button
-                type="submit"
-                className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 w-full font-bold rounded-lg"
-              >
-                Lưu lịch hẹn
-              </button>
+
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-3"></div>
+                <div className="col-span-9 flex gap-3">
+                  <button
+                    type="submit"
+                    className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
+                  >
+                    Tạo hẹn giờ
+                  </button>
+                  {(() => {
+                    const activeTimer = contract.reminders?.find((r: any) => r.status === "active");
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => activeTimer && handleStopTimer(activeTimer.id)}
+                        className={`btn btn-outline border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-bold rounded-lg text-xs h-9 min-h-[36px] px-6`}
+                        disabled={!activeTimer}
+                      >
+                        Dừng hẹn giờ
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
             </form>
 
             <div>
-              <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-wider">Danh sách nhắc nợ</h4>
-              {contract.reminders?.length === 0 ? (
-                <p className="text-slate-500 text-xs">Chưa có lịch nhắc nợ nào</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="table w-full text-slate-600 text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500">
-                        <th>Thời gian hẹn</th>
-                        <th>Nội dung</th>
-                        <th>Trạng thái</th>
-                        <th className="text-right">Tác vụ</th>
+              <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-wider">Lịch sử hẹn giờ</h4>
+              <div className="overflow-x-auto">
+                <table className="table w-full text-slate-600 text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500">
+                      <th className="w-12 text-center">STT</th>
+                      <th>Trạng thái</th>
+                      <th>Hẹn đến ngày</th>
+                      <th>Nội dung hẹn giờ</th>
+                      <th>Ngày tạo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!contract.reminders || contract.reminders.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-6 text-slate-400">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-xs">Không có dữ liệu</span>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {contract.reminders?.map((rem: any) => (
-                        <tr key={rem.id} className="border-b border-slate-100">
-                          <td>{new Date(rem.reminder_date).toLocaleString("vi-VN")}</td>
-                          <td>{rem.content}</td>
+                    ) : (
+                      contract.reminders.map((rem: any, idx: number) => (
+                        <tr key={rem.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                          <td className="text-center">{idx + 1}</td>
                           <td>
-                            <span className={`badge badge-xs font-bold ${rem.status === "active" ? "badge-warning" : "badge-neutral text-slate-400"}`}>
+                            <span className={`badge badge-xs font-bold text-[9px] px-1.5 py-0.5 rounded ${rem.status === "active" ? "bg-amber-400 text-slate-950" : "bg-slate-200 text-slate-500"}`}>
                               {rem.status === "active" ? "Đang chờ" : "Đã hủy/Xong"}
                             </span>
                           </td>
-                          <td className="text-right">
-                            {rem.status === "active" && (
-                              <button
-                                onClick={() => handleStopTimer(rem.id)}
-                                className="text-red-500 hover:underline font-bold text-xs"
-                                type="button"
-                              >
-                                Hủy hẹn
-                              </button>
-                            )}
-                          </td>
+                          <td className="font-bold text-slate-700">{new Date(rem.reminder_date).toLocaleDateString("vi-VN")}</td>
+                          <td>{rem.content || "-"}</td>
+                          <td>{new Date(rem.created_at).toLocaleDateString("vi-VN")}</td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
         {/* TAB 10: Báo xấu */}
         {activeTab === "blacklist" && (
-          <form onSubmit={handleBlacklist} className="max-w-md space-y-4">
-            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Báo xấu khách hàng (Đưa vào danh sách đen)</h3>
-            <div className="alert alert-warning bg-amber-500/10 border border-amber-500/20 text-slate-700 text-xs rounded-lg p-3 leading-relaxed">
-              <span className="font-semibold block mb-1">CẢNH BÁO BLACKLIST:</span>
-              Hành động này sẽ đánh dấu khách hàng này vào danh sách đen trên toàn chuỗi cửa hàng. Mọi giao dịch viên khác sẽ nhận được cảnh báo đỏ khi tạo hợp đồng mới liên quan đến khách hàng này.
+          <form onSubmit={handleBlacklist} className="max-w-xl space-y-4 text-slate-800">
+            <h4 className="font-bold text-red-600 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
+              Báo xấu khách hàng này
+            </h4>
+
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-3 text-right font-bold text-slate-600 text-xs">Tên khách hàng <span className="text-red-500">*</span></div>
+              <div className="col-span-9">
+                <input
+                  type="text"
+                  value={contract.customer?.full_name || ""}
+                  disabled
+                  className="input input-bordered w-full max-w-md bg-slate-50 border-slate-200 text-slate-500 rounded-lg text-xs h-9 cursor-not-allowed"
+                />
+              </div>
             </div>
-            <div>
-              <label className="label font-semibold text-slate-600">Lý do đưa vào danh sách đen *</label>
-              <textarea
-                placeholder="Nhập chi tiết hành vi vi phạm (ví dụ: bùng lãi, thế chấp xe máy gian lận...)"
-                value={blacklistReason}
-                onChange={(e) => setBlacklistReason(e.target.value)}
-                className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-24 focus:outline-none"
-                required
-              />
+
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-3 text-right font-bold text-slate-600 text-xs">Số điện thoại <span className="text-red-500">*</span></div>
+              <div className="col-span-9">
+                <input
+                  type="text"
+                  value={contract.customer?.phone || ""}
+                  disabled
+                  className="input input-bordered w-full max-w-md bg-slate-50 border-slate-200 text-slate-500 rounded-lg text-xs h-9 cursor-not-allowed"
+                />
+              </div>
             </div>
-            <button
-              type="submit"
-              className="btn btn-primary bg-red-600 hover:bg-red-700 border-none text-white w-full font-bold rounded-lg"
-            >
-              Xác nhận báo xấu khách hàng
-            </button>
+
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-3 text-right font-bold text-slate-600 text-xs">Số CCCD/Hộ chiếu <span className="text-red-500">*</span></div>
+              <div className="col-span-9">
+                <input
+                  type="text"
+                  value={contract.customer?.identity_card_number || ""}
+                  disabled
+                  className="input input-bordered w-full max-w-md bg-slate-50 border-slate-200 text-slate-500 rounded-lg text-xs h-9 cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-3 text-right font-bold text-slate-600 text-xs">Địa chỉ <span className="text-red-500">*</span></div>
+              <div className="col-span-9">
+                <input
+                  type="text"
+                  value={contract.customer?.address || ""}
+                  disabled
+                  className="input input-bordered w-full max-w-md bg-slate-50 border-slate-200 text-slate-500 rounded-lg text-xs h-9 cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-4 items-start">
+              <div className="col-span-3 text-right font-bold text-slate-600 pt-1.5 text-xs">Nội dung báo <span className="text-red-500">*</span></div>
+              <div className="col-span-9">
+                <textarea
+                  placeholder="Nhập nội dung báo"
+                  value={blacklistReason}
+                  onChange={(e) => setBlacklistReason(e.target.value)}
+                  className="textarea textarea-bordered w-full max-w-md bg-white border-slate-200 text-slate-800 focus:border-red-500 focus:outline-none rounded-lg text-xs h-20"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-3"></div>
+              <div className="col-span-9">
+                <button
+                  type="submit"
+                  className="btn btn-primary bg-red-600 hover:bg-red-700 border-none text-white font-bold rounded-lg text-xs h-9 min-h-[36px] px-6"
+                >
+                  Xác nhận báo xấu
+                </button>
+              </div>
+            </div>
           </form>
         )}
       </div>
@@ -1229,7 +1504,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
   if (isModal) {
     return (
       <div className="modal modal-open">
-        <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl p-6 relative">
+        <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl w-11/12 max-w-[1320px] max-h-[95vh] overflow-y-auto p-6 relative" style={{ zoom: 0.92 }}>
           <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
             <h3 className="font-black text-lg text-slate-800 flex items-center gap-2">
               <FileText className="w-5 h-5 text-amber-500" />
