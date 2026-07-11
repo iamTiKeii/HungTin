@@ -18,7 +18,8 @@ import {
   User, 
   BookOpen, 
   Coins,
-  X
+  X,
+  Car
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { PawnDetail } from "./PawnDetail";
@@ -197,7 +198,7 @@ export const Contracts: React.FC = () => {
   const openCreateModal = () => {
     setEditingId(null);
     setPCustomerId("");
-    setCustomerType("existing");
+    setCustomerType("new");
     setPCommodityId("");
     setPAssetName("");
     setPLoanAmount("");
@@ -937,35 +938,28 @@ export const Contracts: React.FC = () => {
       )}
 
       {/* PAWN CREATE / EDIT MODAL matching Image 2 */}
-      {isPawnOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl p-6 relative">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
-              <h3 className="font-extrabold text-lg text-amber-500 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                {editingId ? `Cập nhật hợp đồng cầm đồ CĐ-${pContractCodeNumber}` : "Lập Hợp Đồng Cầm Đồ Mới"}
-              </h3>
-              <button onClick={() => setIsPawnOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {isPawnOpen && (() => {
+        const selectedCustomer = customers.find((c) => String(c.id) === String(pCustomerId));
+        const labelClass = "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
 
-            <form onSubmit={handleCreatePawn} className="space-y-6 text-xs text-slate-700">
-              
-              {/* SECTION 1: CUSTOMER GROUP */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
-                    <input
-                      type="radio"
-                      name="customer_type"
-                      checked={customerType === "existing"}
-                      onChange={() => setCustomerType("existing")}
-                      className="radio radio-xs radio-primary"
-                    />
-                    <span>Khách cũ</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
+        return (
+          <div className="modal modal-open">
+            <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl p-6 relative">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+                <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-slate-800" />
+                  Hợp đồng cầm đồ
+                </h3>
+                <button onClick={() => setIsPawnOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreatePawn} className="space-y-6 text-xs text-slate-700">
+                
+                {/* Centered Radio selection */}
+                <div className="flex justify-center gap-6 mt-2 mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
                     <input
                       type="radio"
                       name="customer_type"
@@ -975,431 +969,508 @@ export const Contracts: React.FC = () => {
                     />
                     <span>Khách mới</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="radio"
+                      name="customer_type"
+                      checked={customerType === "existing"}
+                      onChange={() => setCustomerType("existing")}
+                      className="radio radio-xs radio-primary"
+                    />
+                    <span>Khách cũ</span>
+                  </label>
                 </div>
 
-                {customerType === "existing" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="label font-bold text-slate-600 py-1">Tên khách hàng *</label>
-                      <select
-                        value={pCustomerId}
-                        onChange={(e) => setPCustomerId(e.target.value)}
-                        className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                        required={customerType === "existing"}
-                      >
-                        <option value="">-- Chọn khách hàng --</option>
-                        {customers.map((c) => (
-                          <option key={c.id} value={c.id}>{c.full_name} ({c.phone || "Không SĐT"})</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label font-bold text-slate-600 py-1">Mã hợp đồng *</label>
-                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden w-full bg-white">
-                        <button
-                          type="button"
-                          onClick={() => setPContractCodeNumber(prev => Math.max(1, prev - 1))}
-                          className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-8 px-3"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          value={pContractCodeNumber}
-                          onChange={(e) => setPContractCodeNumber(Math.max(1, Number(e.target.value)))}
-                          className="input input-bordered border-none text-center bg-white w-full text-slate-800 h-8 font-extrabold focus:outline-none"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setPContractCodeNumber(prev => prev + 1)}
-                          className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-8 px-3"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="label font-bold text-slate-600 py-1">Tên khách hàng *</label>
+                {/* SECTION 1: CUSTOMER GROUP */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                  {/* Row 1, Col 1: Tên khách hàng */}
+                  <div className="flex items-center">
+                    <label className={labelClass}>
+                      Tên khách hàng <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grow">
+                      {customerType === "new" ? (
                         <input
                           type="text"
-                          placeholder="Nhập tên khách hàng..."
+                          placeholder="Nhập họ và tên"
                           value={newCustName}
                           onChange={(e) => setNewCustName(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
+                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
                           required={customerType === "new"}
                         />
-                      </div>
-                      <div>
-                        <label className="label font-bold text-slate-600 py-1">Mã hợp đồng *</label>
-                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden w-full bg-white">
-                          <button
-                            type="button"
-                            onClick={() => setPContractCodeNumber(prev => Math.max(1, prev - 1))}
-                            className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-8 px-3"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            value={pContractCodeNumber}
-                            onChange={(e) => setPContractCodeNumber(Math.max(1, Number(e.target.value)))}
-                            className="input input-bordered border-none text-center bg-white w-full text-slate-800 h-8 font-extrabold focus:outline-none"
-                            required
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setPContractCodeNumber(prev => prev + 1)}
-                            className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-8 px-3"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
+                      ) : (
+                        <select
+                          value={pCustomerId}
+                          onChange={(e) => setPCustomerId(e.target.value)}
+                          className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
+                          required={customerType === "existing"}
+                        >
+                          <option value="">-- Chọn khách hàng --</option>
+                          {customers.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.full_name} ({c.phone || "Không SĐT"})
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="label font-bold text-slate-600 py-1">Số CCCD/Hộ chiếu</label>
-                        <input
-                          type="text"
-                          placeholder="CCCD/CMND khách hàng..."
-                          value={newCustCard}
-                          onChange={(e) => setNewCustCard(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="label font-bold text-slate-600 py-1">Số điện thoại</label>
-                        <input
-                          type="text"
-                          placeholder="Số điện thoại khách hàng..."
-                          value={newCustPhone}
-                          onChange={(e) => setNewCustPhone(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                        />
-                      </div>
+                  </div>
+
+                  {/* Row 1, Col 2: Mã hợp đồng */}
+                  <div className="flex items-center">
+                    <label className={labelClass}>
+                      Mã hợp đồng <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden h-8 w-fit bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setPContractCodeNumber((prev) => Math.max(1, prev - 1))}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-3 flex items-center justify-center transition-colors select-none"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        value={pContractCodeNumber}
+                        onChange={(e) => setPContractCodeNumber(Math.max(1, Number(e.target.value)))}
+                        className="text-center bg-white w-14 text-slate-855 h-full font-bold focus:outline-none border-x border-slate-200 text-xs"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPContractCodeNumber((prev) => prev + 1)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-3 flex items-center justify-center transition-colors select-none"
+                      >
+                        +
+                      </button>
                     </div>
-                    <div>
-                      <label className="label font-bold text-slate-600 py-1">Địa chỉ</label>
+                  </div>
+
+                  {/* Row 2, Col 1: Số CCCD/Hộ chiếu */}
+                  <div className="flex items-center">
+                    <label className={labelClass}>Số CCCD/Hộ chiếu</label>
+                    <div className="grow">
+                      <input
+                        type="text"
+                        placeholder="CCCD/CMND khách hàng..."
+                        value={customerType === "new" ? newCustCard : selectedCustomer?.identity_card_number || ""}
+                        onChange={(e) => setNewCustCard(e.target.value)}
+                        readOnly={customerType === "existing"}
+                        disabled={customerType === "existing"}
+                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none ${
+                          customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2, Col 2: Số điện thoại */}
+                  <div className="flex items-center">
+                    <label className={labelClass}>Số điện thoại</label>
+                    <div className="grow">
+                      <input
+                        type="text"
+                        placeholder="Số điện thoại khách hàng..."
+                        value={customerType === "new" ? newCustPhone : selectedCustomer?.phone || ""}
+                        onChange={(e) => setNewCustPhone(e.target.value)}
+                        readOnly={customerType === "existing"}
+                        disabled={customerType === "existing"}
+                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none ${
+                          customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Địa chỉ */}
+                  <div className="col-span-1 md:col-span-2 flex items-center">
+                    <label className={labelClass}>Địa chỉ</label>
+                    <div className="grow">
                       <input
                         type="text"
                         placeholder="Địa chỉ hộ khẩu/tạm trú..."
-                        value={newCustAddress}
+                        value={customerType === "new" ? newCustAddress : selectedCustomer?.address || ""}
                         onChange={(e) => setNewCustAddress(e.target.value)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
+                        readOnly={customerType === "existing"}
+                        disabled={customerType === "existing"}
+                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none ${
+                          customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
+                        }`}
                       />
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* SECTION 2: THÔNG TIN KHOÁN VAY */}
-              <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
-                <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" />
-                  THÔNG TIN KHOÁN VAY
-                </span>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Loại tài sản *</label>
-                    <select
-                      value={pCommodityId}
-                      onChange={(e) => handleCommodityChange(e.target.value)}
-                      className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-semibold"
-                      required
-                    >
-                      <option value="">-- Chọn loại hàng hóa --</option>
-                      {commodities.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name.split("|")[0]} ({c.code})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Tên tài sản</label>
-                    <input
-                      type="text"
-                      placeholder="Tên tài sản. VD: Honda SH 150i"
-                      value={pAssetName}
-                      onChange={(e) => setPAssetName(e.target.value)}
-                      className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                      required
-                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="label font-bold text-slate-600 py-1">Tổng tiền vay *</label>
-                  <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
-                    <div className="relative w-full md:w-80">
-                      <input
-                        type="number"
-                        placeholder="Nhập số tiền..."
-                        value={pLoanAmount}
-                        onChange={(e) => setPLoanAmount(e.target.value)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-bold"
-                        required
-                      />
-                      <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 font-extrabold">VNĐ</span>
-                    </div>
+                {/* SECTION 2: THÔNG TIN KHOẢN VAY */}
+                <div className="pt-4 border-t border-slate-100 space-y-4">
+                  <h4 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-2">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                    THÔNG TIN KHOẢN VAY
+                  </h4>
 
-                    {/* Quick amount selectors */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        { label: "-5", val: -5000000 },
-                        { label: "+5", val: 5000000 },
-                        { label: "10", val: 10000000 },
-                        { label: "20", val: 20000000 },
-                        { label: "30", val: 30000000 },
-                        { label: "40", val: 40000000 },
-                        { label: "50", val: 50000000 },
-                      ].map((item, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            let curr = Number(pLoanAmount) || 0;
-                            if (item.label.startsWith("-") || item.label.startsWith("+")) {
-                              setPLoanAmount(String(Math.max(0, curr + item.val)));
-                            } else {
-                              setPLoanAmount(String(item.val));
-                            }
-                          }}
-                          className="px-2.5 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200/50"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    {/* Row 1: Loại tài sản & Tên tài sản */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>
+                        Loại tài sản <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <select
+                          value={pCommodityId}
+                          onChange={(e) => handleCommodityChange(e.target.value)}
+                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                          required
                         >
-                          {item.label}
-                        </button>
-                      ))}
+                          <option value="">-- Chọn loại hàng hóa --</option>
+                          {commodities.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name.split("|")[0]} ({c.code})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Hình thức lãi *</label>
-                    <select
-                      value={pInterestTypeId}
-                      onChange={(e) => setPInterestTypeId(e.target.value)}
-                      className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                      required
-                    >
-                      <option value="">-- Lọc hình thức --</option>
-                      {interestTypes.map((i) => (
-                        <option key={i.id} value={i.id}>{i.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-2 pt-6">
-                    <input
-                      type="checkbox"
-                      checked={pIsUpfront}
-                      onChange={(e) => setPIsUpfront(e.target.checked)}
-                      className="checkbox checkbox-sm checkbox-primary border-slate-200 rounded checked:border-amber-500 checked:bg-amber-500"
-                    />
-                    <span className="font-bold text-slate-600">Thu lãi trước</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Số ngày vay *</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        placeholder="90"
-                        value={pLoanDays}
-                        onChange={(e) => setPLoanDays(e.target.value)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                        required
-                      />
-                      <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">Ngày</span>
+                    <div className="flex items-center">
+                      <div className="grow">
+                        <input
+                          type="text"
+                          placeholder="Tên tài sản. VD: Honda SH 150i"
+                          value={pAssetName}
+                          onChange={(e) => setPAssetName(e.target.value)}
+                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Kỳ lãi *</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        placeholder="10"
-                        value={pPeriodValue}
-                        onChange={(e) => setPPeriodValue(e.target.value)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                        required
-                      />
-                      <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">Ngày</span>
-                    </div>
-                  </div>
-                  <div className="pt-6 text-[10px] text-slate-400 leading-relaxed font-semibold">
-                    (VD : 10 ngày đóng lãi 1 lần thì điền số 10)
-                  </div>
-                </div>
 
-                <div>
-                  <label className="label font-bold text-slate-600 py-1">Lãi phí *</label>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                    <div className="relative col-span-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="1"
-                        value={pInterestRate}
-                        onChange={(e) => setPInterestRate(e.target.value)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-bold"
-                        required
-                      />
-                      <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400">k/1 triệu</span>
-                    </div>
-                    <div className="col-span-3 text-[10px] text-red-500 leading-relaxed font-semibold">
-                      * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật Hình sự.
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label font-bold text-slate-600 py-1">Ngày vay *</label>
-                  <input
-                    type="date"
-                    value={pLoanDate}
-                    onChange={(e) => setPLoanDate(e.target.value)}
-                    className="input input-bordered input-sm w-full md:w-60 bg-white border-slate-200 rounded-lg text-slate-800"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* SECTION 3: THÔNG TIN KHÁC */}
-              <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
-                <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
-                  <User className="w-3 h-3" />
-                  THÔNG TIN KHÁC
-                </span>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Nhân viên thu</label>
-                    <select
-                      value={pCollectorId}
-                      onChange={(e) => setPCollectorId(e.target.value)}
-                      className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                      required
-                    >
-                      <option value="">-- Chọn nhân viên --</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label font-bold text-slate-600 py-1">Cộng tác viên</label>
-                    <select
-                      value={pCollaboratorId}
-                      onChange={(e) => setPCollaboratorId(e.target.value)}
-                      className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
-                    >
-                      <option value="">-- Chọn cộng tác viên --</option>
-                      {collaborators.map((c) => (
-                        <option key={c.id} value={c.id}>{c.full_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label font-bold text-slate-600 py-1">Ghi chú</label>
-                  <textarea
-                    placeholder="Nhập ghi chú chi tiết..."
-                    value={pNotes}
-                    onChange={(e) => setPNotes(e.target.value)}
-                    className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-16 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* SECTION 4: THÔNG TIN TÀI SẢN (DYNAMIC BASED ON COMMODITY CONFIG) */}
-              {(() => {
-                const selectedComm = commodities.find((c) => c.id === pCommodityId);
-                const parts = selectedComm ? selectedComm.name.split("|") : [];
-                const commAttrs = parts[1] ? parts[1].split(",") : [];
-
-                if (commAttrs.length === 0) return null;
-
-                return (
-                  <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
-                    <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
-                      <Anchor className="w-3 h-3" />
-                      THÔNG TIN TÀI SẢN
-                    </span>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      {commAttrs[0] && (
-                        <div>
-                          <label className="label font-bold text-slate-600 py-1">{commAttrs[0]} *</label>
+                    {/* Row 2: Tổng tiền vay & Quick buttons */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>
+                        Tổng tiền vay <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
                           <input
-                            type="text"
-                            placeholder={`Nhập ${commAttrs[0].toLowerCase()}...`}
-                            value={pLicensePlate}
-                            onChange={(e) => setPLicensePlate(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
+                            type="number"
+                            placeholder="0"
+                            value={pLoanAmount}
+                            onChange={(e) => setPLoanAmount(e.target.value)}
+                            className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs"
                             required
                           />
+                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                            VNĐ
+                          </span>
                         </div>
-                      )}
-                      {commAttrs[1] && (
-                        <div>
-                          <label className="label font-bold text-slate-600 py-1">{commAttrs[1]} *</label>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="grow flex flex-wrap gap-1">
+                        {[
+                          { label: "-5", val: -5000000 },
+                          { label: "+5", val: 5000000 },
+                          { label: "10", val: 10000000 },
+                          { label: "20", val: 20000000 },
+                          { label: "30", val: 30000000 },
+                          { label: "40", val: 40000000 },
+                          { label: "50", val: 50000000 },
+                        ].map((item, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              let curr = Number(pLoanAmount) || 0;
+                              if (item.label.startsWith("-") || item.label.startsWith("+")) {
+                                setPLoanAmount(String(Math.max(0, curr + item.val)));
+                              } else {
+                                setPLoanAmount(String(item.val));
+                              }
+                            }}
+                            className="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Hình thức lãi & Checkbox */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>
+                        Hình thức lãi <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <select
+                          value={pInterestTypeId}
+                          onChange={(e) => setPInterestTypeId(e.target.value)}
+                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                          required
+                        >
+                          <option value="">-- Lọc hình thức --</option>
+                          {interestTypes.map((i) => (
+                            <option key={i.id} value={i.id}>
+                              {i.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="grow">
+                        <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-600 select-none">
                           <input
-                            type="text"
-                            placeholder={`Nhập ${commAttrs[1].toLowerCase()}...`}
-                            value={pChassisNumber}
-                            onChange={(e) => setPChassisNumber(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800"
+                            type="checkbox"
+                            checked={pIsUpfront}
+                            onChange={(e) => setPIsUpfront(e.target.checked)}
+                            className="checkbox checkbox-sm checkbox-primary border-slate-300 rounded checked:bg-blue-600 checked:border-blue-600 focus:outline-none"
+                          />
+                          <span>Thu lãi trước</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Row 4: Số ngày vay */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>
+                        Số ngày vay <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+                          <input
+                            type="number"
+                            placeholder="90"
+                            value={pLoanDays}
+                            onChange={(e) => setPLoanDays(e.target.value)}
+                            className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs"
                             required
                           />
+                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                            Ngày
+                          </span>
                         </div>
-                      )}
-                      {commAttrs[2] && (
-                        <div className="md:col-span-2">
-                          <label className="label font-bold text-slate-600 py-1">{commAttrs[2]} *</label>
+                      </div>
+                    </div>
+                    <div className="flex items-center"></div>
+
+                    {/* Row 5: Kỳ lãi & Description */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>
+                        Kỳ lãi <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
                           <input
-                            type="text"
-                            placeholder={`Nhập ${commAttrs[2].toLowerCase()}...`}
-                            value={pEngineNumber}
-                            onChange={(e) => setPEngineNumber(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850"
+                            type="number"
+                            placeholder="10"
+                            value={pPeriodValue}
+                            onChange={(e) => setPPeriodValue(e.target.value)}
+                            className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs"
                             required
                           />
+                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                            Ngày
+                          </span>
                         </div>
-                      )}
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-slate-400 text-xs italic font-semibold select-none">
+                        (VD : 10 ngày đóng lãi 1 lần thì điền số 10)
+                      </span>
+                    </div>
+
+                    {/* Row 6: Lãi phí & Warning */}
+                    <div className="flex items-start">
+                      <label className={`${labelClass} mt-1.5`}>
+                        Lãi phí <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="1"
+                            value={pInterestRate}
+                            onChange={(e) => setPInterestRate(e.target.value)}
+                            className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs"
+                            required
+                          />
+                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                            k/1 triệu
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="text-red-500 text-[10px] leading-relaxed font-semibold block grow mt-0.5 max-w-md select-none">
+                        * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật Hình sự.
+                      </span>
+                    </div>
+
+                    {/* Row 7: Ngày vay */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>
+                        Ngày vay <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grow">
+                        <input
+                          type="date"
+                          value={pLoanDate}
+                          onChange={(e) => setPLoanDate(e.target.value)}
+                          className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center"></div>
+                  </div>
+                </div>
+
+                {/* SECTION 3: THÔNG TIN KHÁC */}
+                <div className="pt-4 border-t border-slate-100 space-y-4">
+                  <h4 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-2">
+                    <User className="w-3.5 h-3.5 text-blue-600" />
+                    THÔNG TIN KHÁC
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    {/* Row 1: Nhân viên thu & Cộng tác viên */}
+                    <div className="flex items-center">
+                      <label className={labelClass}>Nhân viên thu</label>
+                      <div className="grow">
+                        <select
+                          value={pCollectorId}
+                          onChange={(e) => setPCollectorId(e.target.value)}
+                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                          required
+                        >
+                          <option value="">-- Chọn nhân viên --</option>
+                          {employees.map((emp) => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <label className={labelClass}>Cộng tác viên</label>
+                      <div className="grow">
+                        <select
+                          value={pCollaboratorId}
+                          onChange={(e) => setPCollaboratorId(e.target.value)}
+                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                        >
+                          <option value="">-- Chọn cộng tác viên --</option>
+                          {collaborators.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Ghi chú */}
+                    <div className="col-span-1 md:col-span-2 flex items-start">
+                      <label className={`${labelClass} mt-1.5`}>Ghi chú</label>
+                      <div className="grow">
+                        <textarea
+                          placeholder="Nhập ghi chú chi tiết..."
+                          value={pNotes}
+                          onChange={(e) => setPNotes(e.target.value)}
+                          className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-16 focus:outline-none text-xs"
+                        />
+                      </div>
                     </div>
                   </div>
-                );
-              })()}
+                </div>
 
-              {/* Modal Footer buttons */}
-              <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
-                <button
-                  type="submit"
-                  className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 border-none text-white btn-sm px-5 font-bold rounded-lg"
-                >
-                  {editingId ? "Cập nhật" : "+ Thêm mới"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPawnOpen(false)}
-                  className="btn btn-neutral border-slate-200 text-slate-600 bg-slate-100 hover:bg-slate-200 btn-sm px-5 font-bold rounded-lg"
-                >
-                  X Đóng
-                </button>
-              </div>
+                {/* SECTION 4: THÔNG TIN TÀI SẢN (DYNAMIC BASED ON COMMODITY CONFIG) */}
+                {(() => {
+                  const selectedComm = commodities.find((c) => c.id === pCommodityId);
+                  const parts = selectedComm ? selectedComm.name.split("|") : [];
+                  const commAttrs = parts[1] ? parts[1].split(",") : [];
 
-            </form>
+                  if (commAttrs.length === 0) return null;
+
+                  return (
+                    <div className="pt-4 border-t border-slate-100 space-y-4">
+                      <h4 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-2">
+                        <Car className="w-3.5 h-3.5 text-blue-600" />
+                        THÔNG TIN TÀI SẢN
+                      </h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        {commAttrs[0] && (
+                          <div className="flex items-center">
+                            <label className={labelClass}>{commAttrs[0]}</label>
+                            <div className="grow">
+                              <input
+                                type="text"
+                                placeholder={`Nhập ${commAttrs[0].toLowerCase()}...`}
+                                value={pLicensePlate}
+                                onChange={(e) => setPLicensePlate(e.target.value)}
+                                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {commAttrs[1] && (
+                          <div className="flex items-center">
+                            <label className={labelClass}>{commAttrs[1]}</label>
+                            <div className="grow">
+                              <input
+                                type="text"
+                                placeholder={`Nhập ${commAttrs[1].toLowerCase()}...`}
+                                value={pChassisNumber}
+                                onChange={(e) => setPChassisNumber(e.target.value)}
+                                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {commAttrs[2] && (
+                          <div className="flex items-center">
+                            <label className={labelClass}>{commAttrs[2]}</label>
+                            <div className="grow">
+                              <input
+                                type="text"
+                                placeholder={`Nhập ${commAttrs[2].toLowerCase()}...`}
+                                value={pEngineNumber}
+                                onChange={(e) => setPEngineNumber(e.target.value)}
+                                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Modal Footer buttons */}
+                <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-6">
+                  <button
+                    type="submit"
+                    className="btn bg-[#1abc9c] hover:bg-[#16a085] border-none text-white btn-sm px-5 font-bold rounded-lg transition-colors"
+                  >
+                    {editingId ? "Cập nhật" : "+ Thêm mới"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPawnOpen(false)}
+                    className="btn bg-slate-400 hover:bg-slate-500 border-none text-white btn-sm px-5 font-bold rounded-lg transition-colors"
+                  >
+                    X Đóng
+                  </button>
+                </div>
+
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* UNSECURED CREATE MODAL */}
       {isUnsecuredOpen && (
