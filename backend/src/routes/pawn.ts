@@ -158,18 +158,6 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
-// Get Pawn Interest Types
-router.get("/interest-types", async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const types = await prisma.interestType.findMany({
-      orderBy: { name: "asc" },
-    });
-    return res.json(types);
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-
 // 2. Get Pawn Contract details
 router.get("/:id", async (req: AuthenticatedRequest, res: Response) => {
   try {

@@ -381,7 +381,7 @@ export const Contracts: React.FC = () => {
         axios.get("/api/collaborators"),
         axios.get("/api/employees"),
         axios.get("/api/commodities"),
-        axios.get("/api/contracts/pawn/interest-types"),
+        axios.get("/api/interest-types"),
         axios.get("/api/stores")
       ]);
       setCollaborators(collabs.data);

@@ -140,7 +140,7 @@ export const CapitalContracts: React.FC = () => {
   const fetchHelpers = async () => {
     try {
       const [interestRes, customerRes] = await Promise.all([
-        axios.get("/api/contracts/pawn/interest-types"),
+        axios.get("/api/interest-types"),
         axios.get("/api/customers")
       ]);
       setInterestTypes(interestRes.data);

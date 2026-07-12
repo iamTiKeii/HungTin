@@ -23,6 +23,7 @@ import reportsRouter from "./routes/reports";
 import profileRouter from "./routes/profile";
 import warningsRouter from "./routes/warnings";
 import settingsRouter from "./routes/settings";
+import interestTypesRouter from "./routes/interestTypes";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -48,6 +49,7 @@ app.use("/api/reports", reportsRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/warnings", warningsRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/interest-types", interestTypesRouter);
 
 // Serve Frontend static build in production
 const frontendBuildPath = path.join(__dirname, "../../frontend/dist");
