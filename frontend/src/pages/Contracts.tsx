@@ -33,6 +33,7 @@ import { MoneyInput } from "../components/shared/MoneyInput";
 import { CustomerLookup } from "../components/shared/CustomerLookup";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 import { useConfirm } from "../context/ConfirmContext";
+import { getCompiledHtml } from "../services/print/PrintService";
 
 export const Contracts: React.FC = () => {
   const { activeStore } = useAuth();
@@ -181,68 +182,6 @@ export const Contracts: React.FC = () => {
     } catch (err) {
       console.error("Error fetching cash summary", err);
     }
-  };
-
-  const convertNumberToVietnameseWords = (amount: number): string => {
-    if (amount === 0) return "Không đồng";
-    const units = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
-    const placeValues = ["", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ"];
-
-    const readThreeDigits = (num: number, showZeroHundred: boolean): string => {
-      let hundred = Math.floor(num / 100);
-      let ten = Math.floor((num % 100) / 10);
-      let unit = num % 10;
-      let res = "";
-
-      if (hundred > 0 || showZeroHundred) {
-        res += units[hundred] + " trăm ";
-      }
-
-      if (ten > 0) {
-        if (ten === 1) res += "mười ";
-        else res += units[ten] + " mươi ";
-      } else if (hundred > 0 && unit > 0) {
-        res += "lẻ ";
-      }
-
-      if (unit > 0) {
-        if (ten > 1 && unit === 1) res += "mốt";
-        else if (ten > 0 && unit === 5) res += "lăm";
-        else if (ten === 0 && unit === 5) res += "năm";
-        else res += units[unit];
-      }
-      return res.trim();
-    };
-
-    let numStr = String(Math.floor(amount));
-    while (numStr.length % 3 !== 0) {
-      numStr = "0" + numStr;
-    }
-
-    let groups: string[] = [];
-    for (let i = 0; i < numStr.length; i += 3) {
-      groups.push(numStr.substring(i, i + 3));
-    }
-
-    let result = "";
-    let started = false;
-
-    for (let i = 0; i < groups.length; i++) {
-      let val = Number(groups[i]);
-      let placeIdx = groups.length - 1 - i;
-
-      if (val > 0) {
-        let groupText = readThreeDigits(val, started);
-        result += groupText + " " + placeValues[placeIdx] + " ";
-        started = true;
-      }
-    }
-
-    result = result.trim();
-    if (result.length > 0) {
-      result = result.charAt(0).toUpperCase() + result.slice(1);
-    }
-    return result + " đồng";
   };
 
   const handleExportExcel = () => {
@@ -1527,6 +1466,11 @@ export const Contracts: React.FC = () => {
                               }
                               items={[
                                 {
+                                  label: "In hợp đồng",
+                                  icon: <Printer className="w-3.5 h-3.5 text-emerald-500" />,
+                                  onClick: () => setActivePrintContract(item)
+                                },
+                                {
                                   label: "Đóng hợp đồng",
                                   icon: <Anchor className="w-3.5 h-3.5 text-blue-500" />,
                                   onClick: () => { setSelectedDetailId(item.id); setDetailDefaultTab("redeem"); }
@@ -1673,6 +1617,11 @@ export const Contracts: React.FC = () => {
                             <ActionMenu
                               align="right"
                               items={[
+                                {
+                                  label: "In hợp đồng",
+                                  icon: <Printer className="w-3.5 h-3.5 text-emerald-500" />,
+                                  onClick: () => setActivePrintContract(item)
+                                },
                                 {
                                   label: "Đóng hợp đồng",
                                   icon: <Anchor className="w-3.5 h-3.5 text-blue-500" />,
@@ -3278,45 +3227,15 @@ export const Contracts: React.FC = () => {
           address: "62 lò đúc",
           notes: ""
         };
-        let rep = "Thực";
-        try {
-          const notesObj = JSON.parse(storeDetails.notes || "{}");
-          rep = notesObj.representative || "Thực";
-        } catch {
-          rep = storeDetails.notes || "Thực";
-        }
 
-        const customerName = activePrintContract.customer?.full_name || "";
-        const customerPhone = activePrintContract.customer?.phone || "";
-        const customerCard = activePrintContract.customer?.identity_card_number || "";
-        const customerAddress = activePrintContract.customer?.address || "";
-        const customerCardDate = activePrintContract.customer?.identity_card_date
-          ? new Date(activePrintContract.customer.identity_card_date).toLocaleDateString("vi-VN")
-          : "";
-        const customerCardPlace = activePrintContract.customer?.identity_card_place || "";
+        const isNegotiated = activeTemplate === "negotiated";
+        const moduleName = activePrintContract.contract_code?.startsWith("TC-") || activePrintContract.commodity?.category === "unsecured"
+          ? "unsecured"
+          : activePrintContract.contract_code?.startsWith("TG-") || activePrintContract.commodity?.category === "installment"
+          ? "installment"
+          : "pawn";
 
-        const loanStartDateStr = activePrintContract.loan_date
-          ? new Date(activePrintContract.loan_date).toLocaleDateString("vi-VN")
-          : "";
-        const loanEndDateStr = activePrintContract.loan_date && activePrintContract.loan_days
-          ? new Date(new Date(activePrintContract.loan_date).getTime() + (activePrintContract.loan_days * 24 * 60 * 60 * 1000)).toLocaleDateString("vi-VN")
-          : "";
-
-        const isUnsecuredPrint = activePrintContract.contract_code?.startsWith("TC-") || activePrintContract.commodity?.category === "unsecured";
-        const assetType = isUnsecuredPrint
-          ? (activePrintContract.commodity?.name?.split("|")[0] || "Cho vay tín chấp")
-          : (activePrintContract.commodity?.name?.split("|")[0] || "Tài sản");
-        const assetDetailParts = isUnsecuredPrint ? [] : [
-          activePrintContract.asset_name,
-          activePrintContract.license_plate ? `Biển kiểm soát: ${activePrintContract.license_plate}` : "",
-          activePrintContract.chassis_number ? `Số khung: ${activePrintContract.chassis_number}` : "",
-          activePrintContract.engine_number ? `Số máy: ${activePrintContract.engine_number}` : ""
-        ].filter(Boolean);
-        const assetDetailStr = assetDetailParts.join(", ");
-
-        const amountNumber = Number(activePrintContract.loan_amount || 0);
-        const loanAmountStr = formatCurrency(amountNumber).replace("₫", "");
-        const loanAmountTextStr = convertNumberToVietnameseWords(amountNumber);
+        const compiledHtml = getCompiledHtml(moduleName, activePrintContract, storeDetails, { isNegotiated });
 
         return (
           <div className="modal modal-open">
@@ -3334,172 +3253,7 @@ export const Contracts: React.FC = () => {
               {/* Paper Preview area with standard design */}
               <div className="bg-slate-100 p-4 border border-slate-200 rounded-xl max-h-[480px] overflow-y-auto">
                 <div className="bg-white p-10 shadow-lg text-black font-serif text-[11px] leading-relaxed text-left" style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}>
-                  <div ref={printContractRef}>
-                    <style dangerouslySetInnerHTML={{__html: `
-                      @media print {
-                        body { background: none; padding: 0; margin: 0; }
-                        .print-contract-container { width: 100% !important; padding: 0 !important; margin: 0 !important; }
-                      }
-                    `}} />
-                    <div className="print-contract-container">
-                      <table className="w-full mb-6 border-collapse">
-                        <tbody>
-                          <tr>
-                            <td className="w-[45%] text-center align-top">
-                              <div className="font-bold text-[12px] uppercase">
-                                {isUnsecuredPrint ? "GIAO DỊCH" : "CẦM ĐỒ"} {storeDetails.name}
-                              </div>
-                              <div className="text-[9px] mt-1">Hotline: <strong>{storeDetails.phone}</strong></div>
-                              <div className="text-[9px]">Mã Giao Dịch: <strong>{activePrintContract.contract_code}</strong></div>
-                            </td>
-                            <td className="w-[55%] text-center align-top">
-                              <div className="font-bold text-[13px] uppercase">
-                                {isUnsecuredPrint ? "HỢP ĐỒNG CHO VAY TÍN CHẤP" : "HỢP ĐỒNG CẦM ĐỒ"}
-                              </div>
-                              <div className="italic text-[9px]">
-                                {isUnsecuredPrint ? "(Tự nguyện dân sự)" : "(Kiêm phiếu chi tiền mặt)"}
-                              </div>
-                              <div className="text-[9px] mt-1">Ngày: <strong>{loanStartDateStr}</strong></div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      {/* Bên cho vay */}
-                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">
-                        {isUnsecuredPrint ? "BÊN CHO VAY" : "BÊN CHO VAY / NHẬN CẦM"}
-                      </div>
-                      <table className="w-full border-collapse mb-3 text-[10px]">
-                        <tbody>
-                          <tr>
-                            <td className="font-bold w-[120px] py-0.5">
-                              {isUnsecuredPrint ? "Bên cho vay:" : "Bên nhận cầm:"}
-                            </td>
-                            <td className="font-bold uppercase py-0.5">{storeDetails.name}</td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Người đại diện:</td>
-                            <td className="py-0.5">
-                              <div className="flex justify-between">
-                                <span>{rep}</span>
-                                <span>Điện thoại: <strong>{storeDetails.phone}</strong></span>
-                              </div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Địa chỉ:</td>
-                            <td className="py-0.5">{storeDetails.address}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      {/* Bên vay */}
-                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">
-                        {isUnsecuredPrint ? "BÊN VAY TIỀN" : "BÊN VAY (BÊN CẦM TÀI SẢN)"}
-                      </div>
-                      <table className="w-full border-collapse mb-3 text-[10px]">
-                        <tbody>
-                          <tr>
-                            <td className="font-bold w-[120px] py-0.5">Họ và tên khách:</td>
-                            <td className="font-bold py-0.5">{customerName}</td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Số CMND/CCCD:</td>
-                            <td className="py-0.5">
-                              <div className="flex justify-between">
-                                <span>{customerCard}</span>
-                                <span>Ngày cấp: {customerCardDate}</span>
-                                <span>Nơi cấp: {customerCardPlace}</span>
-                              </div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Số điện thoại:</td>
-                            <td className="py-0.5">{customerPhone}</td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Địa chỉ:</td>
-                            <td className="py-0.5">{customerAddress}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      {/* Thông tin tài sản */}
-                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">
-                        {isUnsecuredPrint ? "THÔNG TIN KHOÁN VAY & GIẤY TỜ THAM CHIẾU" : "THÔNG TIN TÀI SẢN & GIẤY TỜ KÈM THEO"}
-                      </div>
-                      <table className="w-full border-collapse mb-3 text-[10px]">
-                        <tbody>
-                          <tr>
-                            <td className="font-bold w-[120px] py-0.5">
-                              {isUnsecuredPrint ? "Hình thức vay:" : "Loại tài sản:"}
-                            </td>
-                            <td className="py-0.5">
-                              <div className="flex justify-between">
-                                <span>{assetType}</span>
-                                {!isUnsecuredPrint && (
-                                  <span>Chi tiết tài sản: <strong>{assetDetailStr}</strong></span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Số tiền vay:</td>
-                            <td className="py-0.5">
-                              <span className="font-bold">{loanAmountStr} VNĐ</span>
-                              <span className="ml-2">(Bằng chữ: <em>{loanAmountTextStr}</em>)</span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold py-0.5">Thời hạn vay:</td>
-                            <td className="py-0.5">Từ ngày: <strong>{loanStartDateStr}</strong> đến ngày: <strong>{loanEndDateStr}</strong></td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      {/* Cam kết */}
-                      <div className="font-bold border-b border-black text-[10px] uppercase mt-4 mb-2">CAM KẾT CỦA BÊN VAY</div>
-                      <ol className="list-decimal pl-4 space-y-1 text-justify text-[10px]">
-                        {activeTemplate === "interest" ? (
-                          <li>Tự nguyện chi trả lệ phí: <strong>{activePrintContract.interest_rate}%/T</strong>, tính theo số ngày thực tế vay.</li>
-                        ) : (
-                          <li>Tự nguyện chi trả lệ phí: <strong>Thỏa thuận</strong>.</li>
-                        )}
-                        {isUnsecuredPrint ? (
-                          <li>Tôi cam kết các thông tin nhân thân đã xuất trình là bản gốc chính xác và hoàn toàn chịu trách nhiệm trước pháp luật nếu có hành vi gian dối, trốn nợ.</li>
-                        ) : (
-                          <li>Tôi cam kết tài sản thuộc quyền sở hữu hợp pháp của tôi và các giấy tờ đã xuất trình là bản gốc do các cơ quan quản lý nhà nước cấp. Nếu sai, tôi hoàn toàn chịu trách nhiệm trước pháp luật.</li>
-                        )}
-                        {isUnsecuredPrint ? (
-                          <li>Tôi cam kết hoàn trả đầy đủ số tiền gốc vay và lệ phí đúng kỳ hạn đã ký kết. Trường hợp chậm trả quá hạn, Bên cho vay có quyền áp dụng các biện pháp thu hồi nợ theo thỏa thuận dân sự đã thống nhất.</li>
-                        ) : (
-                          <li>Tôi cam kết trả gốc và lệ phí đúng hạn. Hết thời hạn trên, tôi không đến chuộc lại tài sản hoặc trả lệ phí để kéo dài thêm thời hạn thì tài sản trên sẽ thuộc quyền sở hữu của Bên cho vay. Bên cho vay không có nghĩa vụ thông báo với Bên vay. Lúc đó, Hợp đồng này có giá trị như giấy bán tài sản của tôi. Bên cho vay được toàn quyền thanh lý để thu hồi vốn và toàn bộ số tiền thu được từ việc thanh lý.</li>
-                        )}
-                        <li>Tôi thực hiện việc lập Hợp đồng này trong trạng thái tinh thần hoàn toàn minh mẫn, đã đọc kỹ và hiểu toàn bộ trách nhiệm và nghĩa vụ trả nợ vay số tiền trên. Tôi cam kết thực hiện tất cả các nội dung trong Hợp đồng này, ký tên và điểm chỉ dưới đây để làm bằng chứng.</li>
-                      </ol>
-
-                      {/* Signatures */}
-                      <table className="w-full mt-6 text-center border-collapse text-[10px]">
-                        <tbody>
-                          <tr className="font-bold">
-                            <td className="w-1/3">THẨM ĐỊNH</td>
-                            <td className="w-1/3">TRƯỞNG PGDTT</td>
-                            <td className="w-1/3">NGƯỜI VAY</td>
-                          </tr>
-                          <tr className="text-[9px] italic text-slate-500">
-                            <td>(Ký và ghi rõ họ tên)</td>
-                            <td>(Ký và ghi rõ họ tên)</td>
-                            <td>(Ký, ghi rõ họ tên và điểm chỉ)</td>
-                          </tr>
-                          <tr>
-                            <td className="pt-16"></td>
-                            <td className="pt-16"></td>
-                            <td className="pt-16 font-bold">{customerName}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  <div ref={printContractRef} dangerouslySetInnerHTML={{ __html: compiledHtml }} />
                 </div>
               </div>
 

@@ -23,6 +23,10 @@ import {
 } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import { useAuth } from "../context/AuthContext";
+import { useReactToPrint } from "react-to-print";
+import { getCompiledHtml } from "../services/print/PrintService";
+import { useRef } from "react";
 
 interface InstallmentDetailProps {
   idProp?: string;
@@ -50,6 +54,16 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
   const setSuccess = (msg: string) => {
     if (msg) toast.success(msg);
   };
+
+  const { activeStore } = useAuth();
+  const [allStores, setAllStores] = useState<any[]>([]);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const printContractRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintContractTrigger = useReactToPrint({
+    content: () => printContractRef.current,
+    onAfterPrint: () => setIsPrintModalOpen(false),
+  });
 
   const [activeSubTab, setActiveSubTab] = useState<"schedule" | "redeem" | "renew" | "debt" | "docs" | "ledger" | "reminders" | "blacklist">((defaultTab as any) || "schedule");
 
@@ -131,8 +145,12 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
     try {
       setLoading(true);
       setError("");
-      const res = await axios.get(`/api/contracts/installment/${id}`);
-      setContract(res.data);
+      const [contractRes, storesRes] = await Promise.all([
+        axios.get(`/api/contracts/installment/${id}`),
+        axios.get("/api/stores"),
+      ]);
+      setContract(contractRes.data);
+      setAllStores(storesRes.data);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải chi tiết hợp đồng.");
     } finally {
@@ -587,6 +605,60 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
             </div>
           </div>
         )}
+
+        {/* PRINT CONTRACT PREVIEW MODAL */}
+        {isPrintModalOpen && (() => {
+          const storeDetails = allStores.find((s) => s.id === activeStore?.id) || {
+            name: activeStore?.name || "CẦM ĐỒ THỰC NGUYỄN",
+            phone: "0354856176",
+            address: "62 lò đúc",
+            notes: ""
+          };
+
+          const compiledHtml = getCompiledHtml("installment", contract, storeDetails);
+
+          return (
+            <div className="modal modal-open">
+              <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-3xl p-6 relative">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+                  <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                    <Printer className="w-4 h-4 text-slate-800" />
+                    Xem trước bản in hợp đồng
+                  </h3>
+                  <button onClick={() => setIsPrintModalOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Paper Preview area with standard design */}
+                <div className="bg-slate-100 p-4 border border-slate-200 rounded-xl max-h-[480px] overflow-y-auto">
+                  <div className="bg-white p-10 shadow-lg text-black font-serif text-[11px] leading-relaxed text-left" style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}>
+                    <div ref={printContractRef} dangerouslySetInnerHTML={{ __html: compiledHtml }} />
+                  </div>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsPrintModalOpen(false)}
+                    className="btn btn-outline border-slate-200 text-slate-600 rounded-lg btn-sm text-xs px-4"
+                  >
+                    Đóng lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrintContractTrigger}
+                    className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 font-bold rounded-lg btn-sm text-xs px-5 flex items-center gap-1.5"
+                  >
+                    <Printer className="w-4 h-4" />
+                    In hợp đồng ngay
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </>
     );
   };
@@ -668,7 +740,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
           <div className="flex gap-2 justify-end pt-3">
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => setIsPrintModalOpen(true)}
               className="btn btn-outline border-slate-200 text-slate-600 btn-xs rounded-lg flex items-center gap-1 h-7 text-[10px]"
             >
               <Printer className="w-3.5 h-3.5" />
