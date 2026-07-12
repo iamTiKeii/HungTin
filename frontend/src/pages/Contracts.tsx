@@ -23,6 +23,7 @@ import {
   Car,
   Printer
 } from "lucide-react";
+import { ActionMenu } from "../components/shared/ActionMenu";
 import { useAuth } from "../context/AuthContext";
 import { PawnDetail } from "./PawnDetail";
 import { toast } from "../lib/toast";
@@ -844,25 +845,26 @@ export const Contracts: React.FC = () => {
             </button>
             
             {/* Top dropdown trigger next to add new */}
-            <div className="dropdown dropdown-end">
-              <label tabIndex={0} className="btn btn-primary bg-blue-500 hover:bg-blue-600 border-none text-white btn-sm text-xs rounded-xl">
-                <MoreHorizontal className="w-4 h-4" />
-              </label>
-              <ul tabIndex={0} className="dropdown-content z-[10] menu p-1.5 shadow-2xl bg-white border border-slate-200 rounded-xl w-52 mt-1">
-                <li>
-                  <button onClick={() => { setTempTemplate(activeTemplate); setIsPrintTemplateModalOpen(true); }} className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
-                    <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-                    Chọn mẫu hợp đồng in
-                  </button>
-                </li>
-                <li>
-                  <button onClick={handleExportExcel} className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-                    Xuất Excel
-                  </button>
-                </li>
-              </ul>
-            </div>
+            <ActionMenu
+              align="right"
+              trigger={
+                <button type="button" className="btn btn-primary bg-blue-500 hover:bg-blue-600 border-none text-white btn-sm text-xs rounded-xl flex items-center justify-center">
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              }
+              items={[
+                {
+                  label: "Chọn mẫu hợp đồng in",
+                  icon: <BookOpen className="w-3.5 h-3.5 text-blue-500" />,
+                  onClick: () => { setTempTemplate(activeTemplate); setIsPrintTemplateModalOpen(true); }
+                },
+                {
+                  label: "Xuất Excel",
+                  icon: <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />,
+                  onClick: handleExportExcel
+                }
+              ]}
+            />
           </div>
         </div>
       ) : (
@@ -975,43 +977,37 @@ export const Contracts: React.FC = () => {
                             </button>
 
                             {/* Dropdown triggers actions */}
-                            <div className="dropdown dropdown-end">
-                              <label tabIndex={0} className="btn btn-ghost btn-circle btn-xs text-slate-400 hover:bg-slate-100">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </label>
-                              <ul tabIndex={0} className="dropdown-content z-[10] menu p-1.5 shadow-2xl bg-white border border-slate-200 rounded-xl w-40 mt-1">
-                                <li>
-                                  <button onClick={() => { setSelectedDetailId(item.id); setDetailDefaultTab("redeem"); }} className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
-                                    <Anchor className="w-3.5 h-3.5 text-blue-500" />
-                                    Chuộc đồ
-                                  </button>
-                                </li>
-                                <li>
-                                  <button onClick={() => { setSelectedDetailId(item.id); setDetailDefaultTab("timer"); }} className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
-                                    <Clock className="w-3.5 h-3.5 text-amber-500" />
-                                    Hẹn giờ
-                                  </button>
-                                </li>
-                                <li>
-                                  <button onClick={() => setActivePrintContract(item)} className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
-                                    <Printer className="w-3.5 h-3.5 text-emerald-500" />
-                                    In hợp đồng
-                                  </button>
-                                </li>
-                                <li>
-                                  <button onClick={() => openEditModal(item)} className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
-                                    <Edit className="w-3.5 h-3.5 text-slate-600" />
-                                    Sửa hợp đồng
-                                  </button>
-                                </li>
-                                <li className="border-t border-slate-100 mt-1 pt-1">
-                                  <button onClick={() => handleDeletePawnRow(item.id, item.contract_code)} className="flex items-center gap-1.5 text-red-500 text-xs font-semibold hover:bg-red-50">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    Xóa hợp đồng
-                                  </button>
-                                </li>
-                              </ul>
-                            </div>
+                            <ActionMenu
+                              align="right"
+                              items={[
+                                {
+                                  label: "Chuộc đồ",
+                                  icon: <Anchor className="w-3.5 h-3.5 text-blue-500" />,
+                                  onClick: () => { setSelectedDetailId(item.id); setDetailDefaultTab("redeem"); }
+                                },
+                                {
+                                  label: "Hẹn giờ",
+                                  icon: <Clock className="w-3.5 h-3.5 text-amber-500" />,
+                                  onClick: () => { setSelectedDetailId(item.id); setDetailDefaultTab("timer"); }
+                                },
+                                {
+                                  label: "In hợp đồng",
+                                  icon: <Printer className="w-3.5 h-3.5 text-emerald-500" />,
+                                  onClick: () => setActivePrintContract(item)
+                                },
+                                {
+                                  label: "Sửa hợp đồng",
+                                  icon: <Edit className="w-3.5 h-3.5 text-slate-600" />,
+                                  onClick: () => openEditModal(item)
+                                },
+                                {
+                                  label: "Xóa hợp đồng",
+                                  icon: <Trash2 className="w-3.5 h-3.5" />,
+                                  onClick: () => handleDeletePawnRow(item.id, item.contract_code),
+                                  danger: true
+                                }
+                              ]}
+                            />
                           </div>
                         </td>
                       </tr>
