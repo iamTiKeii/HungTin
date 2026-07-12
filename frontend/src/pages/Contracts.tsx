@@ -21,7 +21,8 @@ import {
   Coins,
   X,
   Car,
-  Printer
+  Printer,
+  Eye
 } from "lucide-react";
 import { ActionMenu } from "../components/shared/ActionMenu";
 import { useAuth } from "../context/AuthContext";
@@ -29,6 +30,8 @@ import { PawnDetail } from "./PawnDetail";
 import { UnsecuredDetail } from "./UnsecuredDetail";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import { CustomerLookup } from "../components/shared/CustomerLookup";
+import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 
 export const Contracts: React.FC = () => {
   const { activeStore } = useAuth();
@@ -67,7 +70,7 @@ export const Contracts: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Helpers choice lists
-  const [customers, setCustomers] = useState<any[]>([]);
+
   const [collaborators, setCollaborators] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [commodities, setCommodities] = useState<any[]>([]);
@@ -89,6 +92,11 @@ export const Contracts: React.FC = () => {
   const [newCustPhone, setNewCustPhone] = useState("");
   const [newCustCard, setNewCustCard] = useState("");
   const [newCustAddress, setNewCustAddress] = useState("");
+
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedHistoryCustomerId, setSelectedHistoryCustomerId] = useState("");
+  const [selectedHistoryCustomerName, setSelectedHistoryCustomerName] = useState("");
 
   const [pCustomerId, setPCustomerId] = useState("");
   const [pContractCodeNumber, setPContractCodeNumber] = useState<number>(5);
@@ -369,15 +377,13 @@ export const Contracts: React.FC = () => {
 
   const fetchHelpers = async () => {
     try {
-      const [custs, collabs, emps, comms, pawnInt, storesRes] = await Promise.all([
-        axios.get("/api/customers"),
+      const [collabs, emps, comms, pawnInt, storesRes] = await Promise.all([
         axios.get("/api/collaborators"),
         axios.get("/api/employees"),
         axios.get("/api/commodities"),
         axios.get("/api/contracts/pawn/interest-types"),
         axios.get("/api/stores")
       ]);
-      setCustomers(custs.data.filter((c: any) => c.status === "active"));
       setCollaborators(collabs.data);
       setEmployees(emps.data.filter((e: any) => e.status === "active"));
       setCommodities(comms.data);
@@ -418,6 +424,7 @@ export const Contracts: React.FC = () => {
     setNewCustPhone("");
     setNewCustCard("");
     setNewCustAddress("");
+    setCustomerSearchQuery("");
 
     if (activeTab === "pawn") {
       setPCustomerId("");
@@ -560,6 +567,12 @@ export const Contracts: React.FC = () => {
 
     if (activeTab === "pawn") {
       setPCustomerId(item.customer_id);
+      setCustomerSearchQuery(item.customer?.full_name || "");
+      setNewCustName(item.customer?.full_name || "");
+      setNewCustCard(item.customer?.identity_card_number || "");
+      setNewCustPhone(item.customer?.phone || "");
+      setNewCustAddress(item.customer?.address || "");
+      
       setPCommodityId(item.commodity_id);
       setPAssetName(item.asset_name);
       setPLoanAmount(String(Number(item.loan_amount)));
@@ -587,8 +600,13 @@ export const Contracts: React.FC = () => {
       setIsPawnOpen(true);
     } else if (activeTab === "unsecured") {
       setUCustomerId(item.customer_id);
-      setUCommodityId(item.commodity_id || "");
+      setCustomerSearchQuery(item.customer?.full_name || "");
+      setNewCustName(item.customer?.full_name || "");
+      setNewCustCard(item.customer?.identity_card_number || "");
+      setNewCustPhone(item.customer?.phone || "");
+      setNewCustAddress(item.customer?.address || "");
 
+      setUCommodityId(item.commodity_id || "");
       setULoanAmount(String(Number(item.loan_amount)));
       setUInterestTypeId(item.interest_type_id);
       setUIsUpfront(item.is_upfront_interest);
@@ -1479,7 +1497,6 @@ export const Contracts: React.FC = () => {
 
       {/* PAWN CREATE / EDIT MODAL matching Image 2 */}
       {isPawnOpen && (() => {
-        const selectedCustomer = customers.find((c) => String(c.id) === String(pCustomerId));
         const labelClass = "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
 
         return (
@@ -1504,7 +1521,15 @@ export const Contracts: React.FC = () => {
                       type="radio"
                       name="customer_type"
                       checked={customerType === "new"}
-                      onChange={() => setCustomerType("new")}
+                      onChange={() => {
+                        setCustomerType("new");
+                        setNewCustName("");
+                        setNewCustCard("");
+                        setNewCustPhone("");
+                        setNewCustAddress("");
+                        setCustomerSearchQuery("");
+                        setPCustomerId("");
+                      }}
                       className="radio radio-xs radio-primary"
                     />
                     <span>Khách mới</span>
@@ -1514,11 +1539,38 @@ export const Contracts: React.FC = () => {
                       type="radio"
                       name="customer_type"
                       checked={customerType === "existing"}
-                      onChange={() => setCustomerType("existing")}
+                      onChange={() => {
+                        setCustomerType("existing");
+                        setNewCustName("");
+                        setNewCustCard("");
+                        setNewCustPhone("");
+                        setNewCustAddress("");
+                        setCustomerSearchQuery("");
+                        setPCustomerId("");
+                      }}
                       className="radio radio-xs radio-primary"
                     />
                     <span>Khách cũ</span>
                   </label>
+                  
+                  {/* Eye icon next to lookup selection */}
+                  {customerType === "existing" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (pCustomerId) {
+                          setSelectedHistoryCustomerId(pCustomerId);
+                          setSelectedHistoryCustomerName(newCustName);
+                          setIsHistoryOpen(true);
+                        }
+                      }}
+                      className={`text-blue-600 hover:text-blue-800 shrink-0 ${!pCustomerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                      title="Xem lịch sử hợp đồng của khách"
+                      disabled={!pCustomerId}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* SECTION 1: CUSTOMER GROUP */}
@@ -1539,19 +1591,26 @@ export const Contracts: React.FC = () => {
                           required={customerType === "new"}
                         />
                       ) : (
-                        <select
-                          value={pCustomerId}
-                          onChange={(e) => setPCustomerId(e.target.value)}
-                          className="select select-bordered select-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
-                          required={customerType === "existing"}
-                        >
-                          <option value="">-- Chọn khách hàng --</option>
-                          {customers.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.full_name} ({c.phone || "Không SĐT"})
-                            </option>
-                          ))}
-                        </select>
+                        <CustomerLookup
+                          value={customerSearchQuery}
+                          onChange={setCustomerSearchQuery}
+                          onSelect={(c) => {
+                            setPCustomerId(c.id);
+                            setCustomerSearchQuery(c.full_name);
+                            setNewCustName(c.full_name);
+                            setNewCustCard(c.identity_card_number || "");
+                            setNewCustPhone(c.phone || "");
+                            setNewCustAddress(c.address || "");
+                          }}
+                          onClear={() => {
+                            setPCustomerId("");
+                            setNewCustName("");
+                            setNewCustCard("");
+                            setNewCustPhone("");
+                            setNewCustAddress("");
+                          }}
+                          required
+                        />
                       )}
                     </div>
                   </div>
@@ -1593,11 +1652,11 @@ export const Contracts: React.FC = () => {
                       <input
                         type="text"
                         placeholder="CCCD/CMND khách hàng..."
-                        value={customerType === "new" ? newCustCard : selectedCustomer?.identity_card_number || ""}
+                        value={newCustCard}
                         onChange={(e) => setNewCustCard(e.target.value)}
                         readOnly={customerType === "existing"}
                         disabled={customerType === "existing"}
-                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none ${
+                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
                           customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
                         }`}
                       />
@@ -1611,11 +1670,11 @@ export const Contracts: React.FC = () => {
                       <input
                         type="text"
                         placeholder="Số điện thoại khách hàng..."
-                        value={customerType === "new" ? newCustPhone : selectedCustomer?.phone || ""}
+                        value={newCustPhone}
                         onChange={(e) => setNewCustPhone(e.target.value)}
                         readOnly={customerType === "existing"}
                         disabled={customerType === "existing"}
-                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none ${
+                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
                           customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
                         }`}
                       />
@@ -1629,11 +1688,11 @@ export const Contracts: React.FC = () => {
                       <input
                         type="text"
                         placeholder="Địa chỉ hộ khẩu/tạm trú..."
-                        value={customerType === "new" ? newCustAddress : selectedCustomer?.address || ""}
+                        value={newCustAddress}
                         onChange={(e) => setNewCustAddress(e.target.value)}
                         readOnly={customerType === "existing"}
                         disabled={customerType === "existing"}
-                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none ${
+                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
                           customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
                         }`}
                       />
@@ -2014,7 +2073,6 @@ export const Contracts: React.FC = () => {
 
       {/* UNSECURED CREATE / EDIT MODAL matching Image 2 */}
       {isUnsecuredOpen && (() => {
-        const selectedCustomer = customers.find((c) => String(c.id) === String(uCustomerId));
         const labelClass = "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
 
         return (
@@ -2039,7 +2097,15 @@ export const Contracts: React.FC = () => {
                       type="radio"
                       name="u_customer_type"
                       checked={customerType === "new"}
-                      onChange={() => setCustomerType("new")}
+                      onChange={() => {
+                        setCustomerType("new");
+                        setNewCustName("");
+                        setNewCustCard("");
+                        setNewCustPhone("");
+                        setNewCustAddress("");
+                        setCustomerSearchQuery("");
+                        setUCustomerId("");
+                      }}
                       className="radio radio-xs radio-primary"
                     />
                     <span>Khách mới</span>
@@ -2049,11 +2115,38 @@ export const Contracts: React.FC = () => {
                       type="radio"
                       name="u_customer_type"
                       checked={customerType === "existing"}
-                      onChange={() => setCustomerType("existing")}
+                      onChange={() => {
+                        setCustomerType("existing");
+                        setNewCustName("");
+                        setNewCustCard("");
+                        setNewCustPhone("");
+                        setNewCustAddress("");
+                        setCustomerSearchQuery("");
+                        setUCustomerId("");
+                      }}
                       className="radio radio-xs radio-primary"
                     />
                     <span>Khách cũ</span>
                   </label>
+
+                  {/* Eye icon next to lookup selection */}
+                  {customerType === "existing" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (uCustomerId) {
+                          setSelectedHistoryCustomerId(uCustomerId);
+                          setSelectedHistoryCustomerName(newCustName);
+                          setIsHistoryOpen(true);
+                        }
+                      }}
+                      className={`text-blue-600 hover:text-blue-800 shrink-0 ${!uCustomerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                      title="Xem lịch sử hợp đồng của khách"
+                      disabled={!uCustomerId}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* SECTION 1: THÔNG TIN KHÁCH HÀNG */}
@@ -2062,17 +2155,26 @@ export const Contracts: React.FC = () => {
                     <div className="flex items-center">
                       <label className={labelClass}>Tên khách hàng *</label>
                       {customerType === "existing" ? (
-                        <select
-                          value={uCustomerId}
-                          onChange={(e) => setUCustomerId(e.target.value)}
-                          className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none font-semibold text-xs h-8 min-h-[32px]"
+                        <CustomerLookup
+                          value={customerSearchQuery}
+                          onChange={setCustomerSearchQuery}
+                          onSelect={(c) => {
+                            setUCustomerId(c.id);
+                            setCustomerSearchQuery(c.full_name);
+                            setNewCustName(c.full_name);
+                            setNewCustCard(c.identity_card_number || "");
+                            setNewCustPhone(c.phone || "");
+                            setNewCustAddress(c.address || "");
+                          }}
+                          onClear={() => {
+                            setUCustomerId("");
+                            setNewCustName("");
+                            setNewCustCard("");
+                            setNewCustPhone("");
+                            setNewCustAddress("");
+                          }}
                           required
-                        >
-                          <option value="">-- Chọn khách hàng --</option>
-                          {customers.map((c) => (
-                            <option key={c.id} value={c.id}>{c.full_name} ({c.phone || "Không SĐT"})</option>
-                          ))}
-                        </select>
+                        />
                       ) : (
                         <input
                           type="text"
@@ -2118,7 +2220,7 @@ export const Contracts: React.FC = () => {
                       <input
                         type="text"
                         placeholder=""
-                        value={customerType === "new" ? newCustCard : (selectedCustomer?.identity_card_number || "")}
+                        value={newCustCard}
                         onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
                         disabled={customerType === "existing"}
                         className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
@@ -2129,7 +2231,7 @@ export const Contracts: React.FC = () => {
                       <input
                         type="text"
                         placeholder=""
-                        value={customerType === "new" ? newCustPhone : (selectedCustomer?.phone || "")}
+                        value={newCustPhone}
                         onChange={(e) => customerType === "new" && setNewCustPhone(e.target.value)}
                         disabled={customerType === "existing"}
                         className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
@@ -2142,7 +2244,7 @@ export const Contracts: React.FC = () => {
                     <input
                       type="text"
                       placeholder=""
-                      value={customerType === "new" ? newCustAddress : (selectedCustomer?.address || "")}
+                      value={newCustAddress}
                       onChange={(e) => customerType === "new" && setNewCustAddress(e.target.value)}
                       disabled={customerType === "existing"}
                       className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
@@ -2388,21 +2490,145 @@ export const Contracts: React.FC = () => {
               Lập Hợp Đồng Trả Góp Mới
             </h3>
             <form onSubmit={handleCreateInstallment} className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Khách hàng góp *</label>
-                  <select
-                    value={iCustomerId}
-                    onChange={(e) => setICustomerId(e.target.value)}
-                    className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
-                    required
+              
+              {/* Centered Radio selection */}
+              <div className="flex justify-center gap-6 mt-2 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                  <input
+                    type="radio"
+                    name="i_customer_type"
+                    checked={customerType === "new"}
+                    onChange={() => {
+                      setCustomerType("new");
+                      setNewCustName("");
+                      setNewCustCard("");
+                      setNewCustPhone("");
+                      setNewCustAddress("");
+                      setCustomerSearchQuery("");
+                      setICustomerId("");
+                    }}
+                    className="radio radio-xs radio-primary"
+                  />
+                  <span>Khách mới</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                  <input
+                    type="radio"
+                    name="i_customer_type"
+                    checked={customerType === "existing"}
+                    onChange={() => {
+                      setCustomerType("existing");
+                      setNewCustName("");
+                      setNewCustCard("");
+                      setNewCustPhone("");
+                      setNewCustAddress("");
+                      setCustomerSearchQuery("");
+                      setICustomerId("");
+                    }}
+                    className="radio radio-xs radio-primary"
+                  />
+                  <span>Khách cũ</span>
+                </label>
+                
+                {/* Eye icon next to lookup selection */}
+                {customerType === "existing" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (iCustomerId) {
+                        setSelectedHistoryCustomerId(iCustomerId);
+                        setSelectedHistoryCustomerName(newCustName);
+                        setIsHistoryOpen(true);
+                      }
+                    }}
+                    className={`text-blue-600 hover:text-blue-800 shrink-0 ${!iCustomerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    title="Xem lịch sử hợp đồng của khách"
+                    disabled={!iCustomerId}
                   >
-                    <option value="">-- Chọn khách hàng --</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>{c.full_name} ({c.phone})</option>
-                    ))}
-                  </select>
+                    <Eye className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* SECTION 1: THÔNG TIN KHÁCH HÀNG */}
+              <div className="space-y-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center">
+                    <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Tên khách hàng *</label>
+                    <div className="grow">
+                      {customerType === "new" ? (
+                        <input
+                          type="text"
+                          placeholder="Nhập họ và tên"
+                          value={newCustName}
+                          onChange={(e) => setNewCustName(e.target.value)}
+                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
+                          required={customerType === "new"}
+                        />
+                      ) : (
+                        <CustomerLookup
+                          value={customerSearchQuery}
+                          onChange={setCustomerSearchQuery}
+                          onSelect={(c) => {
+                            setICustomerId(c.id);
+                            setCustomerSearchQuery(c.full_name);
+                            setNewCustName(c.full_name);
+                            setNewCustCard(c.identity_card_number || "");
+                            setNewCustPhone(c.phone || "");
+                            setNewCustAddress(c.address || "");
+                          }}
+                          onClear={() => {
+                            setICustomerId("");
+                            setNewCustName("");
+                            setNewCustCard("");
+                            setNewCustPhone("");
+                            setNewCustAddress("");
+                          }}
+                          required
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Số CCCD/Hộ chiếu</label>
+                    <input
+                      type="text"
+                      placeholder="CCCD/CMND..."
+                      value={newCustCard}
+                      onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
+                      disabled={customerType === "existing"}
+                      className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
+                    />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center">
+                    <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Số điện thoại</label>
+                    <input
+                      type="text"
+                      placeholder="Số điện thoại..."
+                      value={newCustPhone}
+                      onChange={(e) => customerType === "new" && setNewCustPhone(e.target.value)}
+                      disabled={customerType === "existing"}
+                      className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
+                    />
+                  </div>
+                  <div className="flex items-center">
+                    <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Địa chỉ</label>
+                    <input
+                      type="text"
+                      placeholder="Địa chỉ hộ khẩu/tạm trú..."
+                      value={newCustAddress}
+                      onChange={(e) => customerType === "new" && setNewCustAddress(e.target.value)}
+                      disabled={customerType === "existing"}
+                      className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label text-slate-600 font-semibold py-1">Ngày lập hợp đồng</label>
                   <input
@@ -2412,9 +2638,6 @@ export const Contracts: React.FC = () => {
                     className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label text-slate-600 font-semibold py-1">Tổng tiền phải trả góp (Gốc + Lãi) *</label>
                   <MoneyInput
@@ -2424,6 +2647,9 @@ export const Contracts: React.FC = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label text-slate-600 font-semibold py-1">Tiền thực giao cho khách vay *</label>
                   <MoneyInput
@@ -2433,9 +2659,6 @@ export const Contracts: React.FC = () => {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="label text-slate-600 font-semibold py-1">Loại chu kỳ góp *</label>
                   <select
@@ -2449,6 +2672,9 @@ export const Contracts: React.FC = () => {
                     <option value="monthly">Hàng tháng</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label text-slate-600 font-semibold py-1">Thời gian vay (Ngày) *</label>
                   <input
@@ -2475,7 +2701,7 @@ export const Contracts: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label text-slate-600 font-semibold py-1">Nhân viên thu tiền (Collector) *</label>
+                  <label className="label text-slate-600 font-semibold py-1">Nhân viên thu tiền *</label>
                   <select
                     value={iCollectorId}
                     onChange={(e) => setICollectorId(e.target.value)}
@@ -2489,7 +2715,7 @@ export const Contracts: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label text-slate-600 font-semibold py-1">Cộng tác viên giới thiệu</label>
+                  <label className="label text-slate-600 font-semibold py-1">Cộng tác viên</label>
                   <select
                     value={iCollaboratorId}
                     onChange={(e) => setICollaboratorId(e.target.value)}
@@ -2953,6 +3179,12 @@ export const Contracts: React.FC = () => {
           </div>
         );
       })()}
+      <CustomerHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        customerId={selectedHistoryCustomerId}
+        customerName={selectedHistoryCustomerName}
+      />
     </div>
   );
 };

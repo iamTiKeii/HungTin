@@ -15,6 +15,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import { CustomerLookup } from "../components/shared/CustomerLookup";
+import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 
 interface InterestType {
   id: string;
@@ -91,7 +93,6 @@ export const CapitalContracts: React.FC = () => {
 
   // Customer contract list modal (Image 3)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [selectedInvestorName, setSelectedInvestorName] = useState("");
 
   // Capital transactions detail ledger modal (Images 4 & 5)
   const [isDetailLedgerOpen, setIsDetailLedgerOpen] = useState(false);
@@ -106,9 +107,6 @@ export const CapitalContracts: React.FC = () => {
   const [investorType, setInvestorType] = useState<"new" | "existing">("new");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [searchResults, setSearchResults] = useState<Customer[]>([]);
-  const [searchingCustomers, setSearchingCustomers] = useState(false);
   
   const [investorName, setInvestorName] = useState("");
   const [investorIdCard, setInvestorIdCard] = useState("");
@@ -160,26 +158,7 @@ export const CapitalContracts: React.FC = () => {
     fetchHelpers();
   }, []);
 
-  useEffect(() => {
-    if (!customerSearchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const delayDebounceFn = setTimeout(async () => {
-      try {
-        setSearchingCustomers(true);
-        const res = await axios.get(`/api/customers?search=${encodeURIComponent(customerSearchQuery)}`);
-        setSearchResults(res.data);
-      } catch (err) {
-        console.error("Error searching customers:", err);
-      } finally {
-        setSearchingCustomers(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [customerSearchQuery]);
+  // Debounced search logic removed because it is now handled by CustomerLookup component
 
   const handleOpenCreate = () => {
     setIsEditMode(false);
@@ -187,7 +166,6 @@ export const CapitalContracts: React.FC = () => {
     setInvestorType("new");
     setSelectedCustomerId("");
     setCustomerSearchQuery("");
-    setShowSuggestions(false);
     setInvestorName("");
     setInvestorIdCard("");
     setInvestorPhone("");
@@ -231,7 +209,6 @@ export const CapitalContracts: React.FC = () => {
       setSelectedCustomerId("");
       setCustomerSearchQuery("");
     }
-    setShowSuggestions(false);
     
     setInvestorName(c.investor_name);
     setInvestorIdCard(c.investor_id_card || "");
@@ -250,16 +227,6 @@ export const CapitalContracts: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSelectCustomer = (custId: string) => {
-    setSelectedCustomerId(custId);
-    const selected = customers.find(c => c.id === custId);
-    if (selected) {
-      setInvestorName(selected.full_name);
-      setInvestorIdCard(selected.identity_card_number || "");
-      setInvestorPhone(selected.phone || "");
-      setInvestorAddress(selected.address || "");
-    }
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,8 +286,14 @@ export const CapitalContracts: React.FC = () => {
 
   const handleOpenHistory = (name: string) => {
     if (!name) return;
-    setSelectedInvestorName(name);
-    setIsHistoryOpen(true);
+    const cust = customers.find(c => c.full_name === name);
+    if (cust) {
+      setSelectedCustomerId(cust.id);
+      setInvestorName(cust.full_name);
+      setIsHistoryOpen(true);
+    } else {
+      toast.warning("Không tìm thấy thông tin khách hàng này trên hệ thống để xem lịch sử.");
+    }
   };
 
   const handleOpenDetailLedger = async (c: CapitalContract) => {
@@ -440,12 +413,6 @@ export const CapitalContracts: React.FC = () => {
   const totalAmountSum = filtered.reduce((sum, c) => sum + (c.status === "active" ? Number(c.amount) : 0), 0);
   const totalInterestPaidSum = 0; // standard mock value matching the image
 
-  // Client History specific contracts (Image 3)
-  const historyContracts = contracts.filter(c => c.investor_name === selectedInvestorName);
-  const historyTotalAmount = historyContracts.reduce((sum, c) => sum + (c.status === "active" ? Number(c.amount) : 0), 0);
-  const historyActiveCount = historyContracts.filter(c => c.status === "active").length;
-  const historyCompletedCount = historyContracts.filter(c => c.status === "completed").length;
-  const historyCancelledCount = historyContracts.filter(c => c.status === "cancelled").length;
 
   return (
     <div className="space-y-6 text-slate-800 animate-fade-in max-w-7xl mx-auto font-sans">
@@ -717,7 +684,6 @@ export const CapitalContracts: React.FC = () => {
                       checked={investorType === "new"}
                       onChange={() => {
                         setInvestorType("new");
-                        setShowSuggestions(false);
                       }}
                       className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
                     />
@@ -730,7 +696,6 @@ export const CapitalContracts: React.FC = () => {
                       checked={investorType === "existing"}
                       onChange={() => {
                         setInvestorType("existing");
-                        setShowSuggestions(false);
                       }}
                       className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
                     />
@@ -757,57 +722,26 @@ export const CapitalContracts: React.FC = () => {
                 </div>
                 <div className="col-span-9">
                   {investorType === "existing" ? (
-                    <div className="relative w-full">
-                      <input
-                        type="text"
-                        placeholder="Nhập tên, số điện thoại hoặc CCCD để tìm kiếm..."
-                        value={customerSearchQuery}
-                        onChange={(e) => {
-                          setCustomerSearchQuery(e.target.value);
-                          setShowSuggestions(true);
-                          // Reset selected values since the user is typing to search
-                          setInvestorName("");
-                          setInvestorIdCard("");
-                          setInvestorPhone("");
-                          setInvestorAddress("");
-                        }}
-                        onFocus={() => setShowSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
-                        required
-                      />
-                      {showSuggestions && customerSearchQuery && (
-                        <div className="absolute z-[999] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100">
-                          {searchingCustomers ? (
-                            <div className="p-3 text-center text-xs text-slate-400">
-                              Đang tìm kiếm...
-                            </div>
-                          ) : searchResults.length === 0 ? (
-                            <div className="p-3 text-center text-xs text-slate-400">
-                              Không tìm thấy khách hàng
-                            </div>
-                          ) : (
-                            searchResults.slice(0, 10).map((c) => (
-                              <div
-                                key={c.id}
-                                onClick={() => {
-                                  handleSelectCustomer(c.id);
-                                  setCustomerSearchQuery(c.full_name);
-                                  setShowSuggestions(false);
-                                }}
-                                className="p-2.5 hover:bg-amber-50/50 cursor-pointer transition-colors text-left"
-                              >
-                                <div className="font-semibold text-slate-800 text-xs">{c.full_name}</div>
-                                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-[10px] text-slate-500 font-medium">
-                                  {c.identity_card_number && <span>CCCD: {c.identity_card_number}</span>}
-                                  {c.phone && <span>SĐT: {c.phone}</span>}
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <CustomerLookup
+                      value={customerSearchQuery}
+                      onChange={setCustomerSearchQuery}
+                      onSelect={(c) => {
+                        setSelectedCustomerId(c.id);
+                        setCustomerSearchQuery(c.full_name);
+                        setInvestorName(c.full_name);
+                        setInvestorIdCard(c.identity_card_number || "");
+                        setInvestorPhone(c.phone || "");
+                        setInvestorAddress(c.address || "");
+                      }}
+                      onClear={() => {
+                        setSelectedCustomerId("");
+                        setInvestorName("");
+                        setInvestorIdCard("");
+                        setInvestorPhone("");
+                        setInvestorAddress("");
+                      }}
+                      required
+                    />
                   ) : (
                     <input
                       type="text"
@@ -830,7 +764,7 @@ export const CapitalContracts: React.FC = () => {
                     placeholder="CCCD/Hộ chiếu"
                     value={investorIdCard}
                     onChange={(e) => setInvestorIdCard(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg disabled:bg-slate-50 disabled:text-slate-500"
                     disabled={investorType === "existing"}
                   />
                 </div>
@@ -843,7 +777,7 @@ export const CapitalContracts: React.FC = () => {
                     placeholder="Điện thoại"
                     value={investorPhone}
                     onChange={(e) => setInvestorPhone(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg disabled:bg-slate-50 disabled:text-slate-500"
                     disabled={investorType === "existing"}
                   />
                 </div>
@@ -858,7 +792,7 @@ export const CapitalContracts: React.FC = () => {
                     placeholder="Nhập địa chỉ"
                     value={investorAddress}
                     onChange={(e) => setInvestorAddress(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg disabled:bg-slate-50 disabled:text-slate-500"
                     disabled={investorType === "existing"}
                   />
                 </div>
@@ -982,162 +916,12 @@ export const CapitalContracts: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* HISTORY DETAILS MODAL (Danh sách hợp đồng của khách hàng - Image 3) */}
-      {isHistoryOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-4xl shadow-2xl p-6 relative">
-            <button 
-              onClick={() => setIsHistoryOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Modal Title */}
-            <h3 className="font-semibold text-slate-850 border-b pb-3 text-sm">
-              Danh sách hợp đồng của khách hàng <span className="text-blue-600 font-bold">{selectedInvestorName}</span>
-            </h3>
-
-            {/* Overview Metrics Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 text-[11px]">
-              
-              {/* Card 1: Tổng hợp đồng */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">Tổng hợp đồng</div>
-                <div className="font-bold text-slate-800 mt-1">{historyContracts.length}</div>
-              </div>
-
-              {/* Card 2: Dư nợ gốc */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">Dư nợ gốc</div>
-                <div className="font-bold text-blue-600 mt-1">{formatNumber(historyTotalAmount)} VNĐ</div>
-              </div>
-
-              {/* Card 3: Dư nợ hiện tại */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">Dư nợ hiện tại</div>
-                <div className="font-bold text-blue-600 mt-1">{formatNumber(historyTotalAmount)} VNĐ</div>
-              </div>
-
-              {/* Card 4: Tiền nợ */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">Tiền nợ</div>
-                <div className="font-bold text-blue-600 mt-1">0 VNĐ</div>
-              </div>
-
-              {/* Card 5: Lãi đã trả */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">Lãi đã trả</div>
-                <div className="font-bold text-blue-600 mt-1">0 VNĐ</div>
-              </div>
-
-              {/* Card 6: HĐ đang vay */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">HĐ đang vay</div>
-                <div className="font-bold text-blue-600 mt-1">{historyActiveCount}</div>
-              </div>
-
-              {/* Card 7: HĐ đã kết thúc */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">HĐ đã kết thúc</div>
-                <div className="font-bold text-blue-600 mt-1">{historyCompletedCount}</div>
-              </div>
-
-              {/* Card 8: HĐ chậm thanh toán */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">HĐ chậm thanh toán</div>
-                <div className="font-bold text-amber-500 mt-1">0</div>
-              </div>
-
-              {/* Card 9: HĐ quá hạn */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">HĐ quá hạn</div>
-                <div className="font-bold text-red-500 mt-1">0</div>
-              </div>
-
-              {/* Card 10: HĐ đã xóa */}
-              <div className="bg-slate-50 border border-slate-150 p-2 rounded-xl">
-                <div className="text-slate-450 font-medium">HĐ đã xóa</div>
-                <div className="font-bold text-slate-450 mt-1">{historyCancelledCount}</div>
-              </div>
-
-            </div>
-
-            {/* Modal Contracts Table */}
-            <div className="mt-6 border border-slate-150 rounded-2xl overflow-hidden">
-              <table className="table w-full text-slate-700 text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 text-[10px] font-semibold">
-                    <th className="w-10 text-center">#</th>
-                    <th>Loại hình</th>
-                    <th>Mã HĐ</th>
-                    <th>Ngày vay</th>
-                    <th>Dư nợ gốc</th>
-                    <th>Dư nợ hiện tại</th>
-                    <th>Lãi suất</th>
-                    <th>Lãi đã trả</th>
-                    <th>Tiền nợ</th>
-                    <th>Tình trạng</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyContracts.map((h, i) => (
-                    <tr key={h.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                      <td className="text-center font-medium text-slate-400">{i + 1}</td>
-                      <td className="font-semibold text-slate-800">Nguồn vốn</td>
-                      <td className="font-semibold text-blue-600">NV-{h.id.substring(0,4).toUpperCase()}</td>
-                      <td className="text-slate-500">{formatDate(h.investment_date)}</td>
-                      <td className="font-semibold text-blue-600">{formatNumber(h.amount)}</td>
-                      <td className="font-semibold text-blue-600">{formatNumber(h.amount)}</td>
-                      <td className="text-slate-500">{h.interest_type ? h.interest_type.name : "Không tính lãi"}</td>
-                      <td className="font-semibold text-blue-600">0</td>
-                      <td className="font-semibold text-blue-600">0</td>
-                      <td>
-                        <span className={`badge font-medium badge-xs py-1.5 px-2 border-none rounded uppercase text-[9px] ${
-                          h.status === "active" 
-                            ? "bg-blue-500 text-white" 
-                            : h.status === "completed" 
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-100 text-slate-500"
-                        }`}>
-                          {h.status === "active" ? "Đang đầu tư" : h.status === "completed" ? "Đã trả xong" : "Đã hủy"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* Totals Row inside the history modal */}
-                  <tr className="bg-amber-50 font-bold text-xs text-slate-800 border-none">
-                    <td></td>
-                    <td className="font-bold">Tổng</td>
-                    <td></td>
-                    <td></td>
-                    <td className="text-blue-600 font-bold">{formatNumber(historyTotalAmount)}</td>
-                    <td className="text-blue-600 font-bold">{formatNumber(historyTotalAmount)}</td>
-                    <td></td>
-                    <td className="text-blue-600 font-bold">0</td>
-                    <td className="text-blue-600 font-bold">0</td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Close Button */}
-            <div className="modal-action mt-6">
-              <button
-                type="button"
-                onClick={() => setIsHistoryOpen(false)}
-                className="btn btn-outline border-slate-200 text-slate-550 btn-sm rounded-lg text-xs"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CustomerHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        customerId={selectedCustomerId}
+        customerName={investorName}
+      />
 
       {/* LEDGER DETAILS MODAL (Bảng chi tiết hợp đồng nguồn vốn - Images 4 & 5) */}
       {isDetailLedgerOpen && selectedContractDetail && (
