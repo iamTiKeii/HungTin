@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Wallet, History, ArrowUpRight, ArrowDownRight, RefreshCw, CalendarRange } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import { useConfirm } from "../context/ConfirmContext";
 
 interface CashHistory {
   id: string;
@@ -18,6 +19,7 @@ interface CashHistory {
 
 export const CashFund: React.FC = () => {
   const { activeStore } = useAuth();
+  const confirm = useConfirm();
   const [summary, setSummary] = useState<any>(null);
   const [history, setHistory] = useState<CashHistory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,20 +80,20 @@ export const CashFund: React.FC = () => {
     }
   };
 
-  const handleBalance = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn CHỐT QUỸ CUỐI NGÀY? Việc này sẽ đồng bộ số két hiện tại thành số két đầu ngày tiếp theo.")) {
-      return;
-    }
-
-    try {
-      setError("");
-      setSuccess("");
-      await axios.post("/api/cash/balance");
-      setSuccess("Chốt quỹ đầu ngày tiếp theo thành công!");
-      fetchData();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể chốt số dư quỹ két.");
-    }
+  const handleBalance = (e: React.MouseEvent) => {
+    confirm({
+      title: "Chốt quỹ cuối ngày",
+      message: "Bạn có chắc chắn muốn CHỐT QUỸ CUỐI NGÀY? Việc này sẽ đồng bộ số két hiện tại thành số két đầu ngày tiếp theo.",
+      type: "warning",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post("/api/cash/balance");
+        fetchData();
+      },
+      successMessage: "Chốt quỹ đầu ngày tiếp theo thành công!",
+    });
   };
 
   const formatCurrency = (val: number | string) => {
@@ -121,7 +123,7 @@ export const CashFund: React.FC = () => {
             Điều chỉnh quỹ két
           </button>
           <button
-            onClick={handleBalance}
+            onClick={(e) => handleBalance(e)}
             className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 btn-sm font-extrabold flex-1 md:flex-none rounded-xl"
           >
             Chốt quỹ cuối ngày

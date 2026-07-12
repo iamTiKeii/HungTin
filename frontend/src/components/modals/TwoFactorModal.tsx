@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { X, ShieldAlert, ShieldCheck, QrCode, Clipboard } from "lucide-react";
 import { toast } from "../../lib/toast";
+import { useConfirm } from "../../context/ConfirmContext";
 
 interface TwoFactorModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface TwoFactorModalProps {
 
 export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose }) => {
   const { user, fetchProfile } = useAuth();
+  const confirm = useConfirm();
   
   const [isEnabled, setIsEnabled] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -75,23 +77,25 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
     }
   };
 
-  const handleDisable = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn TẮT bảo mật 2 lớp không? Tài khoản của bạn sẽ kém an toàn hơn.")) {
-      return;
-    }
-    setLoading(true);
-
-    try {
-      await axios.delete("/api/profile/2fa");
-      toast.success("Đã tắt bảo mật 2 lớp thành công.");
-      await fetchProfile();
-      setIsEnabled(false);
-      loadSetup();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể tắt bảo mật 2 lớp.");
-    } finally {
-      setLoading(false);
-    }
+  const handleDisable = (e: React.MouseEvent) => {
+    confirm({
+      title: "Tắt bảo mật 2 lớp",
+      message: "Bạn có chắc chắn muốn TẮT bảo mật 2 lớp không? Tài khoản của bạn sẽ kém an toàn hơn.",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await axios.delete("/api/profile/2fa");
+          await fetchProfile();
+          setIsEnabled(false);
+          loadSetup();
+        } finally {
+          setLoading(false);
+        }
+      },
+      successMessage: "Đã tắt bảo mật 2 lớp thành công.",
+    });
   };
 
   const copySecret = () => {
@@ -133,7 +137,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
             <div className="pt-4 border-t border-slate-100">
               <button
                 type="button"
-                onClick={handleDisable}
+                onClick={(e) => handleDisable(e)}
                 disabled={loading}
                 className="btn btn-outline border-red-200 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-xl px-6 w-full font-bold"
               >

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import { useConfirm } from "../context/ConfirmContext";
 
 interface InterestType {
   id: string;
@@ -41,6 +42,7 @@ export const Commodities: React.FC = () => {
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [interestTypes, setInterestTypes] = useState<InterestType[]>([]);
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -207,16 +209,19 @@ export const Commodities: React.FC = () => {
     }
   };
 
-  const handleDelete = async (comm: Commodity) => {
+  const handleDelete = (comm: Commodity, e: React.MouseEvent) => {
     const cleanName = comm.name.split("|")[0];
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa cấu hình hàng hóa "${cleanName}"?`)) return;
-    try {
-      await axios.delete(`/api/commodities/${comm.id}`);
-      toast.success(`Đã xóa cấu hình hàng hóa ${cleanName} thành công!`);
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa cấu hình.");
-    }
+    confirm({
+      title: "Xóa cấu hình hàng hóa",
+      message: `Bạn có chắc chắn muốn xóa cấu hình hàng hóa "${cleanName}"?`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/commodities/${comm.id}`);
+        fetchData();
+      },
+      successMessage: `Đã xóa cấu hình hàng hóa ${cleanName} thành công!`,
+    });
   };
 
   const handleAddAttribute = () => {
@@ -476,7 +481,7 @@ export const Commodities: React.FC = () => {
 
                             {/* Delete Button */}
                             <button
-                              onClick={() => handleDelete(c)}
+                              onClick={(e) => handleDelete(c, e)}
                               className="btn btn-outline border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 btn-xs rounded p-1"
                               type="button"
                               title="Xóa cấu hình"

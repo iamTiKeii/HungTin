@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { useConfirm } from "../context/ConfirmContext";
 import {
   Trash,
   Upload,
@@ -39,6 +40,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
   const { id: paramId } = useParams<{ id: string }>();
   const id = idProp || paramId;
   const navigate = useNavigate();
+  const confirm = useConfirm();
 
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -143,17 +145,20 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
   }, [id]);
 
 
-  const handleCancelPayCycle = async (paymentId: string, cycleNum: number) => {
-    if (!window.confirm(`Hủy đóng góp kỳ ${cycleNum}? Số tiền thu sẽ được hoàn trả khỏi quỹ két.`)) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.post(`/api/contracts/installment/${id}/cancel-pay`, { paymentId });
-      setSuccess(`Đã hủy thu kỳ góp ${cycleNum} thành công.`);
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy thu góp kỳ.");
-    }
+  const handleCancelPayCycle = (paymentId: string, cycleNum: number, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy đóng góp kỳ",
+      message: `Hủy đóng góp kỳ ${cycleNum}? Số tiền thu sẽ được hoàn trả khỏi quỹ két.`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post(`/api/contracts/installment/${id}/cancel-pay`, { paymentId });
+        fetchContractDetails();
+      },
+      successMessage: `Đã hủy thu kỳ góp ${cycleNum} thành công.`,
+    });
   };
 
   const handleRedeem = async (e: React.FormEvent) => {
@@ -176,17 +181,20 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
     }
   };
 
-  const handleCancelRedeem = async () => {
-    if (!window.confirm("Khôi phục hợp đồng trả góp về trạng thái hoạt động? Tiền đã tất toán sẽ bị rút ra khỏi két.")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.post(`/api/contracts/installment/${id}/cancel-redeem`);
-      setSuccess("Khôi phục trạng thái hoạt động thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy tất toán.");
-    }
+  const handleCancelRedeem = (e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy tất toán sớm",
+      message: "Khôi phục hợp đồng trả góp về trạng thái hoạt động? Tiền đã tất toán sẽ bị rút ra khỏi két.",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post(`/api/contracts/installment/${id}/cancel-redeem`);
+        fetchContractDetails();
+      },
+      successMessage: "Khôi phục trạng thái hoạt động thành công.",
+    });
   };
 
   const handleDebtAction = async (e: React.FormEvent) => {
@@ -245,17 +253,20 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
     }
   };
 
-  const handleDeleteDebtTx = async (txId: string) => {
-    if (!window.confirm("Hủy giao dịch nợ này?")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.delete(`/api/contracts/installment/${id}/debt-transaction/${txId}`);
-      setSuccess("Hủy bỏ nợ thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy nợ.");
-    }
+  const handleDeleteDebtTx = (txId: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy giao dịch nợ",
+      message: "Hủy giao dịch nợ này?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.delete(`/api/contracts/installment/${id}/debt-transaction/${txId}`);
+        fetchContractDetails();
+      },
+      successMessage: "Hủy bỏ nợ thành công.",
+    });
   };
 
   const handleSetTimer = async (e: React.FormEvent) => {
@@ -393,25 +404,31 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
 
 
 
-  const handleDeleteDoc = async (docId: string) => {
-    if (!window.confirm("Xóa tài liệu?")) return;
-    try {
-      await axios.delete(`/api/contracts/installment/${id}/documents/${docId}`);
-      fetchContractDetails();
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDeleteDoc = (docId: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa tài liệu",
+      message: "Xóa tài liệu?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/contracts/installment/${id}/documents/${docId}`);
+        fetchContractDetails();
+      },
+    });
   };
 
-  const handleDeleteContract = async () => {
-    if (!window.confirm("CẢNH BÁO: Xóa hợp đồng sẽ đảo ngược dòng tiền ròng thực tế phát sinh trong két chi nhánh. Tiếp tục?")) return;
-    try {
-      setError("");
-      await axios.delete(`/api/contracts/installment/${id}`);
-      navigate("/contracts");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể xóa hợp đồng.");
-    }
+  const handleDeleteContract = (e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa hợp đồng",
+      message: "CẢNH BÁO: Xóa hợp đồng sẽ đảo ngược dòng tiền ròng thực tế phát sinh trong két chi nhánh. Tiếp tục?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        await axios.delete(`/api/contracts/installment/${id}`);
+        navigate("/contracts");
+      },
+    });
   };
 
   const formatCurrency = (val: number | string) => {
@@ -659,7 +676,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
             </button>
             <button
               type="button"
-              onClick={handleDeleteContract}
+              onClick={(e) => handleDeleteContract(e)}
               className="btn btn-error bg-red-50 hover:bg-red-100 border-none text-red-600 btn-xs rounded-lg flex items-center gap-1 h-7 text-[10px]"
             >
               <Trash className="w-3.5 h-3.5" />
@@ -817,7 +834,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handleCancelPayCycle(payment.id, payment.cycle_number)}
+                                    onClick={(e) => handleCancelPayCycle(payment.id, payment.cycle_number, e)}
                                     className="btn btn-ghost btn-circle btn-xs text-red-500"
                                     disabled={payment.cycle_number === 1 && contract.is_upfront_collected && payment.paid_date === contract.loan_date}
                                     title="Hủy đóng góp"
@@ -858,7 +875,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
                   <p className="text-xs font-semibold text-emerald-600 mb-4">Hợp đồng này đã tất toán đóng.</p>
                   <button
                     type="button"
-                    onClick={handleCancelRedeem}
+                    onClick={(e) => handleCancelRedeem(e)}
                     className="btn btn-neutral border-slate-200 text-red-500 hover:bg-red-505/10 btn-sm rounded-xl font-bold px-6"
                   >
                     Hủy tất toán sớm
@@ -1116,7 +1133,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
                             <td className="text-right">
                               <button
                                 type="button"
-                                onClick={() => handleDeleteDebtTx(d.id)}
+                                onClick={(e) => handleDeleteDebtTx(d.id, e)}
                                 className="btn btn-ghost text-red-500 hover:bg-red-50 hover:text-red-600 btn-xs rounded-lg"
                               >
                                 Hủy bỏ
@@ -1206,7 +1223,7 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
                       </a>
                       <button
                         type="button"
-                        onClick={() => handleDeleteDoc(doc.id)}
+                        onClick={(e) => handleDeleteDoc(doc.id, e)}
                         className="text-red-500 font-bold hover:underline"
                       >
                         Xóa

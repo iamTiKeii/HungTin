@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ConfirmProvider } from "./context/ConfirmContext";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { ToastContainer } from "./components/shared/ToastContainer";
@@ -121,7 +122,8 @@ function App() {
     <ToastContainer />
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <ConfirmProvider>
+          <Routes>
           {/* Public routes */}
           <Route
             path="/login"
@@ -520,6 +522,7 @@ function App() {
           {/* Fallback to Home page dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ConfirmProvider>
       </AuthProvider>
     </BrowserRouter>
     </>

@@ -5,7 +5,7 @@ import { MoreHorizontal } from "lucide-react";
 export interface ActionMenuItem {
   label: string;
   icon?: React.ReactNode;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   danger?: boolean;
   disabled?: boolean;
 }
@@ -104,16 +104,18 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ items, trigger, align = 
     };
   }, [isOpen]);
 
-  const handleItemClick = (onClick: () => void) => {
+  const handleItemClick = (e: React.MouseEvent<HTMLButtonElement>, onClick: (e: React.MouseEvent<HTMLButtonElement>) => void) => {
     setIsOpen(false);
-    onClick();
+    onClick(e);
   };
 
   // Keyboard navigation inside dropdown menu
-  const handleMenuKeyDown = (e: React.KeyboardEvent, onClick: () => void) => {
+  const handleMenuKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, onClick: (e: React.MouseEvent<HTMLButtonElement>) => void) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      handleItemClick(onClick);
+      // Cast the keydown event to target type for click confirmation trigger
+      const clickEvent = e as unknown as React.MouseEvent<HTMLButtonElement>;
+      handleItemClick(clickEvent, onClick);
     }
   };
 
@@ -153,7 +155,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ items, trigger, align = 
                 <li key={index} role="menuitem">
                   <button
                     type="button"
-                    onClick={() => handleItemClick(item.onClick)}
+                    onClick={(e) => handleItemClick(e, item.onClick)}
                     onKeyDown={(e) => handleMenuKeyDown(e, item.onClick)}
                     className={`flex items-center gap-2 px-3 py-2 w-full text-left rounded-lg transition-colors duration-100 ${
                       item.danger

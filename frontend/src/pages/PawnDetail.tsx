@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useConfirm } from "../context/ConfirmContext";
 import {
   Trash,
   Upload,
@@ -33,6 +34,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
   const { id: paramId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const id = idProp || paramId;
+  const confirm = useConfirm();
 
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -156,20 +158,20 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     }
   };
 
-  const handleCancelPayInterest = async (paymentId: string, cycleNum: number) => {
-    if (!window.confirm(`Hủy giao dịch đóng lãi kỳ ${cycleNum}? Số tiền sẽ bị trừ ra khỏi quỹ két.`)) return;
-    try {
-      setSubmitting(true);
-      setError("");
-      setSuccess("");
-      await axios.post(`/api/contracts/pawn/${id}/cancel-pay-interest`, { paymentId });
-      setSuccess(`Đã hủy đóng lãi kỳ ${cycleNum} thành công.`);
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy đóng lãi kỳ.");
-    } finally {
-      setSubmitting(false);
-    }
+  const handleCancelPayInterest = (paymentId: string, cycleNum: number, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy đóng lãi",
+      message: `Hủy giao dịch đóng lãi kỳ ${cycleNum}? Số tiền sẽ bị trừ ra khỏi quỹ két.`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post(`/api/contracts/pawn/${id}/cancel-pay-interest`, { paymentId });
+        fetchContractDetails();
+      },
+      successMessage: `Đã hủy đóng lãi kỳ ${cycleNum} thành công.`,
+    });
   };
 
   const handlePrincipalTx = async (action: "borrow_more" | "pay_down") => {
@@ -236,20 +238,20 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     }
   };
 
-  const handleCancelRedeem = async () => {
-    if (!window.confirm("Khôi phục hợp đồng cầm đồ về trạng thái hoạt động? Tiền chuộc đã đóng sẽ bị rút ra khỏi quỹ két.")) return;
-    try {
-      setSubmitting(true);
-      setError("");
-      setSuccess("");
-      await axios.post(`/api/contracts/pawn/${id}/cancel-redeem`);
-      setSuccess("Khôi phục trạng thái hoạt động hợp đồng thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy tất toán.");
-    } finally {
-      setSubmitting(false);
-    }
+  const handleCancelRedeem = (e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy tất toán",
+      message: "Khôi phục hợp đồng cầm đồ về trạng thái hoạt động? Tiền chuộc đã đóng sẽ bị rút ra khỏi quỹ két.",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post(`/api/contracts/pawn/${id}/cancel-redeem`);
+        fetchContractDetails();
+      },
+      successMessage: "Khôi phục trạng thái hoạt động hợp đồng thành công.",
+    });
   };
 
   const handleStopTimer = async (timerId: string) => {
@@ -376,18 +378,17 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     }
   };
 
-  const handleDeleteDoc = async (docId: string) => {
-    if (!window.confirm("Xóa tài liệu đính kèm này?")) return;
-    try {
-      setSubmitting(true);
-      setError("");
-      await axios.delete(`/api/contracts/pawn/${id}/documents/${docId}`);
-      fetchContractDetails();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
+  const handleDeleteDoc = (docId: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa tài liệu",
+      message: "Xóa tài liệu đính kèm này?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/contracts/pawn/${id}/documents/${docId}`);
+        fetchContractDetails();
+      },
+    });
   };
 
   const handleBlacklist = async (e: React.FormEvent) => {
@@ -409,22 +410,22 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     }
   };
 
-  const handleDeleteContract = async () => {
-    if (!window.confirm("CẢNH BÁO: Bạn đang xóa hợp đồng. Hệ thống sẽ tự động tính toán dòng tiền ròng thực tế phát sinh của hợp đồng này và ĐẢO NGƯỢC QUỸ KÉT tương ứng để cân đối sổ sách. Bạn có chắc chắn muốn xóa?")) return;
-    try {
-      setSubmitting(true);
-      setError("");
-      await axios.delete(`/api/contracts/pawn/${id}`);
-      if (onClose) {
-        onClose();
-      } else {
-        navigate("/contracts");
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể xóa hợp đồng.");
-    } finally {
-      setSubmitting(false);
-    }
+  const handleDeleteContract = (e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa hợp đồng",
+      message: "CẢNH BÁO: Bạn đang xóa hợp đồng. Hệ thống sẽ tự động tính toán dòng tiền ròng thực tế phát sinh của hợp đồng này và ĐẢO NGƯỢC QUỸ KÉT tương ứng để cân đối sổ sách. Bạn có chắc chắn muốn xóa?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        await axios.delete(`/api/contracts/pawn/${id}`);
+        if (onClose) {
+          onClose();
+        } else {
+          navigate("/contracts");
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -798,7 +799,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                         <td className="text-right">
                           {isPaid ? (
                             <button
-                              onClick={() => handleCancelPayInterest(payment.id, payment.cycle_number)}
+                              onClick={(e) => handleCancelPayInterest(payment.id, payment.cycle_number, e)}
                               className="text-red-500 hover:underline font-bold text-xs"
                               disabled={payment.cycle_number === 1 && contract.is_upfront_interest && payment.paid_date === contract.loan_date}
                             >
@@ -1016,7 +1017,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                   ) : (
                     <button
                       type="button"
-                      onClick={handleCancelRedeem}
+                      onClick={(e) => handleCancelRedeem(e)}
                       className="btn btn-neutral border-slate-200 text-red-500 hover:bg-red-500/10 w-52 font-bold rounded-lg text-xs h-9 min-h-[36px]"
                       disabled={submitting}
                     >
@@ -1202,7 +1203,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
                     </p>
                   </div>
                   <button
-                    onClick={() => handleDeleteDoc(doc.id)}
+                    onClick={(e) => handleDeleteDoc(doc.id, e)}
                     className="btn btn-error btn-circle btn-xs absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Xóa tài liệu"
                     type="button"
@@ -1558,7 +1559,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       {/* Delete contract button */}
       <div className="flex justify-end pt-2">
         <button
-          onClick={handleDeleteContract}
+          onClick={(e) => handleDeleteContract(e)}
           className="btn btn-outline border-red-200 hover:bg-red-500/10 text-red-500 btn-sm rounded-lg font-bold gap-1"
           type="button"
         >

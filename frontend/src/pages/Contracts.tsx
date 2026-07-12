@@ -32,11 +32,13 @@ import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
 import { CustomerLookup } from "../components/shared/CustomerLookup";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
+import { useConfirm } from "../context/ConfirmContext";
 
 export const Contracts: React.FC = () => {
   const { activeStore } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const confirm = useConfirm();
 
   // Print & Excel states
   const [isPrintTemplateModalOpen, setIsPrintTemplateModalOpen] = useState(false);
@@ -545,16 +547,19 @@ export const Contracts: React.FC = () => {
     }
   };
 
-  const handleDeleteUnsecuredRow = async (contractId: string, contractCode: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`)) return;
-    try {
-      await axios.delete(`/api/contracts/unsecured/${contractId}`);
-      toast.success(`Đã xóa hợp đồng ${contractCode} thành công!`);
-      fetchContracts();
-      fetchCashSummary();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa hợp đồng.");
-    }
+  const handleDeleteUnsecuredRow = (contractId: string, contractCode: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa hợp đồng tín chấp",
+      message: `Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/contracts/unsecured/${contractId}`);
+        fetchContracts();
+        fetchCashSummary();
+      },
+      successMessage: `Đã xóa hợp đồng ${contractCode} thành công!`,
+    });
   };
 
   const handleCommodityChange = (commId: string) => {
@@ -848,28 +853,34 @@ export const Contracts: React.FC = () => {
     }
   };
 
-  const handleDeletePawnRow = async (contractId: string, contractCode: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`)) return;
-    try {
-      await axios.delete(`/api/contracts/pawn/${contractId}`);
-      toast.success(`Đã xóa hợp đồng ${contractCode} thành công!`);
-      fetchContracts();
-      fetchCashSummary();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa hợp đồng.");
-    }
+  const handleDeletePawnRow = (contractId: string, contractCode: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa hợp đồng cầm đồ",
+      message: `Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/contracts/pawn/${contractId}`);
+        fetchContracts();
+        fetchCashSummary();
+      },
+      successMessage: `Đã xóa hợp đồng ${contractCode} thành công!`,
+    });
   };
 
-  const handleDeleteInstallmentRow = async (contractId: string, contractCode: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`)) return;
-    try {
-      await axios.delete(`/api/contracts/installment/${contractId}`);
-      toast.success(`Đã xóa hợp đồng ${contractCode} thành công!`);
-      fetchContracts();
-      fetchCashSummary();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa hợp đồng.");
-    }
+  const handleDeleteInstallmentRow = (contractId: string, contractCode: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa hợp đồng trả góp",
+      message: `Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/contracts/installment/${contractId}`);
+        fetchContracts();
+        fetchCashSummary();
+      },
+      successMessage: `Đã xóa hợp đồng ${contractCode} thành công!`,
+    });
   };
 
   const formatCurrency = (val: number) => {
@@ -1388,7 +1399,7 @@ export const Contracts: React.FC = () => {
                                 {
                                   label: "Xóa hợp đồng",
                                   icon: <Trash2 className="w-3.5 h-3.5" />,
-                                  onClick: () => handleDeletePawnRow(item.id, item.contract_code),
+                                  onClick: (e: any) => handleDeletePawnRow(item.id, item.contract_code, e),
                                   danger: true
                                 }
                               ]}
@@ -1533,7 +1544,7 @@ export const Contracts: React.FC = () => {
                                 {
                                   label: "Xóa hợp đồng",
                                   icon: <Trash2 className="w-3.5 h-3.5" />,
-                                  onClick: () => handleDeleteUnsecuredRow(item.id, item.contract_code),
+                                  onClick: (e: any) => handleDeleteUnsecuredRow(item.id, item.contract_code, e),
                                   danger: true
                                 }
                               ]}
@@ -1690,7 +1701,7 @@ export const Contracts: React.FC = () => {
                                 {
                                   label: "Xóa hợp đồng",
                                   icon: <Trash2 className="w-3.5 h-3.5" />,
-                                  onClick: () => handleDeleteInstallmentRow(item.id, item.contract_code)
+                                  onClick: (e: any) => handleDeleteInstallmentRow(item.id, item.contract_code, e)
                                 }
                               ]}
                             />

@@ -5,6 +5,7 @@ import { useReactToPrint } from "react-to-print";
 import { useLocation } from "react-router-dom";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import { useConfirm } from "../context/ConfirmContext";
 
 interface Voucher {
   id: string;
@@ -28,6 +29,7 @@ interface Voucher {
 
 export const Vouchers: React.FC = () => {
   const location = useLocation();
+  const confirm = useConfirm();
   const isExpensePage = location.pathname.includes("/expenses");
 
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -135,15 +137,18 @@ export const Vouchers: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, code: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa phiếu ${code}?`)) return;
-    try {
-      await axios.delete(`/api/vouchers/${id}`);
-      toast.success(`Đã xóa phiếu ${code} thành công!`);
-      fetchVouchers();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa phiếu.");
-    }
+  const handleDelete = (id: string, code: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa phiếu",
+      message: `Bạn có chắc chắn muốn xóa phiếu ${code}?`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/vouchers/${id}`);
+        fetchVouchers();
+      },
+      successMessage: `Đã xóa phiếu ${code} thành công!`,
+    });
   };
 
   const handlePrint = useReactToPrint({
@@ -309,7 +314,7 @@ export const Vouchers: React.FC = () => {
                         {/* Cancel / Delete */}
                         <button
                           type="button"
-                          onClick={() => handleDelete(v.id, v.voucher_code)}
+                          onClick={(e) => handleDelete(v.id, v.voucher_code, e)}
                           className="btn btn-xs btn-ghost border border-red-100 bg-red-50/50 hover:bg-red-100/80 text-red-600 rounded p-1"
                           title="Hủy phiếu"
                         >

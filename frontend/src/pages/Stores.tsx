@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useConfirm } from "../context/ConfirmContext";
 import { 
   Plus, 
   Save, 
@@ -45,6 +46,7 @@ const PROVINCES = [
 export const Stores: React.FC = () => {
   const navigate = useNavigate();
   const { switchStore } = useAuth();
+  const confirm = useConfirm();
   
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
@@ -187,15 +189,18 @@ export const Stores: React.FC = () => {
 
 
 
-  const handleDelete = async (store: Store) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa chi nhánh "${store.name}"?`)) return;
-    try {
-      await axios.delete(`/api/stores/${store.id}`);
-      toast.success(`Xóa chi nhánh ${store.name} thành công!`);
-      fetchStores();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa chi nhánh (Có thể do đã đăng ký nhân viên).");
-    }
+  const handleDelete = (store: Store, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa chi nhánh",
+      message: `Bạn có chắc chắn muốn xóa chi nhánh "${store.name}"?`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/stores/${store.id}`);
+        fetchStores();
+      },
+      successMessage: `Xóa chi nhánh ${store.name} thành công!`,
+    });
   };
 
   const handleOpenEdit = (store: Store) => {
@@ -510,7 +515,7 @@ export const Stores: React.FC = () => {
 
                             {/* Delete store */}
                             <button
-                              onClick={() => handleDelete(s)}
+                              onClick={(e) => handleDelete(s, e)}
                               className="btn btn-outline border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 btn-xs rounded p-1"
                               type="button"
                               title="Xóa chi nhánh"

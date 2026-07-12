@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "../lib/toast";
+import { useConfirm } from "../context/ConfirmContext";
 import { MoneyInput } from "../components/shared/MoneyInput";
 import { CustomerLookup } from "../components/shared/CustomerLookup";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
@@ -65,6 +66,7 @@ interface Customer {
 
 export const CapitalContracts: React.FC = () => {
   const { activeStore } = useAuth();
+  const confirm = useConfirm();
   
   // Data lists
   const [contracts, setContracts] = useState<CapitalContract[]>([]);
@@ -271,17 +273,20 @@ export const CapitalContracts: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy/xóa hợp đồng góp vốn này? Tiền két sẽ được khấu trừ tự động.")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.delete(`/api/contracts/capital/${id}`);
-      setSuccess("Hủy hợp đồng góp vốn thành công!");
-      fetchContracts();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể hủy hợp đồng.");
-    }
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy hợp đồng góp vốn",
+      message: "Bạn có chắc chắn muốn hủy/xóa hợp đồng góp vốn này? Tiền két sẽ được khấu trừ tự động.",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.delete(`/api/contracts/capital/${id}`);
+        fetchContracts();
+      },
+      successMessage: "Hủy hợp đồng góp vốn thành công!",
+    });
   };
 
   const handleOpenHistory = (name: string) => {
@@ -617,7 +622,7 @@ export const CapitalContracts: React.FC = () => {
                               {/* Revert/Cancel Button */}
                               {c.status !== "cancelled" && (
                                 <button
-                                  onClick={() => handleDelete(c.id)}
+                                  onClick={(e) => handleDelete(c.id, e)}
                                   className="btn btn-outline border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 btn-xs rounded p-1"
                                   type="button"
                                   title="Hủy hợp đồng"

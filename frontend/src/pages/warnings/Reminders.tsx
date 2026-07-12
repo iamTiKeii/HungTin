@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Clock, Search, Plus, Trash2, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useConfirm } from "../../context/ConfirmContext";
 
 export const Reminders: React.FC = () => {
   const { activeStore } = useAuth();
+  const confirm = useConfirm();
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -72,14 +74,18 @@ export const Reminders: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa nhắc nhở này không?")) return;
-    try {
-      await axios.delete(`/api/warnings/reminders/${id}`);
-      fetchData();
-    } catch (err: any) {
-      alert("Không thể xóa nhắc nhở.");
-    }
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa nhắc nhở",
+      message: "Bạn có chắc chắn muốn xóa nhắc nhở này không?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/warnings/reminders/${id}`);
+        fetchData();
+      },
+      successMessage: "Đã xóa nhắc nhở thành công.",
+    });
   };
 
   const handleResolve = async (id: string) => {
@@ -223,7 +229,7 @@ export const Reminders: React.FC = () => {
                           </button>
                         )}
                         <button
-                          onClick={() => handleDelete(item.id)}
+                          onClick={(e) => handleDelete(item.id, e)}
                           className="btn btn-outline border-slate-200 text-red-500 hover:bg-red-50 hover:text-red-600 btn-xs rounded-lg"
                           type="button"
                         >

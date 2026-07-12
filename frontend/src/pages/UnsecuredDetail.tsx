@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, Link } from "react-router-dom";
+import { useConfirm } from "../context/ConfirmContext";
 import {
   Upload,
   ArrowLeft,
@@ -31,6 +32,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
   const { id: paramId } = useParams<{ id: string }>();
   // const navigate = useNavigate();
   const id = idProp || paramId;
+  const confirm = useConfirm();
 
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -140,17 +142,20 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  const handleCancelPayInterest = async (paymentId: string, cycleNum: number) => {
-    if (!window.confirm(`Hủy giao dịch đóng lãi kỳ ${cycleNum}? Số tiền sẽ bị trừ ra khỏi quỹ két.`)) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.post(`/api/contracts/unsecured/${id}/cancel-pay-interest`, { paymentId });
-      setSuccess(`Đã hủy đóng lãi kỳ ${cycleNum} thành công.`);
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy đóng lãi kỳ.");
-    }
+  const handleCancelPayInterest = (paymentId: string, cycleNum: number, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy đóng lãi",
+      message: `Hủy giao dịch đóng lãi kỳ ${cycleNum}? Số tiền sẽ bị trừ ra khỏi quỹ két.`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post(`/api/contracts/unsecured/${id}/cancel-pay-interest`, { paymentId });
+        fetchContractDetails();
+      },
+      successMessage: `Đã hủy đóng lãi kỳ ${cycleNum} thành công.`,
+    });
   };
 
   const handlePrincipalTransaction = async (action: "borrow_more" | "pay_down") => {
@@ -175,17 +180,20 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  const handleDeletePrincipalTx = async (txId: string) => {
-    if (!window.confirm("Hủy bỏ giao dịch gốc này và khôi phục quỹ két chi nhánh?")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.delete(`/api/contracts/unsecured/${id}/principal-transaction/${txId}`);
-      setSuccess("Đã hủy bỏ giao dịch nợ gốc thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy bỏ giao dịch nợ gốc.");
-    }
+  const handleDeletePrincipalTx = (txId: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy giao dịch gốc",
+      message: "Hủy bỏ giao dịch gốc này và khôi phục quỹ két chi nhánh?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.delete(`/api/contracts/unsecured/${id}/principal-transaction/${txId}`);
+        fetchContractDetails();
+      },
+      successMessage: "Đã hủy bỏ giao dịch nợ gốc thành công.",
+    });
   };
 
   const handleExtend = async (e: React.FormEvent) => {
@@ -210,17 +218,20 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  const handleDeleteExtension = async (extendId: string) => {
-    if (!window.confirm("Hủy bỏ lượt gia hạn này? Hệ thống sẽ rút ngắn thời hạn và xóa các kỳ lãi phát sinh.")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.delete(`/api/contracts/unsecured/${id}/extend/${extendId}`);
-      setSuccess("Đã hủy gia hạn hợp đồng thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy gia hạn.");
-    }
+  const handleDeleteExtension = (extendId: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy gia hạn hợp đồng",
+      message: "Hủy bỏ lượt gia hạn này? Hệ thống sẽ rút ngắn thời hạn và xóa các kỳ lãi phát sinh.",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.delete(`/api/contracts/unsecured/${id}/extend/${extendId}`);
+        fetchContractDetails();
+      },
+      successMessage: "Đã hủy gia hạn hợp đồng thành công.",
+    });
   };
 
   const handleRedeem = async (e: React.FormEvent) => {
@@ -240,17 +251,19 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  const handleCancelRedeem = async () => {
-    if (!window.confirm("Khôi phục hợp đồng tín chấp về trạng thái hoạt động? Tiền đã đóng tất toán sẽ bị trừ ra khỏi quỹ két.")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.post(`/api/contracts/unsecured/${id}/cancel-redeem`);
-      setSuccess("Khôi phục trạng thái hoạt động thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy tất toán.");
-    }
+  const handleCancelRedeem = (e: React.MouseEvent) => {
+    confirm({
+      title: "Hủy tất toán sớm",
+      message: "Khôi phục hợp đồng tín chấp về trạng thái hoạt động? Tiền đã đóng tất toán sẽ bị trừ ra khỏi quỹ két.",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        setError("");
+        setSuccess("");
+        await axios.post(`/api/contracts/unsecured/${id}/cancel-redeem`);
+        fetchContractDetails();
+      },
+    });
   };
 
   const handleDebtAction = async (action: "record_debt" | "pay_debt") => {
@@ -277,20 +290,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  /*
-  const handleDeleteDebtTx = async (txId: string) => {
-    if (!window.confirm("Hủy giao dịch nợ cũ này và tự động đối chiếu số dư két?")) return;
-    try {
-      setError("");
-      setSuccess("");
-      await axios.delete(`/api/contracts/unsecured/${id}/debt-transaction/${txId}`);
-      setSuccess("Đã hủy bỏ giao dịch nợ thành công.");
-      fetchContractDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi hủy giao dịch nợ.");
-    }
-  };
-  */
+
 
   const handleSetTimer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,14 +339,17 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  const handleDeleteDoc = async (docId: string) => {
-    if (!window.confirm("Xóa tài liệu đính kèm này?")) return;
-    try {
-      await axios.delete(`/api/contracts/unsecured/${id}/documents/${docId}`);
-      fetchContractDetails();
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDeleteDoc = (docId: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa tài liệu",
+      message: "Xóa tài liệu đính kèm này?",
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/contracts/unsecured/${id}/documents/${docId}`);
+        fetchContractDetails();
+      },
+    });
   };
 
   const handleBlacklist = async (e: React.FormEvent) => {
@@ -369,19 +372,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     }
   };
 
-  /*
-  const handleDeleteContract = async () => {
-    if (!window.confirm("CẢNH BÁO: Bạn đang xóa hợp đồng. Hệ thống sẽ tự động tính toán dòng tiền ròng thực tế phát sinh của hợp đồng này và ĐẢO NGƯỢC QUỸ KÉT tương ứng để cân đối sổ sách. Bạn có chắc chắn muốn xóa?")) return;
-    try {
-      setError("");
-      await axios.delete(`/api/contracts/unsecured/${id}`);
-      if (onClose) onClose();
-      else navigate("/contracts");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể xóa hợp đồng.");
-    }
-  };
-  */
+
 
   const formatCurrency = (val: number | string) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(val) || 0);
@@ -608,7 +599,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
                         {isPaid ? (
                           <button
                             type="button"
-                            onClick={() => handleCancelPayInterest(payment.id, cycleNum)}
+                            onClick={(e) => handleCancelPayInterest(payment.id, cycleNum, e)}
                             className="btn btn-ghost btn-circle btn-xs text-red-500 font-bold"
                             title="Hủy đóng lãi"
                           >
@@ -750,7 +741,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
                 <p className="text-slate-600 font-bold text-xs">Hợp đồng này đã được tất toán đóng trước đó.</p>
                 <button
                   type="button"
-                  onClick={handleCancelRedeem}
+                  onClick={(e) => handleCancelRedeem(e)}
                   className="btn btn-xs btn-outline border-slate-300 text-red-500 font-bold rounded"
                 >
                   Hủy tất toán (Khôi phục HĐ)
@@ -895,7 +886,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
                     </a>
                     <button
                       type="button"
-                      onClick={() => handleDeleteDoc(doc.id)}
+                      onClick={(e) => handleDeleteDoc(doc.id, e)}
                       className="text-red-500 font-bold hover:underline"
                     >
                       Xóa
@@ -938,7 +929,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
                           <td>
                             <button
                               type="button"
-                              onClick={() => handleDeleteExtension(ext.id)}
+                              onClick={(e) => handleDeleteExtension(ext.id, e)}
                               className="text-red-500 font-bold hover:underline"
                             >
                               Hủy gia hạn
@@ -983,7 +974,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
                           <td>
                             <button
                               type="button"
-                              onClick={() => handleDeletePrincipalTx(tx.id)}
+                              onClick={(e) => handleDeletePrincipalTx(tx.id, e)}
                               className="text-red-500 font-bold hover:underline"
                             >
                               Hủy giao dịch

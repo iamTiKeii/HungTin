@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Plus, Search, Edit3, X, Upload, List, AlertOctagon, CheckCircle } from "lucide-react";
 import { toast } from "../lib/toast";
+import { useConfirm } from "../context/ConfirmContext";
 
 interface Customer {
   id: string;
@@ -53,6 +54,7 @@ interface Contract {
 export const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -315,28 +317,31 @@ export const Customers: React.FC = () => {
     }
   };
 
-  const handleToggleBlacklist = async (c: Customer) => {
+  const handleToggleBlacklist = (c: Customer, e: React.MouseEvent) => {
     const isCurrentlyBlacklist = c.status === "blacklist";
     const msg = isCurrentlyBlacklist
       ? `Bạn có chắc chắn muốn XÓA nợ xấu cho khách hàng ${c.full_name}?`
       : `Bạn có chắc chắn muốn ĐÁNH DẤU NỢ XẤU / BLACKLIST cho khách hàng ${c.full_name}?`;
 
-    if (!window.confirm(msg)) return;
-
-    try {
-      if (isCurrentlyBlacklist) {
-        await axios.post(`/api/customers/${c.id}/unblacklist`);
-        toast.success(`Đã gỡ blacklist cho khách hàng ${c.full_name}`);
-      } else {
-        const reason = window.prompt("Nhập lý do nợ xấu / blacklist:", "Chậm trễ thanh toán gốc lãi nhiều lần");
-        if (reason === null) return;
-        await axios.post(`/api/customers/${c.id}/blacklist`, { reason });
-        toast.success(`Đã chuyển khách hàng ${c.full_name} sang blacklist.`);
-      }
-      fetchCustomers();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể cập nhật blacklist.");
-    }
+    confirm({
+      title: isCurrentlyBlacklist ? "Gỡ danh sách đen" : "Đánh dấu nợ xấu",
+      message: msg,
+      type: isCurrentlyBlacklist ? "success" : "danger",
+      event: e,
+      onConfirm: async () => {
+        if (isCurrentlyBlacklist) {
+          await axios.post(`/api/customers/${c.id}/unblacklist`);
+        } else {
+          await axios.post(`/api/customers/${c.id}/blacklist`, {
+            reason: "Nợ xấu / Chậm trễ thanh toán nhiều lần"
+          });
+        }
+        fetchCustomers();
+      },
+      successMessage: isCurrentlyBlacklist
+        ? `Đã gỡ blacklist cho khách hàng ${c.full_name}`
+        : `Đã chuyển khách hàng ${c.full_name} sang blacklist.`,
+    });
   };
 
   // Simulating File Uploading to Google Drive
@@ -590,7 +595,7 @@ export const Customers: React.FC = () => {
                           {/* Blacklist block toggle */}
                           <button
                             type="button"
-                            onClick={() => handleToggleBlacklist(c)}
+                            onClick={(e) => handleToggleBlacklist(c, e)}
                             className={`btn btn-xs btn-ghost border rounded p-1 ${
                               c.status === "blacklist"
                                 ? "border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-600"

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, Search, Edit3, ShieldAlert, Trash2, X, Lock, Unlock } from "lucide-react";
+import { Plus, Search, Edit3, Trash2, X, Lock, Unlock } from "lucide-react";
 import { toast } from "../lib/toast";
+import { useConfirm } from "../context/ConfirmContext";
 
 interface Collaborator {
   id: string;
@@ -18,6 +19,7 @@ interface Collaborator {
 export const Collaborators: React.FC = () => {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,7 +31,6 @@ export const Collaborators: React.FC = () => {
   // Modals visibility
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeactivateConfirmOpen, setIsDeactivateConfirmOpen] = useState(false);
 
   // Form states
   const [selectedId, setSelectedId] = useState("");
@@ -40,9 +41,6 @@ export const Collaborators: React.FC = () => {
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankAccountHolder, setBankAccountHolder] = useState("");
   const [status, setStatus] = useState("active");
-
-  // State for collaborator being locked/unlocked
-  const [targetCollab, setTargetCollab] = useState<Collaborator | null>(null);
 
   // Fetch collaborators list
   const fetchCollaborators = async () => {
@@ -110,9 +108,24 @@ export const Collaborators: React.FC = () => {
     setIsEditOpen(true);
   };
 
-  const handleOpenDeactivate = (c: Collaborator) => {
-    setTargetCollab(c);
-    setIsDeactivateConfirmOpen(true);
+  const handleOpenDeactivate = (c: Collaborator, e: React.MouseEvent) => {
+    const isActivating = c.status !== "active";
+    confirm({
+      title: isActivating ? "Kích hoạt cộng tác viên" : "Vô hiệu hóa cộng tác viên",
+      message: `Bạn có chắc chắn muốn ${isActivating ? "kích hoạt" : "vô hiệu hóa"} cộng tác viên ${c.full_name} không?`,
+      type: isActivating ? "success" : "danger",
+      event: e,
+      onConfirm: async () => {
+        const newStatus = isActivating ? "active" : "inactive";
+        await axios.put(`/api/collaborators/${c.id}`, {
+          status: newStatus,
+        });
+        fetchCollaborators();
+      },
+      successMessage: isActivating
+        ? `Đã kích hoạt hoạt động cho cộng tác viên ${c.full_name}!`
+        : `Đã vô hiệu hóa hoạt động cho cộng tác viên ${c.full_name}!`,
+    });
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -165,35 +178,18 @@ export const Collaborators: React.FC = () => {
     }
   };
 
-  const handleToggleStatusSubmit = async () => {
-    if (!targetCollab) return;
-    try {
-      const newStatus = targetCollab.status === "active" ? "inactive" : "active";
-      await axios.put(`/api/collaborators/${targetCollab.id}`, {
-        status: newStatus,
-      });
-      toast.success(
-        newStatus === "active"
-          ? `Đã kích hoạt hoạt động cho cộng tác viên ${targetCollab.full_name}!`
-          : `Đã vô hiệu hóa hoạt động cho cộng tác viên ${targetCollab.full_name}!`
-      );
-      setIsDeactivateConfirmOpen(false);
-      setTargetCollab(null);
-      fetchCollaborators();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể đổi trạng thái hoạt động của cộng tác viên.");
-    }
-  };
-
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ cộng tác viên ${name}?`)) return;
-    try {
-      await axios.delete(`/api/collaborators/${id}`);
-      toast.success(`Đã xóa cộng tác viên ${name} thành công!`);
-      fetchCollaborators();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể xóa cộng tác viên.");
-    }
+  const handleDelete = (id: string, name: string, e: React.MouseEvent) => {
+    confirm({
+      title: "Xóa cộng tác viên",
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ cộng tác viên ${name}?`,
+      type: "danger",
+      event: e,
+      onConfirm: async () => {
+        await axios.delete(`/api/collaborators/${id}`);
+        fetchCollaborators();
+      },
+      successMessage: `Đã xóa cộng tác viên ${name} thành công!`,
+    });
   };
 
   return (
@@ -315,11 +311,11 @@ export const Collaborators: React.FC = () => {
                         {/* Status Lock/Unlock Toggle */}
                         <button
                           type="button"
-                          onClick={() => handleOpenDeactivate(c)}
+                          onClick={(e) => handleOpenDeactivate(c, e)}
                           className={`btn btn-xs btn-ghost border rounded p-1 ${
                             c.status === "active"
-                              ? "border-purple-100 bg-purple-50/50 hover:bg-purple-105 text-purple-600"
-                              : "border-emerald-100 bg-emerald-50/50 hover:bg-emerald-105 text-emerald-600"
+                              ? "border-purple-100 bg-purple-50/50 hover:bg-purple-100/85 text-purple-600"
+                              : "border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/85 text-emerald-600"
                           }`}
                           title={c.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
                         >
@@ -328,7 +324,7 @@ export const Collaborators: React.FC = () => {
                         {/* Delete button */}
                         <button
                           type="button"
-                          onClick={() => handleDelete(c.id, c.full_name)}
+                          onClick={(e) => handleDelete(c.id, c.full_name, e)}
                           className="btn btn-xs btn-ghost border border-red-100 bg-red-50/50 hover:bg-red-100/80 text-red-600 rounded p-1"
                           title="Xóa vĩnh viễn"
                         >
@@ -594,63 +590,6 @@ export const Collaborators: React.FC = () => {
         </div>
       )}
 
-      {/* CONFIRM DEACTIVATE MODAL (Image 4) */}
-      {isDeactivateConfirmOpen && targetCollab && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-md p-6 relative shadow-2xl">
-            {/* Close X button */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsDeactivateConfirmOpen(false);
-                setTargetCollab(null);
-              }}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full p-1 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Warning Content */}
-            <div className="flex flex-col items-center justify-center text-center space-y-4 pt-3">
-              {/* Exclamation Warning Icon */}
-              <div className="bg-amber-50 border border-amber-200 rounded-full p-3.5 flex items-center justify-center text-amber-500">
-                <ShieldAlert className="w-8 h-8" />
-              </div>
-
-              {/* Query message */}
-              <p className="text-sm font-semibold text-slate-800 max-w-sm">
-                Bạn có chắc chắn muốn {targetCollab.status === "active" ? "vô hiệu hoá" : "kích hoạt hoạt động"} cộng tác viên{" "}
-                <span className="text-red-600 font-bold">{targetCollab.full_name}</span> không?
-              </p>
-
-              {/* Modal Actions */}
-              <div className="flex items-center gap-3 w-full justify-center pt-2">
-                <button
-                  type="button"
-                  onClick={handleToggleStatusSubmit}
-                  className={`btn btn-sm rounded-lg px-6 font-bold text-xs text-white border-none ${
-                    targetCollab.status === "active"
-                      ? "btn-error bg-red-600 hover:bg-red-700"
-                      : "btn-success bg-emerald-600 hover:bg-emerald-700"
-                  }`}
-                >
-                  {targetCollab.status === "active" ? "Vô hiệu hoá" : "Kích hoạt"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDeactivateConfirmOpen(false);
-                    setTargetCollab(null);
-                  }}
-                  className="btn btn-sm bg-slate-400 hover:bg-slate-500 border-none text-white rounded-lg px-6 font-bold text-xs"
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
