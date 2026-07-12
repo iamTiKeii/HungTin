@@ -26,6 +26,7 @@ import {
 import { ActionMenu } from "../components/shared/ActionMenu";
 import { useAuth } from "../context/AuthContext";
 import { PawnDetail } from "./PawnDetail";
+import { UnsecuredDetail } from "./UnsecuredDetail";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
 
@@ -120,6 +121,8 @@ export const Contracts: React.FC = () => {
   const [uCollectorId, setUCollectorId] = useState("");
   const [uCollaboratorId, setUCollaboratorId] = useState("");
   const [uNotes, setUNotes] = useState("");
+  const [uContractCodeNumber, setUContractCodeNumber] = useState<number>(1);
+  const [uAssetName, setUAssetName] = useState("");
 
   // Installment form fields
   const [iCustomerId, setICustomerId] = useState("");
@@ -401,42 +404,126 @@ export const Contracts: React.FC = () => {
 
   const openCreateModal = () => {
     setEditingId(null);
-    setPCustomerId("");
     setCustomerType("new");
-    setPCommodityId("");
-    setPAssetName("");
-    setPLoanAmount("");
-    if (interestTypes.length > 0) {
-      const dailyKMil = interestTypes.find(t => t.code === "daily_k_million");
-      setPInterestTypeId(dailyKMil ? dailyKMil.id : interestTypes[0].id);
-    } else {
-      setPInterestTypeId("");
-    }
-    setPIsUpfront(false);
-    setPLoanDays("90");
-    setPPeriodValue("10");
-    setPInterestRate("1");
-    setPLoanDate(new Date().toISOString().split("T")[0]);
-    if (employees.length > 0) {
-      setPCollectorId(employees[0].id);
-    } else {
-      setPCollectorId("");
-    }
-    setPCollaboratorId("");
-    setPLicensePlate("");
-    setPChassisNumber("");
-    setPEngineNumber("");
-    setPNotes("");
-    
-    // Compute next serial code
-    const maxNum = pawnList.reduce((max, item) => {
-      const match = item.contract_code?.match(/\d+/);
-      const num = match ? Number(match[0]) : 0;
-      return num > max ? num : max;
-    }, 0);
-    setPContractCodeNumber(maxNum + 1);
+    setNewCustName("");
+    setNewCustPhone("");
+    setNewCustCard("");
+    setNewCustAddress("");
 
-    setIsPawnOpen(true);
+    if (activeTab === "pawn") {
+      setPCustomerId("");
+      setPCommodityId("");
+      setPAssetName("");
+      setPLoanAmount("");
+      if (interestTypes.length > 0) {
+        const dailyKMil = interestTypes.find(t => t.code === "daily_k_million");
+        setPInterestTypeId(dailyKMil ? dailyKMil.id : interestTypes[0].id);
+      } else {
+        setPInterestTypeId("");
+      }
+      setPIsUpfront(false);
+      setPLoanDays("90");
+      setPPeriodValue("10");
+      setPInterestRate("1");
+      setPLoanDate(new Date().toISOString().split("T")[0]);
+      if (employees.length > 0) {
+        setPCollectorId(employees[0].id);
+      } else {
+        setPCollectorId("");
+      }
+      setPCollaboratorId("");
+      setPLicensePlate("");
+      setPChassisNumber("");
+      setPEngineNumber("");
+      setPNotes("");
+      
+      // Compute next serial code
+      const maxNum = pawnList.reduce((max, item) => {
+        const match = item.contract_code?.match(/\d+/);
+        const num = match ? Number(match[0]) : 0;
+        return num > max ? num : max;
+      }, 0);
+      setPContractCodeNumber(maxNum + 1);
+
+      setIsPawnOpen(true);
+    } else if (activeTab === "unsecured") {
+      setUCustomerId("");
+      setUCommodityId("");
+      setUAssetName("");
+      setULoanAmount("");
+      if (interestTypes.length > 0) {
+        const dailyKMil = interestTypes.find(t => t.code === "daily_k_million");
+        setUInterestTypeId(dailyKMil ? dailyKMil.id : interestTypes[0].id);
+      } else {
+        setUInterestTypeId("");
+      }
+      setUIsUpfront(false);
+      setULoanDays("90");
+      setUPeriodValue("10");
+      setUInterestRate("1");
+      setULoanDate(new Date().toISOString().split("T")[0]);
+      if (employees.length > 0) {
+        setUCollectorId(employees[0].id);
+      } else {
+        setUCollectorId("");
+      }
+      setUCollaboratorId("");
+      setUNotes("");
+
+      // Compute next serial code for Unsecured (TC-)
+      const maxNum = unsecuredList.reduce((max, item) => {
+        const match = item.contract_code?.match(/\d+/);
+        const num = match ? Number(match[0]) : 0;
+        return num > max ? num : max;
+      }, 0);
+      setUContractCodeNumber(maxNum + 1);
+
+      setIsUnsecuredOpen(true);
+    } else if (activeTab === "installment") {
+      setICustomerId("");
+      setIRepaymentAmount("");
+      setIDisbursedAmount("");
+      setIPeriodType("daily");
+      setILoanDuration("40");
+      setICycleDays("1");
+      setIIsUpfront(false);
+      setILoanDate(new Date().toISOString().split("T")[0]);
+      if (employees.length > 0) {
+        setICollectorId(employees[0].id);
+      } else {
+        setICollectorId("");
+      }
+      setICollaboratorId("");
+      setINotes("");
+      setIsInstallmentOpen(true);
+    }
+  };
+
+  const handleUnsecuredCommodityChange = (commId: string) => {
+    setUCommodityId(commId);
+    if (!editingId && commId) {
+      const comm = commodities.find(c => c.id === commId);
+      if (comm) {
+        setULoanAmount(String(Number(comm.default_amount || 0)));
+        setUInterestRate(String(Number(comm.default_interest_rate || 0)));
+        setUPeriodValue(String(comm.default_period_value || 10));
+        setULoanDays(String(comm.default_loan_days || 30));
+        setUIsUpfront(!!comm.is_upfront_interest);
+        setUInterestTypeId(comm.interest_type_id || "");
+      }
+    }
+  };
+
+  const handleDeleteUnsecuredRow = async (contractId: string, contractCode: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng ${contractCode}? Dòng tiền liên quan sẽ bị đảo ngược khỏi quỹ két để cân đối sổ sách.`)) return;
+    try {
+      await axios.delete(`/api/contracts/unsecured/${contractId}`);
+      toast.success(`Đã xóa hợp đồng ${contractCode} thành công!`);
+      fetchContracts();
+      fetchCashSummary();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Không thể xóa hợp đồng.");
+    }
   };
 
   const handleCommodityChange = (commId: string) => {
@@ -721,6 +808,37 @@ export const Contracts: React.FC = () => {
   const totalPaidInterest = filteredPawnList.reduce((sum, item) => sum + getPaidInterest(item), 0);
   const cashFundVal = cashSummary ? Number(cashSummary.current_cash || 0) : 50000000;
 
+  // Unsecured stats calculations
+  const activeUnsecuredList = unsecuredList.filter((item) => item.status === "active");
+  const totalUnsecuredLent = activeUnsecuredList.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
+  const totalUnsecuredDebt = activeUnsecuredList.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
+  const totalUnsecuredExpectedInterest = activeUnsecuredList.reduce((sum, item) => sum + getAccruedInterest(item), 0);
+  const totalUnsecuredPaidInterest = unsecuredList.reduce((sum, item) => sum + getPaidInterest(item), 0);
+
+  const getUnsecuredInterestSubtext = (item: any) => {
+    if (!item.interest_type) return "";
+    const rate = Number(item.interest_rate);
+    const amount = Number(item.loan_amount);
+    const period = item.period_value;
+    
+    if (item.interest_type.code === "daily_k_million") {
+      const dailyInterest = rate * (amount / 1000000);
+      if (period === 7) {
+        return `${dailyInterest * 7}k /tuần`;
+      } else if (period === 10) {
+        return `${dailyInterest * 10}k /10 ngày`;
+      } else if (period === 30) {
+        return `${dailyInterest * 30}k /tháng`;
+      } else {
+        return `${dailyInterest * period}k /${period} ngày`;
+      }
+    } else if (item.interest_type.code === "daily_percent") {
+      const pct = rate * amount / 100;
+      return `${formatCurrency(pct)} /ngày`;
+    }
+    return `${rate}% / kỳ`;
+  };
+
   return (
     <div className="space-y-6">
       
@@ -729,10 +847,12 @@ export const Contracts: React.FC = () => {
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <FileText className="text-amber-500 w-7 h-7" />
-            HỢP ĐỒNG CẦM ĐỒ
+            {activeTab === "pawn" ? "HỢP ĐỒNG CẦM ĐỒ" : "HỢP ĐỒNG TÍN CHẤP"}
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Quản lý danh sách, đóng lãi suất, nợ gốc và các thông tin chi tiết hợp đồng thế chấp tài sản.
+            {activeTab === "pawn"
+              ? "Quản lý danh sách, đóng lãi suất, nợ gốc và các thông tin chi tiết hợp đồng thế chấp tài sản."
+              : "Quản lý danh sách, đóng lãi suất, nợ gốc và các thông tin chi tiết hợp đồng tín chấp."}
           </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
@@ -743,39 +863,46 @@ export const Contracts: React.FC = () => {
       </div>
 
       {/* SUMMARY BOXES ROW matching Image 1 */}
-      {activeTab === "pawn" && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
-            <div>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">QUỸ TIỀN MẶT</p>
-              <h3 className="text-lg font-black text-red-500 mt-1">{formatCurrency(cashFundVal).replace("₫", "")}</h3>
+      {(activeTab === "pawn" || activeTab === "unsecured") && (() => {
+        const lent = activeTab === "pawn" ? totalLent : totalUnsecuredLent;
+        const debt = activeTab === "pawn" ? totalDebt : totalUnsecuredDebt;
+        const expected = activeTab === "pawn" ? totalExpectedInterest : totalUnsecuredExpectedInterest;
+        const paid = activeTab === "pawn" ? totalPaidInterest : totalUnsecuredPaidInterest;
+
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+              <div>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">QUỸ TIỀN MẶT</p>
+                <h3 className="text-lg font-black text-red-500 mt-1">{formatCurrency(cashFundVal).replace("₫", "")}</h3>
+              </div>
+              <button 
+                onClick={fetchCashSummary} 
+                className="absolute top-3 right-3 btn btn-ghost btn-circle btn-xs text-red-500 p-0"
+                title="Cập nhật quỹ két"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <button 
-              onClick={fetchCashSummary} 
-              className="absolute top-3 right-3 btn btn-ghost btn-circle btn-xs text-red-500 p-0"
-              title="Cập nhật quỹ két"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">TIỀN CHO VAY</p>
+              <h3 className="text-lg font-black text-blue-500 mt-1">{formatCurrency(lent).replace("₫", "")}</h3>
+            </div>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">TIỀN NỢ</p>
+              <h3 className="text-lg font-black text-red-500 mt-1">{formatCurrency(debt).replace("₫", "")}</h3>
+            </div>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">LÃI DỰ KIẾN</p>
+              <h3 className="text-lg font-black text-blue-500 mt-1">{formatCurrency(expected).replace("₫", "")}</h3>
+            </div>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">LÃI ĐÃ THU</p>
+              <h3 className="text-lg font-black text-blue-500 mt-1">{formatCurrency(paid).replace("₫", "")}</h3>
+            </div>
           </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">TIỀN CHO VAY</p>
-            <h3 className="text-lg font-black text-blue-500 mt-1">{formatCurrency(totalLent).replace("₫", "")}</h3>
-          </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">TIỀN NỢ</p>
-            <h3 className="text-lg font-black text-red-500 mt-1">{formatCurrency(totalDebt).replace("₫", "")}</h3>
-          </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">LÃI DỰ KIẾN</p>
-            <h3 className="text-lg font-black text-blue-500 mt-1">{formatCurrency(totalExpectedInterest).replace("₫", "")}</h3>
-          </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">LÃI ĐÃ THU</p>
-            <h3 className="text-lg font-black text-blue-500 mt-1">{formatCurrency(totalPaidInterest).replace("₫", "")}</h3>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* FILTER CONTROLS ROW matching Image 1 */}
       {activeTab === "pawn" ? (
@@ -1031,40 +1158,146 @@ export const Contracts: React.FC = () => {
             )}
 
             {activeTab === "unsecured" && (
-              <table className="table w-full text-slate-600">
+              <table className="table w-full text-slate-600 text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
+                  <tr className="border-b border-slate-200/80 text-slate-500">
+                    <th className="w-8">#</th>
                     <th>Mã HĐ</th>
                     <th>Khách hàng</th>
-                    <th>Số nợ vay gốc</th>
-                    <th>Mốc vay</th>
-                    <th>Hạn vay</th>
-                    <th>Lãi suất</th>
-                    <th>Trạng thái</th>
-                    <th className="text-right">Xem chi tiết</th>
+                    <th>Tài sản</th>
+                    <th>VNĐ</th>
+                    <th>Ngày vay</th>
+                    <th>Lãi đã đóng</th>
+                    <th>Nợ cũ</th>
+                    <th>Lãi đến hôm nay</th>
+                    <th>Ngày phải đóng</th>
+                    <th>Tình trạng</th>
+                    <th className="w-20 text-center">Chức năng</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {unsecuredList.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-200/80/50 hover:bg-slate-50/30 text-sm">
-                      <td className="font-bold text-amber-500">{item.contract_code}</td>
-                      <td className="font-semibold text-slate-700">{item.customer?.full_name}</td>
-                      <td className="font-black text-slate-700">{formatCurrency(item.loan_amount)}</td>
-                      <td>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</td>
-                      <td>{item.loan_days} ngày</td>
-                      <td>{item.interest_rate}%</td>
-                      <td>
-                        <span className={`badge badge-xs font-bold uppercase ${item.status === "active" ? "badge-success" : "badge-neutral text-slate-500"}`}>
-                          {item.status === "active" ? "Đang chạy" : "Đã đóng"}
-                        </span>
-                      </td>
-                      <td className="text-right py-3">
-                        <Link to={`/contracts/unsecured/${item.id}`} className="btn btn-ghost btn-circle btn-xs text-amber-500">
-                          <ChevronRight className="w-5 h-5" />
-                        </Link>
-                      </td>
+                  {unsecuredList.map((item, index) => {
+                    const nextPayDate = getNextPaymentDate(item);
+                    const accruedInt = getAccruedInterest(item);
+                    const elapsedDays = getAccruedDays(item);
+                    const paidInt = getPaidInterest(item);
+                    const interestLabel = getUnsecuredInterestSubtext(item);
+                    const isOverdue = nextPayDate && nextPayDate < new Date();
+
+                    return (
+                      <tr key={item.id} className="border-b border-slate-200/60 hover:bg-slate-50/40 text-xs text-slate-700">
+                        <td className="font-semibold text-slate-400">{index + 1}</td>
+                        <td className="font-bold text-amber-500">{item.contract_code}</td>
+                        <td className="font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => { setSelectedDetailId(item.id); setDetailDefaultTab("interest"); }}
+                            className="text-blue-600 font-bold hover:underline text-left"
+                          >
+                            {item.customer?.full_name}
+                          </button>
+                        </td>
+                        <td className="text-slate-400">
+                          {item.commodity?.code || ""}
+                        </td>
+                        <td>
+                          <div className="font-black text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</div>
+                          {interestLabel && <div className="text-[10px] text-red-500 font-bold mt-0.5">{interestLabel}</div>}
+                        </td>
+                        <td>
+                          <div>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">({item.loan_days} ngày)</div>
+                        </td>
+                        <td className="font-bold text-slate-600">
+                          {formatCurrency(paidInt).replace("₫", "")}
+                        </td>
+                        <td className="font-bold text-red-500">
+                          {formatCurrency(item.debt_amount).replace("₫", "")}
+                        </td>
+                        <td>
+                          <div className="font-extrabold text-blue-600">
+                            {formatCurrency(accruedInt).replace("₫", "")}
+                          </div>
+                          {accruedInt > 0 && (
+                            <div className="text-[10px] text-blue-500 font-bold mt-0.5">
+                              ({elapsedDays} ngày)
+                            </div>
+                          )}
+                        </td>
+                        <td className={isOverdue ? "text-red-500 font-bold" : "font-medium"}>
+                          {nextPayDate ? nextPayDate.toLocaleDateString("vi-VN") : ""}
+                        </td>
+                        <td>
+                          <span className={`badge badge-sm font-bold uppercase text-[10px] ${
+                            item.status === "closed"
+                              ? "bg-slate-200 border-none text-slate-500"
+                              : isOverdue || accruedInt > 0
+                              ? "bg-amber-500 border-none text-white"
+                              : "bg-emerald-500 border-none text-white"
+                          } px-2 rounded`}>
+                            {item.status === "closed" ? "Đã đóng" : isOverdue || accruedInt > 0 ? "Nợ lãi" : "Bình thường"}
+                          </span>
+                        </td>
+                        <td className="text-center py-2.5">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedDetailId(item.id); setDetailDefaultTab("interest"); }}
+                              className="btn btn-ghost btn-circle btn-xs text-blue-500 hover:bg-blue-50"
+                              title="Đóng tiền lãi"
+                              disabled={item.status === "closed"}
+                            >
+                              <Coins className="w-4 h-4" />
+                            </button>
+                            <ActionMenu
+                              align="right"
+                              trigger={
+                                <button type="button" className="btn btn-ghost btn-circle btn-xs text-slate-400 hover:text-slate-600">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+                              }
+                              items={[
+                                {
+                                  label: "Đóng hợp đồng",
+                                  icon: <Anchor className="w-3.5 h-3.5 text-blue-500" />,
+                                  onClick: () => { setSelectedDetailId(item.id); setDetailDefaultTab("redeem"); }
+                                },
+                                {
+                                  label: "Hẹn giờ khoản vay",
+                                  icon: <Clock className="w-3.5 h-3.5 text-amber-500" />,
+                                  onClick: () => { setSelectedDetailId(item.id); setDetailDefaultTab("timer"); }
+                                },
+                                {
+                                  label: "Sửa hợp đồng",
+                                  icon: <Edit className="w-3.5 h-3.5 text-slate-600" />,
+                                  onClick: () => openEditModal(item)
+                                },
+                                {
+                                  label: "Xóa hợp đồng",
+                                  icon: <Trash2 className="w-3.5 h-3.5" />,
+                                  onClick: () => handleDeleteUnsecuredRow(item.id, item.contract_code),
+                                  danger: true
+                                }
+                              ]}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* Summary Totals Row matching Image 1 */}
+                  {unsecuredList.length > 0 && (
+                    <tr className="bg-slate-50/50 border-t border-b border-slate-200 text-xs font-extrabold">
+                      <td colSpan={4} className="text-right py-3.5 text-red-600">Tổng tiền:</td>
+                      <td className="text-red-600">{formatCurrency(totalUnsecuredLent).replace("₫", "")}</td>
+                      <td></td>
+                      <td className="text-red-600">{formatCurrency(totalUnsecuredPaidInterest).replace("₫", "")}</td>
+                      <td className="text-red-600">{formatCurrency(totalUnsecuredDebt).replace("₫", "")}</td>
+                      <td className="text-red-600">{formatCurrency(totalUnsecuredExpectedInterest).replace("₫", "")}</td>
+                      <td colSpan={3}></td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             )}
@@ -1128,12 +1361,21 @@ export const Contracts: React.FC = () => {
 
       {/* DETAIL MODAL POPUP WRAPPER */}
       {selectedDetailId && (
-        <PawnDetail
-          idProp={selectedDetailId}
-          onClose={() => setSelectedDetailId(null)}
-          isModal={true}
-          defaultTab={detailDefaultTab}
-        />
+        activeTab === "pawn" ? (
+          <PawnDetail
+            idProp={selectedDetailId}
+            onClose={() => setSelectedDetailId(null)}
+            isModal={true}
+            defaultTab={detailDefaultTab}
+          />
+        ) : (
+          <UnsecuredDetail
+            idProp={selectedDetailId}
+            onClose={() => setSelectedDetailId(null)}
+            isModal={true}
+            defaultTab={detailDefaultTab}
+          />
+        )
       )}
 
       {/* PAWN CREATE / EDIT MODAL matching Image 2 */}
@@ -1671,181 +1913,381 @@ export const Contracts: React.FC = () => {
         );
       })()}
 
-      {/* UNSECURED CREATE MODAL */}
-      {isUnsecuredOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Lập Hợp Đồng Tín Chấp Mới
-            </h3>
-            <form onSubmit={handleCreateUnsecured} className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Khách hàng vay *</label>
-                  <select
-                    value={uCustomerId}
-                    onChange={(e) => setUCustomerId(e.target.value)}
-                    className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">-- Chọn khách hàng --</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>{c.full_name} ({c.phone})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Mặt hàng tham chiếu (Tùy chọn)</label>
-                  <select
-                    value={uCommodityId}
-                    onChange={(e) => setUCommodityId(e.target.value)}
-                    className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
-                  >
-                    <option value="">-- Chọn loại hàng hóa --</option>
-                    {commodities.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+      {/* UNSECURED CREATE / EDIT MODAL matching Image 2 */}
+      {isUnsecuredOpen && (() => {
+        const selectedCustomer = customers.find((c) => String(c.id) === String(uCustomerId));
+        const labelClass = "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
 
-              <div>
-                <label className="label text-slate-600 font-semibold py-1">Số tiền giải ngân vay nợ (VNĐ) *</label>
-                <MoneyInput
-                  value={uLoanAmount}
-                  onChange={(val) => setULoanAmount(String(val))}
-                  placeholder="10000000"
-                  required
-                  className="bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Hình thức tính lãi *</label>
-                  <select
-                    value={uInterestTypeId}
-                    onChange={(e) => setUInterestTypeId(e.target.value)}
-                    className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">-- Lọc hình thức --</option>
-                    {interestTypes.map((i) => (
-                      <option key={i.id} value={i.id}>{i.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Tỷ lệ lãi suất (% / kỳ đóng) *</label>
-                  <input
-                    type="number"
-                    placeholder="3"
-                    step="0.01"
-                    value={uInterestRate}
-                    onChange={(e) => setUInterestRate(e.target.value)}
-                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Kỳ đóng lãi (ngày) *</label>
-                  <input
-                    type="number"
-                    placeholder="10"
-                    value={uPeriodValue}
-                    onChange={(e) => setUPeriodValue(e.target.value)}
-                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Tổng thời hạn hợp đồng (ngày) *</label>
-                  <input
-                    type="number"
-                    placeholder="30"
-                    value={uLoanDays}
-                    onChange={(e) => setULoanDays(e.target.value)}
-                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Ngày lập hợp đồng</label>
-                  <input
-                    type="date"
-                    value={uLoanDate}
-                    onChange={(e) => setULoanDate(e.target.value)}
-                    className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Nhân viên thu nợ (Collector) *</label>
-                  <select
-                    value={uCollectorId}
-                    onChange={(e) => setUCollectorId(e.target.value)}
-                    className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">-- Chọn nhân viên --</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-slate-600 font-semibold py-1">Cộng tác viên giới thiệu</label>
-                  <select
-                    value={uCollaboratorId}
-                    onChange={(e) => setUCollaboratorId(e.target.value)}
-                    className="select select-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl select-sm focus:border-amber-500 focus:outline-none"
-                  >
-                    <option value="">-- Chọn cộng tác viên --</option>
-                    {collaborators.map((c) => (
-                      <option key={c.id} value={c.id}>{c.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-200/80">
-                <input
-                  type="checkbox"
-                  checked={uIsUpfront}
-                  onChange={(e) => setUIsUpfront(e.target.checked)}
-                  className="checkbox checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
-                />
-                <span className="text-slate-600 font-semibold">Thu tiền lãi đóng trước</span>
-              </div>
-
-              <div>
-                <label className="label text-slate-600 font-semibold py-1">Ghi chú kèm theo</label>
-                <textarea
-                  placeholder="Mô tả hiện trạng tài sản..."
-                  value={uNotes}
-                  onChange={(e) => setUNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl h-16"
-                />
-              </div>
-
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsUnsecuredOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy bỏ
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-bold">
-                  Ký kết hợp đồng
+        return (
+          <div className="modal modal-open">
+            <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl p-6 relative">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+                <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-slate-800" />
+                  Hợp đồng tín chấp
+                </h3>
+                <button onClick={() => setIsUnsecuredOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleCreateUnsecured} className="space-y-6 text-xs text-slate-700">
+                
+                {/* Centered Radio selection */}
+                <div className="flex justify-center gap-6 mt-2 mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="radio"
+                      name="u_customer_type"
+                      checked={customerType === "new"}
+                      onChange={() => setCustomerType("new")}
+                      className="radio radio-xs radio-primary"
+                    />
+                    <span>Khách mới</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="radio"
+                      name="u_customer_type"
+                      checked={customerType === "existing"}
+                      onChange={() => setCustomerType("existing")}
+                      className="radio radio-xs radio-primary"
+                    />
+                    <span>Khách cũ</span>
+                  </label>
+                </div>
+
+                {/* SECTION 1: THÔNG TIN KHÁCH HÀNG */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center">
+                      <label className={labelClass}>Tên khách hàng *</label>
+                      {customerType === "existing" ? (
+                        <select
+                          value={uCustomerId}
+                          onChange={(e) => setUCustomerId(e.target.value)}
+                          className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none font-semibold text-xs h-8 min-h-[32px]"
+                          required
+                        >
+                          <option value="">-- Chọn khách hàng --</option>
+                          {customers.map((c) => (
+                            <option key={c.id} value={c.id}>{c.full_name} ({c.phone || "Không SĐT"})</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Nhập họ và tên"
+                          value={newCustName}
+                          onChange={(e) => setNewCustName(e.target.value)}
+                          className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
+                          required
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center">
+                      <label className={labelClass}>Mã hợp đồng *</label>
+                      <div className="flex-1 flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white h-8">
+                        <button
+                          type="button"
+                          onClick={() => setUContractCodeNumber(prev => Math.max(1, prev - 1))}
+                          className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-full px-3 text-xs"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          value={uContractCodeNumber}
+                          onChange={(e) => setUContractCodeNumber(Math.max(1, Number(e.target.value)))}
+                          className="input input-bordered border-none text-center bg-white w-full text-slate-800 h-full font-extrabold focus:outline-none text-xs"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setUContractCodeNumber(prev => prev + 1)}
+                          className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-full px-3 text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center">
+                      <label className={labelClass}>Số CCCD/Hộ chiếu</label>
+                      <input
+                        type="text"
+                        placeholder=""
+                        value={customerType === "new" ? newCustCard : (selectedCustomer?.identity_card_number || "")}
+                        onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
+                        disabled={customerType === "existing"}
+                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <label className={labelClass}>Số điện thoại</label>
+                      <input
+                        type="text"
+                        placeholder=""
+                        value={customerType === "new" ? newCustPhone : (selectedCustomer?.phone || "")}
+                        onChange={(e) => customerType === "new" && setNewCustPhone(e.target.value)}
+                        disabled={customerType === "existing"}
+                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Địa chỉ</label>
+                    <input
+                      type="text"
+                      placeholder=""
+                      value={customerType === "new" ? newCustAddress : (selectedCustomer?.address || "")}
+                      onChange={(e) => customerType === "new" && setNewCustAddress(e.target.value)}
+                      disabled={customerType === "existing"}
+                      className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
+                    />
+                  </div>
+                </div>
+
+                {/* SECTION 2: THÔNG TIN KHOÁN VAY */}
+                <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
+                  <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
+                    <Coins className="w-3 h-3 text-blue-600" />
+                    THÔNG TIN KHOÁN VAY
+                  </span>
+
+                  <div className="flex items-center pt-2">
+                    <label className={labelClass}>Loại tài sản *</label>
+                    <div className="flex-1 flex gap-2">
+                      <select
+                        value={uCommodityId}
+                        onChange={(e) => handleUnsecuredCommodityChange(e.target.value)}
+                        className="select select-bordered select-sm w-1/2 bg-white border-slate-200 rounded-lg text-slate-800 font-semibold text-xs h-8 min-h-[32px] focus:outline-none"
+                        required
+                      >
+                        <option value="">-- Chọn loại hàng hóa --</option>
+                        {commodities.filter(c => c.category === "unsecured").map((c) => (
+                          <option key={c.id} value={c.id}>{c.name.split("|")[0]} ({c.code})</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Tên tài sản. VD: Honda SH 150i"
+                        value={uAssetName}
+                        onChange={(e) => setUAssetName(e.target.value)}
+                        className="input input-bordered input-sm w-1/2 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Tổng tiền vay *</label>
+                    <div className="flex-1 flex gap-4 items-center">
+                      <div className="relative w-1/2">
+                        <MoneyInput
+                          value={uLoanAmount}
+                          onChange={(val) => setULoanAmount(String(val))}
+                          placeholder="0"
+                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-bold text-xs h-8 focus:outline-none"
+                          required
+                        />
+                        <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 font-extrabold text-[10px]">VNĐ</span>
+                      </div>
+                      <div className="flex-1 flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setULoanAmount(prev => String(Math.max(0, Number(prev || 0) - 5000000)))}
+                          className="btn btn-outline border-slate-200 btn-xs text-slate-600 rounded font-bold"
+                        >
+                          -5
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setULoanAmount(prev => String(Number(prev || 0) + 5000000))}
+                          className="btn btn-outline border-slate-200 btn-xs text-slate-600 rounded font-bold"
+                        >
+                          +5
+                        </button>
+                        {[10, 20, 30, 40, 50].map((num) => (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => setULoanAmount(String(num * 1000000))}
+                            className="btn btn-outline border-slate-200 btn-xs text-slate-600 rounded font-bold"
+                          >
+                            {num}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Hình thức lãi *</label>
+                    <div className="flex-1 flex items-center gap-4">
+                      <select
+                        value={uInterestTypeId}
+                        onChange={(e) => setUInterestTypeId(e.target.value)}
+                        className="select select-bordered select-sm w-1/2 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 min-h-[32px] focus:outline-none font-semibold"
+                        required
+                      >
+                        <option value="">-- Chọn hình thức lãi --</option>
+                        {interestTypes.map((i) => (
+                          <option key={i.id} value={i.id}>{i.name}</option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={uIsUpfront}
+                          onChange={(e) => setUIsUpfront(e.target.checked)}
+                          className="checkbox checkbox-sm checkbox-primary border-slate-200 rounded checked:border-amber-500 checked:bg-amber-500 w-4 h-4"
+                        />
+                        <span>Thu lãi trước</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Số ngày vay *</label>
+                    <div className="w-1/2 relative">
+                      <input
+                        type="number"
+                        placeholder="30"
+                        value={uLoanDays}
+                        onChange={(e) => setULoanDays(e.target.value)}
+                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
+                        required
+                      />
+                      <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">Ngày</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Kỳ lãi *</label>
+                    <div className="flex-1 flex items-center gap-4">
+                      <div className="w-1/2 relative">
+                        <input
+                          type="number"
+                          placeholder="10"
+                          value={uPeriodValue}
+                          onChange={(e) => setUPeriodValue(e.target.value)}
+                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
+                          required
+                        />
+                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">Ngày</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-semibold leading-none">
+                        (VD : 10 ngày đóng lãi 1 lần thì điền số 10)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Lãi phí *</label>
+                    <div className="flex-1 flex gap-4 items-center">
+                      <div className="w-1/2 relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="1"
+                          value={uInterestRate}
+                          onChange={(e) => setUInterestRate(e.target.value)}
+                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-bold text-xs h-8 focus:outline-none"
+                          required
+                        />
+                        <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400">k/1 triệu</span>
+                      </div>
+                      <div className="flex-1 text-[10px] text-red-500 leading-normal font-semibold">
+                        * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật Hình sự.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <label className={labelClass}>Ngày vay *</label>
+                    <input
+                      type="date"
+                      value={uLoanDate}
+                      onChange={(e) => setULoanDate(e.target.value)}
+                      className="input input-bordered input-sm w-1/2 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* SECTION 3: THÔNG TIN KHÁCH */}
+                <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
+                  <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
+                    <User className="w-3 h-3 text-blue-600" />
+                    THÔNG TIN KHÁC
+                  </span>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="flex items-center">
+                      <label className={labelClass}>Nhân viên thu</label>
+                      <select
+                        value={uCollectorId}
+                        onChange={(e) => setUCollectorId(e.target.value)}
+                        className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 min-h-[32px] focus:outline-none"
+                        required
+                      >
+                        <option value="">-- Chọn nhân viên --</option>
+                        {employees.map((emp) => (
+                          <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center">
+                      <label className={labelClass}>Cộng tác viên</label>
+                      <select
+                        value={uCollaboratorId}
+                        onChange={(e) => setUCollaboratorId(e.target.value)}
+                        className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 min-h-[32px] focus:outline-none"
+                      >
+                        <option value="">-- Chọn cộng tác viên --</option>
+                        {collaborators.map((c) => (
+                          <option key={c.id} value={c.id}>{c.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <label className={`${labelClass} pt-2`}>Ghi chú</label>
+                    <textarea
+                      placeholder="Mô tả ghi chú..."
+                      value={uNotes}
+                      onChange={(e) => setUNotes(e.target.value)}
+                      className="textarea textarea-bordered flex-1 bg-white border-slate-200 text-slate-800 rounded-lg h-16 text-xs focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Modal Footer buttons */}
+                <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+                  <button
+                    type="submit"
+                    className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 border-none text-white btn-sm px-5 font-bold rounded-lg text-xs"
+                  >
+                    {editingId ? "Cập nhật" : "+ Thêm mới"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsUnsecuredOpen(false)}
+                    className="btn btn-neutral bg-slate-200 hover:bg-slate-300 border-none text-slate-700 btn-sm px-5 font-bold rounded-lg text-xs"
+                  >
+                    Đóng
+                  </button>
+                </div>
+
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* INSTALLMENT CREATE MODAL */}
       {isInstallmentOpen && (

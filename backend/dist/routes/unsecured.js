@@ -90,6 +90,7 @@ router.get("/", async (req, res) => {
                 commodity: true,
                 interest_type: true,
                 collector: { select: { full_name: true } },
+                interest_payments: { orderBy: { cycle_number: "asc" } },
             },
             orderBy: { created_at: "desc" },
         });
@@ -140,7 +141,7 @@ router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), asyn
     try {
         const storeId = req.user.store_id;
         const employeeId = req.user.id;
-        const { customer_id, commodity_id, loan_amount, interest_type_id, is_upfront_interest, loan_days, period_value, interest_rate, loan_date, collector_id, collaborator_id, notes, } = req.body;
+        const { customer_id, commodity_id, loan_amount, interest_type_id, is_upfront_interest, loan_days, period_value, interest_rate, loan_date, collector_id, collaborator_id, notes, contract_code, } = req.body;
         if (!customer_id || !loan_amount || !interest_type_id || !loan_days || !period_value || !collector_id) {
             return res.status(400).json({ error: "Missing required fields" });
         }
@@ -154,7 +155,10 @@ router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), asyn
             return res.status(400).json({ error: "Customer is blacklisted. Cannot create contract." });
         }
         const result = await prisma.$transaction(async (tx) => {
-            const contractCode = await (0, codeGen_1.generateContractCode)(tx, "unsecured");
+            let contractCode = contract_code;
+            if (!contractCode) {
+                contractCode = await (0, codeGen_1.generateContractCode)(tx, "unsecured");
+            }
             const normalizedLoanDate = (0, cash_1.normalizeToMidnight)(loan_date || new Date());
             const interestType = await tx.interestType.findUnique({
                 where: { id: interest_type_id },
@@ -1026,7 +1030,7 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
     try {
         const contractId = req.params.id;
         const employeeId = req.user.id;
-        const { customer_id, commodity_id, loan_amount, interest_type_id, is_upfront_interest, loan_days, period_value, interest_rate, loan_date, collector_id, collaborator_id, notes, } = req.body;
+        const { customer_id, commodity_id, loan_amount, interest_type_id, is_upfront_interest, loan_days, period_value, interest_rate, loan_date, collector_id, collaborator_id, notes, contract_code, } = req.body;
         const result = await prisma.$transaction(async (tx) => {
             const contract = await tx.unsecuredContract.findUnique({
                 where: { id: contractId },
@@ -1099,6 +1103,7 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
                     collector_id: collector_id || undefined,
                     collaborator_id: collaborator_id !== undefined ? collaborator_id : undefined,
                     notes: notes !== undefined ? notes : undefined,
+                    contract_code: contract_code !== undefined ? contract_code : undefined,
                 },
             });
             // Delete old interest payments

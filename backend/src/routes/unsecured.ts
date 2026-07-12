@@ -113,6 +113,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
         commodity: true,
         interest_type: true,
         collector: { select: { full_name: true } },
+        interest_payments: { orderBy: { cycle_number: "asc" } },
       },
       orderBy: { created_at: "desc" },
     });
@@ -180,6 +181,7 @@ router.post("/", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: Aut
       collector_id,
       collaborator_id,
       notes,
+      contract_code,
     } = req.body;
 
     if (!customer_id || !loan_amount || !interest_type_id || !loan_days || !period_value || !collector_id) {
@@ -198,7 +200,10 @@ router.post("/", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: Aut
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const contractCode = await generateContractCode(tx, "unsecured");
+      let contractCode = contract_code;
+      if (!contractCode) {
+        contractCode = await generateContractCode(tx, "unsecured");
+      }
       const normalizedLoanDate = normalizeToMidnight(loan_date || new Date());
 
       const interestType = await tx.interestType.findUnique({
@@ -1341,6 +1346,7 @@ router.put("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: A
       collector_id,
       collaborator_id,
       notes,
+      contract_code,
     } = req.body;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -1434,6 +1440,7 @@ router.put("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: A
           collector_id: collector_id || undefined,
           collaborator_id: collaborator_id !== undefined ? collaborator_id : undefined,
           notes: notes !== undefined ? notes : undefined,
+          contract_code: contract_code !== undefined ? contract_code : undefined,
         },
       });
 

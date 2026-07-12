@@ -1,65 +1,75 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
-  Trash,
   Upload,
-  ArrowLeft,
-  PhoneCall,
-  RefreshCw
+  X,
+  Coins,
+  ArrowDown,
+  ArrowUp,
+  Calendar,
+  Anchor,
+  AlertTriangle,
+  FileText,
+  History,
+  Bell,
+  Printer,
+  Save
 } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
 
-export const UnsecuredDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+interface UnsecuredDetailProps {
+  idProp?: string;
+  onClose?: () => void;
+  isModal?: boolean;
+  defaultTab?: string;
+}
+
+export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClose, isModal = false, defaultTab = "interest" }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  // const navigate = useNavigate();
+  const id = idProp || paramId;
 
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const setError = (msg: string) => {
-    if (msg) toast.error(msg);
-  };
-  const setSuccess = (msg: string) => {
-    if (msg) toast.success(msg);
-  };
+  
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const [activeSubTab, setActiveSubTab] = useState<"schedule" | "principal" | "debt" | "ledger" | "docs" | "reminders">("schedule");
-
-  // Modals state
-  const [isPayInterestOpen, setIsPayInterestOpen] = useState(false);
-  const [isPrincipalOpen, setIsPrincipalOpen] = useState(false);
-  const [isExtendOpen, setIsExtendOpen] = useState(false);
-  const [isRedeemOpen, setIsRedeemOpen] = useState(false);
-  const [isDebtOpen, setIsDebtOpen] = useState(false);
-  const [isTimerOpen, setIsTimerOpen] = useState(false);
+  // Tabs: interest, pay_down, borrow_more, extend, redeem, debt, docs, history, timer, blacklist
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   // Form Fields
-  const [payInterestId, setPayInterestId] = useState("");
-  const [payInterestCycleNum, setPayInterestCycleNum] = useState(1);
-  const [payInterestAmount, setPayInterestAmount] = useState("");
-  const [payInterestOther, setPayInterestOther] = useState("");
-  const [payInterestNotes, setPayInterestNotes] = useState("");
+  const [payAmounts, setPayAmounts] = useState<Record<string, string>>({});
+  const [payOthers, setPayOthers] = useState<Record<string, string>>({});
+  const [payChecked, setPayChecked] = useState<Record<string, boolean>>({});
 
-  const [principalAction, setPrincipalAction] = useState<"borrow_more" | "pay_down">("borrow_more");
+  // Principal state
   const [principalAmount, setPrincipalAmount] = useState("");
   const [principalNotes, setPrincipalNotes] = useState("");
 
+  // Extend state
   const [extendDays, setExtendDays] = useState("");
   const [extendNotes, setExtendNotes] = useState("");
 
+  // Redeem state
   const [redeemDate, setRedeemDate] = useState("");
   const [redeemOther, setRedeemOther] = useState("");
   const [redeemNotes, setRedeemNotes] = useState("");
 
-  const [debtAction, setDebtAction] = useState<"record_debt" | "pay_debt">("record_debt");
-  const [debtAmount, setDebtAmount] = useState("");
-  const [debtNotes, setDebtNotes] = useState("");
+  // Debt state
+  const [recordDebtAmount, setRecordDebtAmount] = useState("");
+  const [payDebtAmount, setPayDebtAmount] = useState("");
+  const [reminderContent, setReminderContent] = useState("");
 
+  // Timer state
   const [timerDate, setTimerDate] = useState("");
   const [timerNotes, setTimerNotes] = useState("");
 
-  const [reminderLogContent, setReminderLogContent] = useState("");
+  // Blacklist state
+  const [blacklistReason, setBlacklistReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Document upload state
   const [docType, setDocType] = useState("id_card");
@@ -72,6 +82,31 @@ export const UnsecuredDetail: React.FC = () => {
       setError("");
       const res = await axios.get(`/api/contracts/unsecured/${id}`);
       setContract(res.data);
+
+      // Initialize inline values for payment inputs
+      const initialAmounts: Record<string, string> = {};
+      const initialOthers: Record<string, string> = {};
+      const initialChecked: Record<string, boolean> = {};
+      res.data.interest_payments?.forEach((p: any) => {
+        initialAmounts[p.id] = String(Number(p.expected_interest));
+        initialOthers[p.id] = String(Number(p.other_amount || 0));
+        initialChecked[p.id] = p.is_paid;
+      });
+      setPayAmounts(initialAmounts);
+      setPayOthers(initialOthers);
+      setPayChecked(initialChecked);
+
+      // Initialize redeem fields
+      if (res.data.status === "closed" && res.data.redemptions?.[0]) {
+        const rDateObj = new Date(res.data.redemptions[0].redeem_date);
+        setRedeemDate(rDateObj.toISOString().split("T")[0]);
+        setRedeemOther(String(Number(res.data.redemptions[0].other_amount || 0)));
+        setRedeemNotes(res.data.redemptions[0].notes || "");
+      } else {
+        setRedeemDate(new Date().toISOString().split("T")[0]);
+        setRedeemOther("");
+        setRedeemNotes("");
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải chi tiết hợp đồng.");
     } finally {
@@ -83,22 +118,21 @@ export const UnsecuredDetail: React.FC = () => {
     fetchContractDetails();
   }, [id]);
 
-
-
   // Actions
-  const handlePayInterest = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePayInterestInline = async (paymentId: string, cycleNum: number) => {
     try {
       setError("");
       setSuccess("");
+      const amount = payAmounts[paymentId] || "0";
+      const other = payOthers[paymentId] || "0";
+
       await axios.post(`/api/contracts/unsecured/${id}/pay-interest`, {
-        paymentId: payInterestId,
-        actualPaid: payInterestAmount,
-        otherAmount: payInterestOther,
-        notes: payInterestNotes,
+        paymentId,
+        actualPaid: Number(amount),
+        otherAmount: Number(other),
+        notes: `Thu lãi kỳ ${cycleNum} trực tiếp từ chi tiết`,
       });
-      setSuccess(`Đã thu lãi thành công kỳ ${payInterestCycleNum}!`);
-      setIsPayInterestOpen(false);
+      setSuccess(`Đã thu lãi thành công kỳ ${cycleNum}!`);
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi đóng lãi kỳ.");
@@ -106,7 +140,7 @@ export const UnsecuredDetail: React.FC = () => {
   };
 
   const handleCancelPayInterest = async (paymentId: string, cycleNum: number) => {
-    if (!window.confirm(`Hủy đóng lãi kỳ ${cycleNum}? Số tiền thu sẽ được hoàn trả khỏi quỹ két.`)) return;
+    if (!window.confirm(`Hủy giao dịch đóng lãi kỳ ${cycleNum}? Số tiền sẽ bị trừ ra khỏi quỹ két.`)) return;
     try {
       setError("");
       setSuccess("");
@@ -118,18 +152,20 @@ export const UnsecuredDetail: React.FC = () => {
     }
   };
 
-  const handlePrincipalTransaction = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePrincipalTransaction = async (action: "borrow_more" | "pay_down") => {
     try {
       setError("");
       setSuccess("");
-      const endpoint = principalAction === "borrow_more" ? "borrow-more" : "pay-down";
+      if (!principalAmount) {
+        toast.warning("Vui lòng nhập số tiền gốc");
+        return;
+      }
+      const endpoint = action === "borrow_more" ? "borrow-more" : "pay-down";
       await axios.post(`/api/contracts/unsecured/${id}/${endpoint}`, {
-        amount: principalAmount,
+        amount: Number(principalAmount),
         notes: principalNotes,
       });
-      setSuccess(`Giao dịch ${principalAction === "borrow_more" ? "vay thêm" : "trả bớt"} gốc thành công!`);
-      setIsPrincipalOpen(false);
+      setSuccess(`Giao dịch ${action === "borrow_more" ? "vay thêm" : "trả bớt"} gốc thành công!`);
       setPrincipalAmount("");
       setPrincipalNotes("");
       fetchContractDetails();
@@ -156,12 +192,15 @@ export const UnsecuredDetail: React.FC = () => {
     try {
       setError("");
       setSuccess("");
+      if (!extendDays) {
+        toast.warning("Vui lòng nhập số ngày gia hạn");
+        return;
+      }
       await axios.post(`/api/contracts/unsecured/${id}/extend`, {
-        extendedDays: extendDays,
+        extendedDays: Number(extendDays),
         notes: extendNotes,
       });
       setSuccess(`Gia hạn hợp đồng thành công thêm ${extendDays} ngày!`);
-      setIsExtendOpen(false);
       setExtendDays("");
       setExtendNotes("");
       fetchContractDetails();
@@ -176,7 +215,7 @@ export const UnsecuredDetail: React.FC = () => {
       setError("");
       setSuccess("");
       await axios.delete(`/api/contracts/unsecured/${id}/extend/${extendId}`);
-      setSuccess("Đã hủy bỏ gia hạn hợp đồng thành công.");
+      setSuccess("Đã hủy gia hạn hợp đồng thành công.");
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi hủy gia hạn.");
@@ -190,52 +229,54 @@ export const UnsecuredDetail: React.FC = () => {
       setSuccess("");
       await axios.post(`/api/contracts/unsecured/${id}/redeem`, {
         redeemDate: redeemDate || undefined,
-        otherAmount: redeemOther,
+        otherAmount: Number(redeemOther) || 0,
         notes: redeemNotes,
       });
       setSuccess("Tất toán đóng hợp đồng tín chấp thành công!");
-      setIsRedeemOpen(false);
-      setRedeemOther("");
-      setRedeemNotes("");
       fetchContractDetails();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi tất toán.");
+      setError(err.response?.data?.error || "Lỗi tất toán đóng hợp đồng.");
     }
   };
 
   const handleCancelRedeem = async () => {
-    if (!window.confirm("Khôi phục hợp đồng tín chấp về trạng thái hoạt động? Tiền đã đóng sẽ bị rút ra khỏi quỹ két.")) return;
+    if (!window.confirm("Khôi phục hợp đồng tín chấp về trạng thái hoạt động? Tiền đã đóng tất toán sẽ bị trừ ra khỏi quỹ két.")) return;
     try {
       setError("");
       setSuccess("");
       await axios.post(`/api/contracts/unsecured/${id}/cancel-redeem`);
-      setSuccess("Khôi phục trạng thái hoạt động hợp đồng thành công.");
+      setSuccess("Khôi phục trạng thái hoạt động thành công.");
       fetchContractDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || "Lỗi hủy tất toán.");
     }
   };
 
-  const handleDebtAction = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDebtAction = async (action: "record_debt" | "pay_debt") => {
     try {
       setError("");
       setSuccess("");
-      const endpoint = debtAction === "record_debt" ? "record-debt" : "pay-debt";
+      const amount = action === "record_debt" ? recordDebtAmount : payDebtAmount;
+      if (!amount) {
+        toast.warning("Vui lòng nhập số tiền nợ");
+        return;
+      }
+      const endpoint = action === "record_debt" ? "record-debt" : "pay-debt";
       await axios.post(`/api/contracts/unsecured/${id}/${endpoint}`, {
-        amount: debtAmount,
-        notes: debtNotes,
+        amount: Number(amount),
+        notes: reminderContent,
       });
-      setSuccess(`Giao dịch ${debtAction === "record_debt" ? "ghi nợ" : "thu nợ"} thành công!`);
-      setIsDebtOpen(false);
-      setDebtAmount("");
-      setDebtNotes("");
+      setSuccess(`Giao dịch ${action === "record_debt" ? "ghi nhận nợ" : "thu hồi nợ"} thành công!`);
+      setRecordDebtAmount("");
+      setPayDebtAmount("");
+      setReminderContent("");
       fetchContractDetails();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi thao tác nợ.");
+      setError(err.response?.data?.error || "Lỗi thao tác nợ cũ.");
     }
   };
 
+  /*
   const handleDeleteDebtTx = async (txId: string) => {
     if (!window.confirm("Hủy giao dịch nợ cũ này và tự động đối chiếu số dư két?")) return;
     try {
@@ -248,17 +289,21 @@ export const UnsecuredDetail: React.FC = () => {
       setError(err.response?.data?.error || "Lỗi hủy giao dịch nợ.");
     }
   };
+  */
 
   const handleSetTimer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError("");
+      if (!timerDate) {
+        toast.warning("Vui lòng chọn ngày hẹn đóng lãi");
+        return;
+      }
       await axios.post(`/api/contracts/unsecured/${id}/timers`, {
         reminder_date: timerDate,
         content: timerNotes,
       });
       setSuccess("Hẹn ngày thanh toán thành công!");
-      setIsTimerOpen(false);
       setTimerDate("");
       setTimerNotes("");
       fetchContractDetails();
@@ -270,18 +315,6 @@ export const UnsecuredDetail: React.FC = () => {
   const handleStopTimer = async (timerId: string) => {
     try {
       await axios.put(`/api/contracts/unsecured/${id}/timers/${timerId}/stop`);
-      fetchContractDetails();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleAddReminderLog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reminderLogContent) return;
-    try {
-      await axios.post(`/api/contracts/unsecured/${id}/reminders/log`, { content: reminderLogContent });
-      setReminderLogContent("");
       fetchContractDetails();
     } catch (err) {
       console.error(err);
@@ -315,16 +348,39 @@ export const UnsecuredDetail: React.FC = () => {
     }
   };
 
+  const handleBlacklist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!blacklistReason) return;
+    try {
+      setSubmitting(true);
+      setError("");
+      setSuccess("");
+      await axios.post(`/api/customers/${contract.customer_id}/blacklist`, {
+        reason: blacklistReason
+      });
+      setSuccess("Đã báo xấu khách hàng thành công!");
+      setBlacklistReason("");
+      fetchContractDetails();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Lỗi báo xấu khách hàng.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /*
   const handleDeleteContract = async () => {
     if (!window.confirm("CẢNH BÁO: Bạn đang xóa hợp đồng. Hệ thống sẽ tự động tính toán dòng tiền ròng thực tế phát sinh của hợp đồng này và ĐẢO NGƯỢC QUỸ KÉT tương ứng để cân đối sổ sách. Bạn có chắc chắn muốn xóa?")) return;
     try {
       setError("");
       await axios.delete(`/api/contracts/unsecured/${id}`);
-      navigate("/contracts");
+      if (onClose) onClose();
+      else navigate("/contracts");
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể xóa hợp đồng.");
     }
   };
+  */
 
   const formatCurrency = (val: number | string) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(val) || 0);
@@ -334,750 +390,735 @@ export const UnsecuredDetail: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-slate-500">
         <span className="loading loading-spinner loading-lg text-amber-500 mb-4"></span>
-        <p className="font-semibold">Đang truy xuất thông tin hồ sơ tín chấp...</p>
+        <p className="font-semibold text-xs">Đang truy xuất thông tin hồ sơ tín chấp...</p>
       </div>
     );
   }
 
   if (!contract) {
     return (
-      <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl text-slate-500">
+      <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl text-slate-500 text-xs">
         Không tìm thấy hợp đồng tín chấp nào phù hợp
       </div>
     );
   }
 
-  const activeTimer = contract.reminders?.find((r: any) => r.status === "active");
+  // const activeTimer = contract.reminders?.find((r: any) => r.status === "active");
+  // const lastPaid = contract.interest_payments?.filter((p: any) => p.is_paid).slice(-1)[0];
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center bg-white border border-slate-200/80 p-6 rounded-2xl">
-        <div className="flex items-center gap-4">
-          <Link to="/contracts" className="btn btn-outline border-slate-200 hover:bg-slate-50 text-slate-600 btn-circle btn-sm">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
-              HĐ Tín Chấp: <span className="text-amber-500">{contract.contract_code}</span>
-              <span className={`badge badge-sm font-bold uppercase ${contract.status === "active" ? "badge-success" : "badge-neutral text-slate-500"}`}>
-                {contract.status === "active" ? "Đang hoạt động" : "Đã tất toán"}
-              </span>
-            </h1>
-            <p className="text-slate-500 text-xs mt-1">
-              Khách hàng: <span className="text-slate-700 font-bold">{contract.customer?.full_name}</span> | Ngày vay: {new Date(contract.loan_date).toLocaleDateString("vi-VN")}
-            </p>
+  const rateLabel = contract.interest_type?.code === "daily_k_million"
+    ? `${Number(contract.interest_rate)}k /triệu`
+    : `${Number(contract.interest_rate)}% / kỳ`;
+
+  // Calculate dynamic accrued interest labels
+  const start = new Date(contract.loan_date);
+  const today = new Date();
+  start.setHours(0,0,0,0);
+  today.setHours(0,0,0,0);
+  const diffTime = Math.max(0, today.getTime() - start.getTime());
+  const elapsedDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  let dailyInterest = 0;
+  if (contract.interest_type?.code === "daily_k_million") {
+    dailyInterest = Number(contract.interest_rate) * (Number(contract.loan_amount) / 1000000);
+  } else {
+    dailyInterest = (Number(contract.interest_rate) / 100) * Number(contract.loan_amount) / (contract.period_value || 10);
+  }
+  const accruedInt = Math.round(dailyInterest * elapsedDays);
+
+  const totalPaidInterest = contract.interest_payments?.filter((p: any) => p.is_paid).reduce((sum: number, p: any) => sum + Number(p.actual_paid || 0), 0) || 0;
+
+  // Standard modal content structure
+  const contentJSX = (
+    <div className="space-y-5 text-sm">
+      {/* Alert Banner */}
+      {error && (
+        <div className="alert alert-error bg-red-500/10 border border-red-500/30 text-red-700 text-xs rounded-xl py-2 px-3 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError("")} className="btn btn-ghost btn-circle btn-xs"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs rounded-xl py-2 px-3 flex items-center justify-between">
+          <span>{success}</span>
+          <button onClick={() => setSuccess("")} className="btn btn-ghost btn-circle btn-xs"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+
+      {/* Grid summary stats matching Image 3 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200/60 p-4 rounded-xl text-slate-700">
+        <div className="space-y-2">
+          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+            <span className="text-slate-400 font-medium">Khách hàng:</span>
+            <Link to={`/customer-list`} className="text-blue-500 font-bold hover:underline">
+              {contract.customer?.full_name}
+            </Link>
+          </div>
+          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+            <span className="text-slate-400 font-medium">Tiền vay:</span>
+            <span className="font-bold text-slate-800">{formatCurrency(contract.loan_amount)}</span>
+          </div>
+          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+            <span className="text-slate-400 font-medium">Lãi suất:</span>
+            <span className="font-bold text-slate-800">{rateLabel}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400 font-medium">Vay từ ngày:</span>
+            <span className="font-bold text-slate-800">
+              {new Date(contract.loan_date).toLocaleDateString("vi-VN")} → {
+                new Date(new Date(contract.loan_date).getTime() + contract.loan_days * 24 * 60 * 60 * 1000).toLocaleDateString("vi-VN")
+              }
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={fetchContractDetails} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button onClick={handleDeleteContract} className="btn btn-neutral border-slate-200/80 text-red-500 hover:bg-red-500/10 btn-sm font-bold rounded-xl">
-            <Trash className="w-4 h-4" />
-            Xóa HĐ
-          </button>
+
+        <div className="space-y-2">
+          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+            <span className="text-slate-400 font-medium">Tổng lãi:</span>
+            <span className="font-bold text-slate-800">{formatCurrency(accruedInt)}</span>
+          </div>
+          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+            <span className="text-slate-400 font-medium">Tiền đã đóng:</span>
+            <span className="font-bold text-emerald-600">{formatCurrency(totalPaidInterest)}</span>
+          </div>
+          <div className="flex justify-between border-b border-slate-200/50 pb-1.5">
+            <span className="text-slate-400 font-medium">Nợ cũ KH / HĐ:</span>
+            <span className="font-bold text-red-500">
+              {formatCurrency(contract.customer?.debt_amount || 0)} / {formatCurrency(contract.debt_amount)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400 font-medium">Trạng thái:</span>
+            <span className={`badge badge-sm text-xs font-bold text-white bg-amber-500 border-none px-2 rounded`}>
+              {contract.status === "active" ? "Nợ lãi" : "Đã tất toán"}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Top Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5">
-          <p className="text-xs text-slate-500 font-semibold uppercase">Số tiền vay gốc hiện tại</p>
-          <h2 className="text-xl font-bold text-slate-700 mt-1">{formatCurrency(contract.loan_amount)}</h2>
-          <p className="text-xs text-slate-500 mt-1 font-semibold">Tín chấp theo hồ sơ pháp lý</p>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5">
-          <p className="text-xs text-slate-500 font-semibold uppercase">Nợ cũ tích lũy</p>
-          <h2 className="text-xl font-bold text-amber-500 mt-1">{formatCurrency(contract.debt_amount)}</h2>
-          <p className="text-xs text-slate-500 mt-1 font-semibold">Lũy kế các kỳ trễ hạn đóng nợ</p>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5">
-          <p className="text-xs text-slate-500 font-semibold uppercase">Tỷ suất & Lãi kỳ</p>
-          <h2 className="text-xl font-bold text-slate-700 mt-1">{contract.interest_rate}% / kỳ</h2>
-          <p className="text-xs text-slate-500 mt-1 font-semibold">Kỳ đóng: {contract.period_value} ngày/kỳ</p>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5">
-          <p className="text-xs text-slate-500 font-semibold uppercase">Hẹn ngày trả tiếp theo</p>
-          {activeTimer ? (
-            <div>
-              <h2 className="text-lg font-bold text-emerald-500 mt-1">
-                {new Date(activeTimer.reminder_date).toLocaleDateString("vi-VN")}
-              </h2>
-              <button onClick={() => handleStopTimer(activeTimer.id)} className="text-[10px] text-red-400 underline font-semibold mt-0.5">
-                Hủy hẹn
-              </button>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm text-slate-500 mt-1">Chưa hẹn lịch thu nợ</p>
-              <button onClick={() => setIsTimerOpen(true)} className="text-xs text-amber-500 underline font-semibold mt-1">
-                Đặt lịch hẹn nợ
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Control Panel */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6">
-        <h2 className="text-sm font-bold text-slate-600 uppercase tracking-wider mb-4">Nghiệp vụ tín chấp</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <button
-            onClick={() => setIsPrincipalOpen(true)}
-            className="btn btn-outline border-slate-200 hover:bg-slate-50 text-slate-700 btn-sm rounded-xl font-semibold"
-            disabled={contract.status !== "active"}
-          >
-            Vay thêm / Trả bớt gốc
-          </button>
-          <button
-            onClick={() => setIsExtendOpen(true)}
-            className="btn btn-outline border-slate-200 hover:bg-slate-50 text-slate-700 btn-sm rounded-xl font-semibold"
-            disabled={contract.status !== "active"}
-          >
-            Gia hạn vay
-          </button>
-          <button
-            onClick={() => setIsDebtOpen(true)}
-            className="btn btn-outline border-slate-200 hover:bg-slate-50 text-slate-700 btn-sm rounded-xl font-semibold"
-          >
-            Ghi nợ / Trả nợ cũ
-          </button>
-
-          {contract.status === "active" ? (
-            <button
-              onClick={() => setIsRedeemOpen(true)}
-              className="btn btn-primary bg-amber-500 border-none text-slate-950 hover:bg-amber-600 btn-sm rounded-xl font-extrabold"
-            >
-              Tất toán sớm
-            </button>
-          ) : (
-            <button
-              onClick={handleCancelRedeem}
-              className="btn btn-neutral border-slate-200 text-red-500 hover:bg-red-500/10 btn-sm rounded-xl font-extrabold"
-            >
-              Hủy đóng tất toán
-            </button>
-          )}
-
-          <button
-            onClick={() => setIsTimerOpen(true)}
-            className="btn btn-outline border-slate-200 hover:bg-slate-50 text-slate-700 btn-sm rounded-xl font-semibold col-span-2 md:col-span-1"
-          >
-            Lịch hẹn đóng
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden">
-        <div className="flex border-b border-slate-200/80 bg-slate-50/60 p-2">
-          {[
-            { id: "schedule", label: "Lịch đóng lãi", count: contract.interest_payments?.length },
-            { id: "principal", label: "Gốc & Gia hạn", count: (contract.principal_transactions?.length || 0) + (contract.extensions?.length || 0) },
-            { id: "debt", label: "Ghi nợ phụ", count: contract.debt_history?.length },
-            { id: "ledger", label: "Nhật ký hệ thống", count: contract.transaction_ledgers?.length },
-            { id: "docs", label: "Ảnh tài liệu", count: contract.documents?.length },
-            { id: "reminders", label: "Nhắc nợ", count: contract.debt_reminders?.length },
-          ].map((tab) => (
+      {/* Reusable Toolbar list tabs of 10 buttons */}
+      <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-2">
+        {[
+          { id: "interest", label: "Đóng tiền lãi", icon: Coins, color: "text-[#3b82f6]" },
+          { id: "pay_down", label: "Trả bớt gốc", icon: ArrowDown, color: "text-[#10b981]" },
+          { id: "borrow_more", label: "Vay thêm", icon: ArrowUp, color: "text-[#ef4444]" },
+          { id: "extend", label: "Gia hạn", icon: Calendar, color: "text-[#f59e0b]" },
+          { id: "redeem", label: "Đóng HĐ", icon: Anchor, color: "text-[#0ea5e9]" },
+          { id: "debt", label: "Nợ", icon: AlertTriangle, color: "text-[#9c27b0]" },
+          { id: "docs", label: "Chứng từ", icon: FileText, color: "text-slate-500" },
+          { id: "history", label: "Lịch sử", icon: History, color: "text-slate-500" },
+          { id: "timer", label: "Hẹn giờ", icon: Bell, color: "text-[#f59e0b]" },
+          { id: "blacklist", label: "Báo xấu", icon: AlertTriangle, color: "text-red-600" },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
             <button
               key={tab.id}
-              onClick={() => setActiveSubTab(tab.id as any)}
-              className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${
-                activeSubTab === tab.id
-                  ? "bg-amber-500/10 text-amber-500"
-                  : "text-slate-500 hover:text-slate-700"
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`btn btn-xs rounded-lg px-2.5 py-1.5 h-auto border font-bold flex items-center gap-1 transition-all ${
+                isActive
+                  ? "bg-slate-100 border-slate-300 text-slate-800 shadow-sm"
+                  : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
               }`}
             >
-              {tab.label} {tab.count !== undefined && <span className="opacity-60">({tab.count})</span>}
+              <Icon className={`w-3.5 h-3.5 ${tab.color}`} />
+              {tab.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        <div className="p-6">
-          {activeSubTab === "schedule" && (
-            <div className="overflow-x-auto">
-              <table className="table w-full text-slate-600">
-                <thead>
-                  <tr className="border-b border-slate-200/80 text-slate-500 text-xs">
-                    <th>Kỳ</th>
-                    <th>Thời gian chu kỳ</th>
-                    <th>Số ngày</th>
-                    <th>Tiền lãi dự kiến</th>
-                    <th>Trạng thái</th>
-                    <th>Ngày đóng thực tế</th>
-                    <th>Số tiền thu</th>
-                    <th className="text-right">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contract.interest_payments?.map((payment: any) => (
-                    <tr key={payment.id} className="border-b border-slate-200/40 hover:bg-slate-50/20 text-sm">
-                      <td className="font-bold text-amber-500">Kỳ {payment.cycle_number}</td>
+      {/* Tab Contents View */}
+      <div className="bg-white border border-slate-200 p-4 rounded-xl">
+        {activeTab === "interest" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <span className="font-extrabold text-blue-600 text-xs cursor-pointer hover:underline">
+                Đóng lãi phí tuỳ biến theo ngày
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-700 text-xs">Lịch sử đóng tiền lãi</span>
+                <button className="btn btn-outline border-slate-200 btn-xs text-[10px] text-slate-600 rounded flex items-center gap-1 font-bold">
+                  <Printer className="w-3 h-3" />
+                  In lịch đóng tiền
+                </button>
+              </div>
+            </div>
+
+            <table className="table table-compact w-full text-xs">
+              <thead>
+                <tr className="border-b border-slate-200/60 text-slate-400">
+                  <th className="w-8">#</th>
+                  <th>Ngày</th>
+                  <th>Số ngày</th>
+                  <th>Tiền lãi</th>
+                  <th>Tiền khác</th>
+                  <th>Tổng</th>
+                  <th className="w-24">Tiền khách trả</th>
+                  <th className="w-8"></th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {contract.interest_payments?.map((payment: any) => {
+                  const cycleNum = payment.cycle_number;
+                  const isPaid = payment.is_paid;
+                  return (
+                    <tr key={payment.id} className="hover:bg-slate-50 border-b border-slate-100">
+                      <td className="font-bold">{cycleNum}</td>
                       <td>
-                        {new Date(payment.from_date).toLocaleDateString("vi-VN")} - {new Date(payment.to_date).toLocaleDateString("vi-VN")}
+                        {new Date(payment.from_date).toLocaleDateString("vi-VN")} → {new Date(payment.to_date).toLocaleDateString("vi-VN")}
                       </td>
-                      <td>{payment.expected_days} ngày</td>
-                      <td className="font-semibold text-slate-700">{formatCurrency(payment.expected_interest)}</td>
+                      <td className="font-semibold text-slate-500">{payment.expected_days}</td>
+                      <td className="font-extrabold text-blue-600">
+                        {formatCurrency(payment.expected_interest).replace("₫", "")}
+                      </td>
+                      <td className="font-extrabold text-blue-600">
+                        {formatCurrency(payment.other_amount || 0).replace("₫", "")}
+                      </td>
+                      <td className="font-extrabold text-blue-600">
+                        {formatCurrency(Number(payment.expected_interest) + Number(payment.other_amount || 0)).replace("₫", "")}
+                      </td>
                       <td>
-                        <span className={`badge badge-xs font-bold uppercase ${payment.is_paid ? "badge-success" : "badge-neutral text-slate-500"}`}>
-                          {payment.is_paid ? "Đã đóng" : "Chưa đóng"}
-                        </span>
+                        <input
+                          type="number"
+                          disabled={isPaid}
+                          value={payAmounts[payment.id] || "0"}
+                          onChange={(e) => setPayAmounts(prev => ({ ...prev, [payment.id]: e.target.value }))}
+                          className="input input-bordered input-xs bg-white text-slate-800 text-center font-bold w-20 border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 rounded"
+                        />
                       </td>
-                      <td>{payment.paid_date ? new Date(payment.paid_date).toLocaleDateString("vi-VN") : "--"}</td>
-                      <td className="font-bold text-emerald-500">{payment.actual_paid ? formatCurrency(payment.actual_paid) : "--"}</td>
-                      <td className="text-right py-2">
-                        {payment.is_paid ? (
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={!!payChecked[payment.id]}
+                          disabled={isPaid}
+                          onChange={(e) => {
+                            setPayChecked(prev => ({ ...prev, [payment.id]: e.target.checked }));
+                            if (e.target.checked) {
+                              handlePayInterestInline(payment.id, cycleNum);
+                            }
+                          }}
+                          className="checkbox checkbox-xs checkbox-primary border-slate-300 rounded"
+                        />
+                      </td>
+                      <td>
+                        {isPaid ? (
                           <button
-                            onClick={() => handleCancelPayInterest(payment.id, payment.cycle_number)}
-                            className="btn btn-neutral border-slate-200/80 text-red-500 hover:bg-red-500/10 btn-xs"
-                            disabled={payment.cycle_number === 1 && contract.is_upfront_interest && payment.paid_date === contract.loan_date}
+                            type="button"
+                            onClick={() => handleCancelPayInterest(payment.id, cycleNum)}
+                            className="btn btn-ghost btn-circle btn-xs text-red-500 font-bold"
+                            title="Hủy đóng lãi"
                           >
-                            Hủy đóng
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         ) : (
                           <button
-                            onClick={() => {
-                              setPayInterestId(payment.id);
-                              setPayInterestCycleNum(payment.cycle_number);
-                              setPayInterestAmount(payment.expected_interest);
-                              setIsPayInterestOpen(true);
-                            }}
-                            className="btn btn-primary bg-amber-500 border-none text-slate-950 hover:bg-amber-600 btn-xs font-bold"
-                            disabled={contract.status !== "active"}
+                            type="button"
+                            onClick={() => handlePayInterestInline(payment.id, cycleNum)}
+                            className="btn btn-ghost btn-circle btn-xs text-slate-400 hover:text-blue-500"
+                            title="Lưu lại"
                           >
-                            Đóng lãi
+                            <Save className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-          {activeSubTab === "principal" && (
-            <div className="space-y-6">
+        {activeTab === "pay_down" && (
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <ArrowDown className="w-4 h-4 text-emerald-500" />
+              Trả bớt tiền gốc
+            </h4>
+            <div className="flex gap-2 max-w-md">
+              <MoneyInput
+                value={principalAmount}
+                onChange={(val) => setPrincipalAmount(String(val))}
+                placeholder="Nhập số tiền trả gốc..."
+                className="input input-bordered input-sm bg-white border-slate-200 flex-1 text-slate-800 font-bold"
+              />
+              <button
+                type="button"
+                onClick={() => handlePrincipalTransaction("pay_down")}
+                className="btn btn-sm btn-primary bg-emerald-600 border-none text-white font-bold"
+              >
+                Trả gốc
+              </button>
+            </div>
+            <div>
+              <label className="label text-slate-500 font-bold text-xs py-1">Ghi chú giao dịch</label>
+              <input
+                type="text"
+                placeholder="Nhập lý do trả bớt gốc..."
+                value={principalNotes}
+                onChange={(e) => setPrincipalNotes(e.target.value)}
+                className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800 max-w-md"
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "borrow_more" && (
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <ArrowUp className="w-4 h-4 text-red-500" />
+              Vay thêm tiền gốc
+            </h4>
+            <div className="flex gap-2 max-w-md">
+              <MoneyInput
+                value={principalAmount}
+                onChange={(val) => setPrincipalAmount(String(val))}
+                placeholder="Nhập số tiền vay thêm..."
+                className="input input-bordered input-sm bg-white border-slate-200 flex-1 text-slate-800 font-bold"
+              />
+              <button
+                type="button"
+                onClick={() => handlePrincipalTransaction("borrow_more")}
+                className="btn btn-sm btn-primary bg-red-500 border-none text-white font-bold"
+              >
+                Vay thêm
+              </button>
+            </div>
+            <div>
+              <label className="label text-slate-500 font-bold text-xs py-1">Ghi chú giao dịch</label>
+              <input
+                type="text"
+                placeholder="Nhập lý do vay thêm gốc..."
+                value={principalNotes}
+                onChange={(e) => setPrincipalNotes(e.target.value)}
+                className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800 max-w-md"
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "extend" && (
+          <form onSubmit={handleExtend} className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <Calendar className="w-4 h-4 text-[#f59e0b]" />
+              Gia hạn hợp đồng tín chấp
+            </h4>
+            <div className="grid grid-cols-2 gap-4 max-w-md">
               <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Lịch sử thay đổi nợ gốc</h3>
-                {contract.principal_transactions?.length === 0 ? (
-                  <p className="text-slate-500 text-xs">Chưa phát sinh tăng giảm gốc</p>
-                ) : (
-                  <table className="table w-full text-slate-600 text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200/80 text-slate-500">
-                        <th>Ngày thay đổi</th>
-                        <th>Loại nghiệp vụ</th>
-                        <th>Số tiền gốc</th>
-                        <th>Nhân viên lập</th>
-                        <th>Ghi chú</th>
-                        <th className="text-right">Tác vụ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contract.principal_transactions?.map((tx: any) => (
-                        <tr key={tx.id} className="border-b border-slate-200/80/30">
-                          <td>{new Date(tx.transaction_date).toLocaleDateString("vi-VN")}</td>
-                          <td>
-                            <span className={`badge badge-xs font-bold ${tx.type === "borrow_more" ? "badge-error" : "badge-success"}`}>
-                              {tx.type === "borrow_more" ? "Khách vay thêm" : "Khách trả bớt"}
-                            </span>
-                          </td>
-                          <td className="font-bold">{formatCurrency(tx.amount)}</td>
-                          <td>{tx.employee?.full_name}</td>
-                          <td>{tx.notes}</td>
-                          <td className="text-right py-1.5">
-                            <button
-                              onClick={() => handleDeletePrincipalTx(tx.id)}
-                              className="btn btn-ghost text-red-400 hover:bg-red-500/10 btn-xs"
-                            >
-                              Hủy bỏ
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <label className="label text-slate-500 font-bold text-xs py-1">Số ngày gia hạn *</label>
+                <input
+                  type="number"
+                  placeholder="30"
+                  value={extendDays}
+                  onChange={(e) => setExtendDays(e.target.value)}
+                  className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800"
+                  required
+                />
               </div>
-
-              <div className="pt-6 border-t border-slate-200/60">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Gia hạn vay</h3>
-                {contract.extensions?.length === 0 ? (
-                  <p className="text-slate-500 text-xs">Chưa gia hạn</p>
-                ) : (
-                  <table className="table w-full text-slate-600 text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200/80 text-slate-500">
-                        <th>Mốc gia hạn</th>
-                        <th>Số ngày kéo dài</th>
-                        <th>Thời hạn hợp đồng mới</th>
-                        <th>Ghi chú</th>
-                        <th className="text-right">Tác vụ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contract.extensions?.map((ext: any) => (
-                        <tr key={ext.id} className="border-b border-slate-200/80/30">
-                          <td>{new Date(ext.created_at).toLocaleDateString("vi-VN")}</td>
-                          <td className="font-bold text-amber-500">+{ext.extension_days} ngày</td>
-                          <td>{new Date(ext.to_date).toLocaleDateString("vi-VN")}</td>
-                          <td>{ext.notes}</td>
-                          <td className="text-right py-1.5">
-                            <button
-                              onClick={() => handleDeleteExtension(ext.id)}
-                              className="btn btn-ghost text-red-400 hover:bg-red-500/10 btn-xs"
-                            >
-                              Hủy bỏ
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+              <div className="flex items-end">
+                <button type="submit" className="btn btn-sm btn-primary bg-[#f59e0b] border-none text-white font-bold w-full">
+                  Gia hạn ngay
+                </button>
               </div>
             </div>
-          )}
-
-          {activeSubTab === "debt" && (
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nhật ký nợ cũ phát sinh</h3>
-              {contract.debt_history?.length === 0 ? (
-                <p className="text-slate-500 text-xs">Chưa ghi nhận nợ phụ nào</p>
-              ) : (
-                <table className="table w-full text-slate-600 text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200/80 text-slate-500">
-                      <th>Ngày phát sinh</th>
-                      <th>Nghiệp vụ</th>
-                      <th>Số tiền nợ</th>
-                      <th>Lý do</th>
-                      <th className="text-right">Tác vụ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {contract.debt_history?.map((d: any) => (
-                      <tr key={d.id} className="border-b border-slate-200/80/30">
-                        <td>{new Date(d.transaction_date).toLocaleDateString("vi-VN")}</td>
-                        <td>
-                          <span className={`badge badge-xs font-bold ${d.type === "record_debt" ? "badge-error" : "badge-success"}`}>
-                            {d.type === "record_debt" ? "Ghi thêm nợ" : "Khách đóng trả"}
-                          </span>
-                        </td>
-                        <td className="font-bold">{formatCurrency(d.amount)}</td>
-                        <td>{d.notes}</td>
-                        <td className="text-right py-1.5">
-                          <button
-                            onClick={() => handleDeleteDebtTx(d.id)}
-                            className="btn btn-ghost text-red-400 hover:bg-red-500/10 btn-xs"
-                          >
-                            Hủy bỏ
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+            <div>
+              <label className="label text-slate-500 font-bold text-xs py-1">Ghi chú gia hạn</label>
+              <input
+                type="text"
+                placeholder="Lý do khách xin gia hạn..."
+                value={extendNotes}
+                onChange={(e) => setExtendNotes(e.target.value)}
+                className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800 max-w-md"
+              />
             </div>
-          )}
+          </form>
+        )}
 
-          {activeSubTab === "ledger" && (
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nhật ký kiểm toán hệ thống</h3>
-              <div className="space-y-2">
-                {contract.transaction_ledgers?.map((ledger: any) => (
-                  <div key={ledger.id} className="flex gap-4 p-3 bg-slate-50/40 border border-slate-200/60 rounded-xl text-xs">
-                    <div className="text-slate-500 font-semibold">{new Date(ledger.created_at).toLocaleString("vi-VN")}</div>
-                    <div className="font-bold text-slate-600">{ledger.employee?.full_name}</div>
-                    <div className="flex-1 text-slate-500">{ledger.content}</div>
-                    <div className="font-bold text-slate-700">
-                      {ledger.debit_amount > 0 && <span className="text-red-400">-{formatCurrency(ledger.debit_amount)}</span>}
-                      {ledger.credit_amount > 0 && <span className="text-emerald-400">+{formatCurrency(ledger.credit_amount)}</span>}
-                    </div>
-                  </div>
-                ))}
+        {activeTab === "redeem" && (
+          <form onSubmit={handleRedeem} className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <Anchor className="w-4 h-4 text-[#0ea5e9]" />
+              Tất toán đóng hợp đồng tín chấp
+            </h4>
+            
+            {contract.status === "closed" ? (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <p className="text-slate-600 font-bold text-xs">Hợp đồng này đã được tất toán đóng trước đó.</p>
+                <button
+                  type="button"
+                  onClick={handleCancelRedeem}
+                  className="btn btn-xs btn-outline border-slate-300 text-red-500 font-bold rounded"
+                >
+                  Hủy tất toán (Khôi phục HĐ)
+                </button>
               </div>
-            </div>
-          )}
-
-          {activeSubTab === "docs" && (
-            <div className="space-y-6">
-              <form onSubmit={handleUploadDoc} className="flex flex-wrap gap-4 items-end bg-slate-50/50 p-4 border border-slate-200/80 rounded-xl">
-                <div className="flex-1 min-w-[150px]">
-                  <label className="label text-slate-500 text-xs py-1">Loại tài liệu</label>
-                  <select
-                    value={docType}
-                    onChange={(e) => setDocType(e.target.value)}
-                    className="select select-bordered select-sm w-full bg-white border-slate-200 text-slate-800"
-                  >
-                    <option value="id_card">Chứng minh nhân dân / CCCD</option>
-                    <option value="contract_scan">Bản chụp hợp đồng ký kết</option>
-                    <option value="other">Tài liệu khác</option>
-                  </select>
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <label className="label text-slate-500 text-xs py-1">Tên tài liệu / Tên file</label>
+            ) : (
+              <div className="space-y-4 max-w-md">
+                <div>
+                  <label className="label text-slate-500 font-bold text-xs py-1">Ngày tất toán *</label>
                   <input
-                    type="text"
-                    placeholder="Ví dụ: CCCD Khách"
-                    value={docFileName}
-                    onChange={(e) => setDocFileName(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800"
-                  />
-                </div>
-                <div className="flex-1 min-w-[250px]">
-                  <label className="label text-slate-500 text-xs py-1">Đường dẫn ảnh URL *</label>
-                  <input
-                    type="text"
-                    placeholder="https://example.com/photo.jpg"
-                    value={docUrl}
-                    onChange={(e) => setDocUrl(e.target.value)}
+                    type="date"
+                    value={redeemDate}
+                    onChange={(e) => setRedeemDate(e.target.value)}
                     className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800"
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 btn-sm font-bold gap-1 rounded-xl">
-                  <Upload className="w-3.5 h-3.5" />
-                  Đăng tải
+                <div>
+                  <label className="label text-slate-500 font-bold text-xs py-1">Chi phí phát sinh khác (nếu có)</label>
+                  <MoneyInput
+                    value={redeemOther}
+                    onChange={(val) => setRedeemOther(String(val))}
+                    placeholder="0"
+                    className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="label text-slate-500 font-bold text-xs py-1">Ghi chú tất toán</label>
+                  <textarea
+                    placeholder="Ghi chú chi tiết tất toán..."
+                    value={redeemNotes}
+                    onChange={(e) => setRedeemNotes(e.target.value)}
+                    className="textarea textarea-bordered bg-white border-slate-200 text-slate-800 w-full h-16"
+                  />
+                </div>
+                <button type="submit" className="btn btn-sm btn-primary bg-[#0ea5e9] border-none text-white font-bold w-full">
+                  Đồng ý tất toán đóng hợp đồng
                 </button>
-              </form>
+              </div>
+            )}
+          </form>
+        )}
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {contract.documents?.map((doc: any) => (
-                  <div key={doc.id} className="bg-slate-955/60 border border-slate-200/80 p-3 rounded-xl flex flex-col justify-between group relative">
-                    <img src={doc.image_url} alt={doc.file_name} className="w-full h-32 object-cover rounded-lg mb-2" />
-                    <div>
-                      <p className="text-xs font-bold text-slate-600 truncate">{doc.file_name}</p>
-                      <span className="badge badge-outline border-slate-200 text-slate-500 badge-xs mt-1 uppercase font-semibold">
-                        {doc.document_type}
-                      </span>
-                    </div>
+        {activeTab === "debt" && (
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <AlertTriangle className="w-4 h-4 text-[#9c27b0]" />
+              Quản lý nợ cũ trễ hạn
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+              {/* Record Debt Box */}
+              <div className="p-4 border border-slate-200 rounded-xl space-y-3">
+                <span className="badge badge-neutral text-[10px] font-extrabold uppercase">Ghi nhận nợ mới</span>
+                <MoneyInput
+                  value={recordDebtAmount}
+                  onChange={(val) => setRecordDebtAmount(String(val))}
+                  placeholder="Nhập số tiền nợ..."
+                  className="input input-bordered input-sm bg-white border-slate-200 w-full text-slate-800 font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDebtAction("record_debt")}
+                  className="btn btn-xs btn-primary bg-[#9c27b0] border-none text-white font-bold w-full"
+                >
+                  Ghi nợ mới
+                </button>
+              </div>
+
+              {/* Pay Debt Box */}
+              <div className="p-4 border border-slate-200 rounded-xl space-y-3">
+                <span className="badge badge-success text-[10px] font-extrabold text-white uppercase">Khách trả nợ cũ</span>
+                <MoneyInput
+                  value={payDebtAmount}
+                  onChange={(val) => setPayDebtAmount(String(val))}
+                  placeholder="Nhập số tiền trả..."
+                  className="input input-bordered input-sm bg-white border-slate-200 w-full text-slate-800 font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDebtAction("pay_debt")}
+                  className="btn btn-xs btn-primary bg-emerald-600 border-none text-white font-bold w-full"
+                >
+                  Thu nợ
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="label text-slate-500 font-bold text-xs py-1">Ghi chú nợ</label>
+              <input
+                type="text"
+                placeholder="Nhập lý do hoặc chi tiết về nợ cũ..."
+                value={reminderContent}
+                onChange={(e) => setReminderContent(e.target.value)}
+                className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800 max-w-lg"
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "docs" && (
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <FileText className="w-4 h-4 text-slate-500" />
+              Tài liệu & Chứng từ đính kèm
+            </h4>
+            <form onSubmit={handleUploadDoc} className="grid grid-cols-3 gap-2 max-w-xl">
+              <select
+                value={docType}
+                onChange={(e) => setDocType(e.target.value)}
+                className="select select-bordered select-sm bg-white border-slate-200 text-slate-800 rounded focus:outline-none"
+              >
+                <option value="id_card">Chứng minh nhân dân/CCCD</option>
+                <option value="vehicle_reg">Đăng ký xe/Cà vẹt</option>
+                <option value="household_reg">Sổ hộ khẩu</option>
+                <option value="job_contract">Hợp đồng lao động</option>
+                <option value="other">Tài liệu khác</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Đường dẫn ảnh/file..."
+                value={docUrl}
+                onChange={(e) => setDocUrl(e.target.value)}
+                className="input input-bordered input-sm bg-white border-slate-200 text-slate-800 rounded focus:outline-none"
+                required
+              />
+              <button type="submit" className="btn btn-sm btn-primary bg-blue-500 border-none text-white font-bold flex items-center gap-1">
+                <Upload className="w-4 h-4" />
+                Tải lên
+              </button>
+            </form>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+              {contract.documents?.map((doc: any) => (
+                <div key={doc.id} className="border border-slate-200 p-2.5 rounded-xl text-xs bg-slate-50 flex flex-col justify-between">
+                  <div>
+                    <p className="font-bold text-slate-700 capitalize">{doc.document_type}</p>
+                    <p className="text-slate-400 mt-0.5 break-all">{doc.file_name}</p>
+                  </div>
+                  <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-200/50">
+                    <a href={doc.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 font-bold hover:underline">
+                      Xem file
+                    </a>
                     <button
+                      type="button"
                       onClick={() => handleDeleteDoc(doc.id)}
-                      className="btn btn-circle btn-ghost btn-xs text-red-500 absolute top-2 right-2 bg-white/80 hover:bg-white border border-slate-200/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-red-500 font-bold hover:underline"
                     >
-                      <Trash className="w-3 h-3" />
+                      Xóa
                     </button>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "history" && (
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <History className="w-4 h-4 text-slate-500" />
+              Nhật ký lịch sử giao dịch nợ gốc & gia hạn
+            </h4>
+            <div className="space-y-4">
+              {/* Extensions list */}
+              <div>
+                <h5 className="font-bold text-slate-700 text-xs mb-2">Lịch sử gia hạn:</h5>
+                {contract.extensions?.length === 0 ? (
+                  <p className="text-slate-400 text-xs">Chưa có lượt gia hạn nào.</p>
+                ) : (
+                  <table className="table table-compact w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200/60 text-slate-400">
+                        <th>Ngày gia hạn</th>
+                        <th>Số ngày</th>
+                        <th>Ghi chú</th>
+                        <th>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contract.extensions?.map((ext: any) => (
+                        <tr key={ext.id} className="border-b border-slate-100">
+                          <td>{new Date(ext.created_at).toLocaleDateString("vi-VN")}</td>
+                          <td className="font-bold">{ext.extended_days} ngày</td>
+                          <td className="text-slate-500">{ext.notes}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExtension(ext.id)}
+                              className="text-red-500 font-bold hover:underline"
+                            >
+                              Hủy gia hạn
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Principal transactions list */}
+              <div className="pt-2">
+                <h5 className="font-bold text-slate-700 text-xs mb-2">Lịch sử giao dịch nợ gốc:</h5>
+                {contract.principal_transactions?.length === 0 ? (
+                  <p className="text-slate-400 text-xs">Chưa có giao dịch biến động nợ gốc nào.</p>
+                ) : (
+                  <table className="table table-compact w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200/60 text-slate-400">
+                        <th>Thời gian</th>
+                        <th>Loại giao dịch</th>
+                        <th>Số tiền</th>
+                        <th>Ghi chú</th>
+                        <th>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contract.principal_transactions?.map((tx: any) => (
+                        <tr key={tx.id} className="border-b border-slate-100">
+                          <td>{new Date(tx.created_at).toLocaleDateString("vi-VN")}</td>
+                          <td className="font-bold">
+                            {tx.transaction_type === "borrow_more" ? (
+                              <span className="text-red-500">Vay thêm gốc</span>
+                            ) : (
+                              <span className="text-emerald-600">Trả bớt gốc</span>
+                            )}
+                          </td>
+                          <td className="font-black text-slate-700">{formatCurrency(tx.amount)}</td>
+                          <td className="text-slate-500">{tx.notes}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePrincipalTx(tx.id)}
+                              className="text-red-500 font-bold hover:underline"
+                            >
+                              Hủy giao dịch
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
-          )}
-
-          {activeSubTab === "reminders" && (
-            <div className="space-y-6">
-              <form onSubmit={handleAddReminderLog} className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Ghi nhận nội dung cuộc gọi nhắc nợ..."
-                  value={reminderLogContent}
-                  onChange={(e) => setReminderLogContent(e.target.value)}
-                  className="input input-bordered flex-1 bg-slate-50 border-slate-200/80 text-slate-205 rounded-xl"
-                  required
-                />
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl gap-1">
-                  <PhoneCall className="w-4 h-4" />
-                  Ghi chú gọi
-                </button>
-              </form>
-
-              <div className="space-y-3">
-                {contract.debt_reminders?.map((log: any) => (
-                  <div key={log.id} className="p-3 bg-slate-50/40 border border-slate-855 rounded-xl text-xs flex justify-between">
-                    <div>
-                      <p className="text-slate-500">{log.content}</p>
-                      <p className="text-slate-500 font-semibold mt-1">Giao dịch viên: {log.employee?.full_name}</p>
-                    </div>
-                    <span className="text-slate-500 font-bold">{new Date(log.created_at).toLocaleString("vi-VN")}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* INTEREST PAYMENT MODAL */}
-      {isPayInterestOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Thu Tiền Đóng Lãi Kỳ {payInterestCycleNum}</h3>
-            <form onSubmit={handlePayInterest} className="space-y-4">
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Tiền lãi thực thu (VNĐ) *</label>
-                <MoneyInput
-                  value={payInterestAmount}
-                  onChange={(val) => setPayInterestAmount(String(val))}
-                  placeholder="0"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Phí phạt trễ (VNĐ)</label>
-                <MoneyInput
-                  value={payInterestOther}
-                  onChange={(val) => setPayInterestOther(String(val))}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Ghi chú</label>
-                <textarea
-                  placeholder="Khách đóng..."
-                  value={payInterestNotes}
-                  onChange={(e) => setPayInterestNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-850 text-slate-700 rounded-xl h-20"
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsPayInterestOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
-                  Xác nhận đóng lãi
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* PRINCIPAL TRANSACTIONS MODAL */}
-      {isPrincipalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Thay Đổi Dư Nợ Gốc</h3>
-            <form onSubmit={handlePrincipalTransaction} className="space-y-4">
+        {activeTab === "timer" && (
+          <form onSubmit={handleSetTimer} className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <Bell className="w-4 h-4 text-[#f59e0b]" />
+              Hẹn giờ đóng lãi / Nhắc nợ khách hàng
+            </h4>
+            <div className="grid grid-cols-2 gap-4 max-w-md">
               <div>
-                <label className="label text-slate-500 text-sm py-1">Nghiệp vụ</label>
-                <select
-                  value={principalAction}
-                  onChange={(e: any) => setPrincipalAction(e.target.value)}
-                  className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-700 rounded-xl"
-                >
-                  <option value="borrow_more">Khách hàng vay thêm nợ gốc (+ két xuất tiền)</option>
-                  <option value="pay_down">Khách đóng trả nợ gốc (- két thu tiền)</option>
-                </select>
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Số tiền gốc (VNĐ) *</label>
-                <MoneyInput
-                  value={principalAmount}
-                  onChange={(val) => setPrincipalAmount(String(val))}
-                  placeholder="Ví dụ: 5.000.000"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Nội dung giải trình *</label>
-                <textarea
-                  placeholder="Lý do điều chỉnh gốc..."
-                  value={principalNotes}
-                  onChange={(e) => setPrincipalNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-850 text-slate-700 rounded-xl h-20"
-                  required
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsPrincipalOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
-                  Xác nhận
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* EXTENSION MODAL */}
-      {isExtendOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Gia Hạn Hợp Đồng</h3>
-            <form onSubmit={handleExtend} className="space-y-4">
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Số ngày gia hạn thêm *</label>
-                <input
-                  type="number"
-                  placeholder="15"
-                  value={extendDays}
-                  onChange={(e) => setExtendDays(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Ghi chú gia hạn</label>
-                <textarea
-                  placeholder="Lý do..."
-                  value={extendNotes}
-                  onChange={(e) => setExtendNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-850 text-slate-700 rounded-xl h-20"
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsExtendOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
-                  Gia hạn vay
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* REDEEM CLOSE MODAL */}
-      {isRedeemOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Tất Toán Đóng HĐ Tín Chấp</h3>
-            <form onSubmit={handleRedeem} className="space-y-4">
-              <div className="bg-slate-50/80 p-4 border border-slate-200/80 rounded-xl text-xs space-y-2.5">
-                <div className="flex justify-between">
-                  <span>Tiền gốc vay tất toán:</span>
-                  <span className="font-bold text-slate-700">{formatCurrency(contract.loan_amount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Nợ phụ lũy kế:</span>
-                  <span className="font-bold text-slate-700">{formatCurrency(contract.debt_amount)}</span>
-                </div>
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Phí phát sinh thêm / Phí giảm trừ (VNĐ)</label>
-                <MoneyInput
-                  value={redeemOther}
-                  onChange={(val) => setRedeemOther(String(val))}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Ngày tất toán thực tế</label>
-                <input
-                  type="date"
-                  value={redeemDate}
-                  onChange={(e) => setRedeemDate(e.target.value)}
-                  className="input input-bordered w-full bg-slate-955 border-slate-850 text-slate-700 rounded-xl"
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Ghi chú tất toán</label>
-                <textarea
-                  placeholder="Khách hoàn thành trả nợ..."
-                  value={redeemNotes}
-                  onChange={(e) => setRedeemNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-850 text-slate-700 rounded-xl h-16"
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsRedeemOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
-                  Xác nhận tất toán
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* DEBT MODAL */}
-      {isDebtOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Ghi Nhận & Đóng Nợ Cũ</h3>
-            <form onSubmit={handleDebtAction} className="space-y-4">
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Nghiệp vụ nợ</label>
-                <select
-                  value={debtAction}
-                  onChange={(e: any) => setDebtAction(e.target.value)}
-                  className="select select-bordered w-full bg-slate-955 border-slate-200/80 text-slate-700 rounded-xl"
-                >
-                  <option value="record_debt">Ghi thêm nợ cũ cho khách (+ Nợ khách mang)</option>
-                  <option value="pay_debt">Khách trả bớt nợ cũ (+ két thu tiền)</option>
-                </select>
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Số tiền nợ (VNĐ) *</label>
-                <MoneyInput
-                  value={debtAmount}
-                  onChange={(val) => setDebtAmount(String(val))}
-                  placeholder="0"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Nội dung ghi nợ / trả nợ *</label>
-                <textarea
-                  placeholder="Lý do..."
-                  value={debtNotes}
-                  onChange={(e) => setDebtNotes(e.target.value)}
-                  className="textarea textarea-bordered w-full bg-slate-955 border-slate-850 text-slate-700 rounded-xl h-20"
-                  required
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsDebtOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
-                  Xác nhận
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* TIMER MODAL */}
-      {isTimerOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Hẹn Ngày Nhắc Nợ</h3>
-            <form onSubmit={handleSetTimer} className="space-y-4">
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Ngày hẹn *</label>
+                <label className="label text-slate-500 font-bold text-xs py-1">Ngày hẹn thu nợ *</label>
                 <input
                   type="date"
                   value={timerDate}
                   onChange={(e) => setTimerDate(e.target.value)}
-                  className="input input-bordered w-full bg-white border-slate-200 text-slate-800 rounded-xl"
+                  className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800"
                   required
                 />
               </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Chi tiết hẹn</label>
-                <input
-                  type="text"
-                  placeholder="Khách hứa trả nợ..."
-                  value={timerNotes}
-                  onChange={(e) => setTimerNotes(e.target.value)}
-                  className="input input-bordered w-full bg-slate-50 border-slate-200/80 text-slate-700 rounded-xl"
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsTimerOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
+              <div className="flex items-end">
+                <button type="submit" className="btn btn-sm btn-primary bg-[#f59e0b] border-none text-white font-bold w-full">
                   Đặt lịch hẹn
                 </button>
               </div>
-            </form>
+            </div>
+            <div>
+              <label className="label text-slate-500 font-bold text-xs py-1">Ghi chú nhắc nợ</label>
+              <input
+                type="text"
+                placeholder="Nhắc đóng lãi kỳ tiếp theo..."
+                value={timerNotes}
+                onChange={(e) => setTimerNotes(e.target.value)}
+                className="input input-bordered input-sm w-full bg-white border-slate-200 text-slate-800 max-w-md"
+              />
+            </div>
+
+            {/* List of active reminders */}
+            <div className="pt-4 border-t border-slate-100">
+              <h5 className="font-bold text-slate-700 text-xs mb-2">Danh sách lịch hẹn hiện tại:</h5>
+              {contract.reminders?.filter((r: any) => r.status === "active").length === 0 ? (
+                <p className="text-slate-400 text-xs">Hiện tại không có lịch hẹn đóng nợ nào đang chạy.</p>
+              ) : (
+                <div className="space-y-2">
+                  {contract.reminders?.filter((r: any) => r.status === "active").map((rem: any) => (
+                    <div key={rem.id} className="flex justify-between items-center p-3 border border-amber-200 bg-amber-500/5 rounded-xl text-xs">
+                      <div>
+                        <p className="font-bold text-slate-700">Ngày hẹn: {new Date(rem.reminder_date).toLocaleDateString("vi-VN")}</p>
+                        <p className="text-slate-500 mt-0.5">{rem.content || "Nhắc nợ đóng lãi"}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleStopTimer(rem.id)}
+                        className="text-red-500 font-bold hover:underline"
+                      >
+                        Hủy lịch hẹn
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </form>
+        )}
+
+        {activeTab === "blacklist" && (
+          <form onSubmit={handleBlacklist} className="space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1 border-b border-slate-100 pb-2">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
+              Báo xấu / Đưa khách hàng vào danh sách đen (Blacklist)
+            </h4>
+            <div className="space-y-3 max-w-md">
+              <div>
+                <label className="label text-slate-500 font-bold text-xs py-1">Lý do đưa vào danh sách đen *</label>
+                <textarea
+                  placeholder="Nhập lý do báo xấu chi tiết..."
+                  value={blacklistReason}
+                  onChange={(e) => setBlacklistReason(e.target.value)}
+                  className="textarea textarea-bordered bg-white border-slate-200 text-slate-800 w-full h-20"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="btn btn-sm btn-primary bg-red-600 hover:bg-red-700 border-none text-white font-bold w-full"
+              >
+                {submitting ? "Đang xử lý..." : "Xác nhận Đưa vào danh sách đen"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+
+  if (isModal) {
+    return (
+      <div className="modal modal-open z-50">
+        <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-5xl p-6 relative">
+          <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
+            <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-slate-800" />
+              Bảng chi tiết hợp đồng tín chấp {contract.contract_code}
+            </h3>
+            <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
+              <X className="w-5 h-5" />
+            </button>
           </div>
+          {contentJSX}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 max-w-6xl">
+      {contentJSX}
     </div>
   );
 };
+
+const BookOpen = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+  </svg>
+);
