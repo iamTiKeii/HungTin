@@ -1,0 +1,320 @@
+import React from "react";
+import { MoneyInput } from "../shared/MoneyInput";
+
+export interface LoanSectionProps {
+  state: any;
+  onChange: (updates: any) => void;
+  config: any;
+}
+
+export const ContractLoanSection: React.FC<LoanSectionProps> = ({
+  state,
+  onChange,
+  config,
+}) => {
+  const labelClass =
+    "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+
+  if (config.type === "capital") {
+    return (
+      <div className="pt-4 border-t border-slate-100 space-y-4">
+        <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+          II. THÔNG TIN ĐẦU TƯ
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          {/* Amount */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Số tiền đầu tư <span className="text-red-500">*</span>
+            </label>
+            <div className="grow">
+              <MoneyInput
+                value={state.loanAmount}
+                onChange={(val) => onChange({ loanAmount: val })}
+                placeholder="0"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Ngày đầu tư <span className="text-red-500">*</span>
+            </label>
+            <div className="grow">
+              <input
+                type="date"
+                value={state.loanDate}
+                onChange={(e) => onChange({ loanDate: e.target.value })}
+                className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+                required
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (config.type === "installment") {
+    return (
+      <div className="pt-4 border-t border-slate-100 space-y-4">
+        <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+          II. THÔNG TIN TRẢ GÓP
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          {/* Disbursed Amount */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Tiền giao khách <span className="text-red-500">*</span>
+            </label>
+            <div className="grow">
+              <MoneyInput
+                value={state.loanAmount}
+                onChange={(val) => onChange({ loanAmount: val })}
+                placeholder="0"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Repayment Amount */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Tổng tiền phải trả <span className="text-red-500">*</span>
+            </label>
+            <div className="grow">
+              <MoneyInput
+                value={state.repaymentAmount}
+                onChange={(val) => onChange({ repaymentAmount: val })}
+                placeholder="0"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Bốc trong vòng <span className="text-red-500">*</span>
+            </label>
+            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+              <input
+                type="number"
+                placeholder="50"
+                value={state.loanDays}
+                onChange={(e) => onChange({ loanDays: Number(e.target.value) })}
+                className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                required
+              />
+              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                Ngày
+              </span>
+            </div>
+          </div>
+
+          {/* Cycles / Periods count */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Số kỳ đóng <span className="text-red-500">*</span>
+            </label>
+            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+              <input
+                type="number"
+                placeholder="50"
+                value={state.installmentCycles}
+                onChange={(e) =>
+                  onChange({ installmentCycles: Number(e.target.value) })
+                }
+                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                required
+              />
+              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                Kỳ
+              </span>
+            </div>
+          </div>
+
+          {/* Repayment period type */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Hình thức <span className="text-red-500">*</span>
+            </label>
+            <div className="grow">
+              <select
+                value={state.installmentPeriodType}
+                onChange={(e) =>
+                  onChange({ installmentPeriodType: e.target.value })
+                }
+                className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                required
+              >
+                <option value="daily">Theo ngày</option>
+                <option value="weekly">Theo tuần</option>
+                <option value="monthly">Theo tháng</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pl-[125px]">
+            <input
+              type="checkbox"
+              checked={state.isUpfrontInterest}
+              onChange={(e) =>
+                onChange({ isUpfrontInterest: e.target.checked })
+              }
+              className="checkbox checkbox-xs checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
+              id="isUpfrontInterest"
+            />
+            <label htmlFor="isUpfrontInterest" className="text-slate-650 font-bold cursor-pointer text-xs select-none">
+              Thu tiền trước
+            </label>
+          </div>
+
+          {/* Cycle length/period */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Hình thức đóng <span className="text-red-500">*</span>
+            </label>
+            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+              <input
+                type="number"
+                placeholder="1"
+                value={state.installmentPeriod}
+                onChange={(e) =>
+                  onChange({ installmentPeriod: Number(e.target.value) })
+                }
+                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                required
+              />
+              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                Ngày / 1 Kỳ
+              </span>
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="flex items-center">
+            <label className={labelClass}>
+              Ngày bốc <span className="text-red-500">*</span>
+            </label>
+            <div className="grow">
+              <input
+                type="date"
+                value={state.loanDate}
+                onChange={(e) => onChange({ loanDate: e.target.value })}
+                className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+                required
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pawn & Unsecured Layout
+  return (
+    <div className="pt-4 border-t border-slate-100 space-y-4">
+      <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+        II. THÔNG TIN KHOẢN VAY
+      </h4>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+        {/* Total Loan Amount */}
+        <div className="flex items-center">
+          <label className={labelClass}>
+            Tổng tiền vay <span className="text-red-500">*</span>
+          </label>
+          <div className="grow">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+              <MoneyInput
+                value={state.loanAmount}
+                onChange={(val) => onChange({ loanAmount: String(val) })}
+                placeholder="0"
+                required
+                className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                suffix=""
+              />
+              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                VNĐ
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick buttons */}
+        <div className="flex items-center">
+          <div className="grow flex flex-wrap gap-1">
+            {[
+              { label: "-5", val: -5000000 },
+              { label: "+5", val: 5000000 },
+              { label: "10", val: 10000000 },
+              { label: "20", val: 20000000 },
+              { label: "30", val: 30000000 },
+              { label: "40", val: 40000000 },
+              { label: "50", val: 50000000 },
+            ].map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  let curr = Number(state.loanAmount) || 0;
+                  if (item.label.startsWith("-") || item.label.startsWith("+")) {
+                    onChange({ loanAmount: String(Math.max(0, curr + item.val)) });
+                  } else {
+                    onChange({ loanAmount: String(item.val) });
+                  }
+                }}
+                className="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Loan Days */}
+        <div className="flex items-center">
+          <label className={labelClass}>
+            Số ngày vay <span className="text-red-500">*</span>
+          </label>
+          <div className="grow">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+              <input
+                type="number"
+                placeholder="90"
+                value={state.loanDays}
+                onChange={(e) => onChange({ loanDays: Number(e.target.value) })}
+                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                required
+              />
+              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+                Ngày
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center"></div>
+
+        {/* Start Date */}
+        <div className="flex items-center">
+          <label className={labelClass}>
+            Ngày vay <span className="text-red-500">*</span>
+          </label>
+          <div className="grow">
+            <input
+              type="date"
+              value={state.loanDate}
+              onChange={(e) => onChange({ loanDate: e.target.value })}
+              className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+              required
+            />
+          </div>
+        </div>
+        <div className="flex items-center"></div>
+      </div>
+    </div>
+  );
+};

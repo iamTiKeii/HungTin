@@ -7,7 +7,6 @@ import {
   Trash2,
   FileSpreadsheet,
   Filter,
-  Eye,
   BookOpen,
   ChevronsUpDown,
   Coins
@@ -16,14 +15,15 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "../lib/toast";
 import { useConfirm } from "../context/ConfirmContext";
 import { MoneyInput } from "../components/shared/MoneyInput";
-import { CustomerLookup } from "../components/shared/CustomerLookup";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 import {
   ContractDetailLayout,
   ContractHeader,
   ContractSummaryGrid,
   ContractTabs,
-  ContractAuditInfo
+  ContractAuditInfo,
+  ContractForm,
+  contractConfigs
 } from "../components/contracts";
 
 interface InterestType {
@@ -100,6 +100,7 @@ export const CapitalContracts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState("");
+  const [initialDataForForm, setInitialDataForForm] = useState<any>(null);
 
   // Customer contract list modal (Image 3)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -114,23 +115,9 @@ export const CapitalContracts: React.FC = () => {
   const [txExtendToDate, setTxExtendToDate] = useState("");
 
   // Add/Edit Form state
-  const [investorType, setInvestorType] = useState<"new" | "existing">("new");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  
   const [investorName, setInvestorName] = useState("");
-  const [investorIdCard, setInvestorIdCard] = useState("");
-  const [investorPhone, setInvestorPhone] = useState("");
-  const [investorAddress, setInvestorAddress] = useState("");
-  
-  const [amount, setAmount] = useState<number>(0);
-  const [investmentDate, setInvestmentDate] = useState("");
-  const [interestTypeId, setInterestTypeId] = useState("");
-  const [isUpfront, setIsUpfront] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [status, setStatus] = useState("active");
 
-  const [saving, setSaving] = useState(false);
 
   const fetchContracts = async () => {
     if (!activeStore) return;
@@ -173,22 +160,7 @@ export const CapitalContracts: React.FC = () => {
   const handleOpenCreate = () => {
     setIsEditMode(false);
     setSelectedId("");
-    setInvestorType("new");
-    setSelectedCustomerId("");
-    setCustomerSearchQuery("");
-    setInvestorName("");
-    setInvestorIdCard("");
-    setInvestorPhone("");
-    setInvestorAddress("");
-    setAmount(0);
-    // set investment date to today's date formatted as YYYY-MM-DD
-    const today = new Date().toISOString().split("T")[0];
-    setInvestmentDate(today);
-    setInterestTypeId("");
-    setIsUpfront(false);
-    setNotes("");
-    setStatus("active");
-    
+    setInitialDataForForm(null);
     setError("");
     setSuccess("");
     setIsModalOpen(true);
@@ -197,71 +169,35 @@ export const CapitalContracts: React.FC = () => {
   const handleOpenEdit = (c: CapitalContract) => {
     setIsEditMode(true);
     setSelectedId(c.id);
-    
-    // Find matching customer from the list of active customers
-    let matchedCustomer = null;
-    if (c.investor_phone) {
-      matchedCustomer = customers.find(cust => cust.phone === c.investor_phone);
-    }
-    if (!matchedCustomer && c.investor_id_card) {
-      matchedCustomer = customers.find(cust => cust.identity_card_number === c.investor_id_card);
-    }
-    if (!matchedCustomer) {
-      matchedCustomer = customers.find(cust => cust.full_name === c.investor_name);
-    }
-
-    if (matchedCustomer) {
-      setInvestorType("existing");
-      setSelectedCustomerId(matchedCustomer.id);
-      setCustomerSearchQuery(matchedCustomer.full_name);
-    } else {
-      setInvestorType("new");
-      setSelectedCustomerId("");
-      setCustomerSearchQuery("");
-    }
-    
-    setInvestorName(c.investor_name);
-    setInvestorIdCard(c.investor_id_card || "");
-    setInvestorPhone(c.investor_phone || "");
-    setInvestorAddress(c.investor_address || "");
-    
-    setAmount(c.amount);
-    setInvestmentDate(c.investment_date.split("T")[0]);
-    setInterestTypeId(c.interest_type_id || "");
-    setIsUpfront(c.is_upfront_interest);
-    setNotes(c.notes || "");
-    setStatus(c.status);
-
+    setInitialDataForForm(c);
     setError("");
     setSuccess("");
     setIsModalOpen(true);
   };
 
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!investorName || !amount || !investmentDate) {
+  const handleSaveCapitalContract = async (formData: any) => {
+    if (!formData.customerName || !formData.loanAmount || !formData.loanDate) {
       setError("Vui lòng nhập đầy đủ các trường bắt buộc (*)");
       return;
     }
 
     try {
-      setSaving(true);
       setError("");
       setSuccess("");
 
       const payload = {
-        customer_id: investorType === "existing" ? selectedCustomerId : null,
-        investor_name: investorName,
-        investor_id_card: investorIdCard || null,
-        investor_phone: investorPhone || null,
-        investor_address: investorAddress || null,
-        amount: amount,
-        investment_date: investmentDate,
-        interest_type_id: interestTypeId || null,
-        is_upfront_interest: isUpfront,
-        notes,
-        status
+        customer_id: formData.customerType === "existing" ? formData.customerId : null,
+        investor_name: formData.customerName,
+        investor_id_card: formData.customerIdCard || null,
+        investor_phone: formData.customerPhone || null,
+        investor_address: formData.customerAddress || null,
+        amount: Number(formData.loanAmount),
+        investment_date: formData.loanDate,
+        interest_type_id: formData.interestType || null,
+        is_upfront_interest: formData.isUpfrontInterest,
+        notes: formData.notes || null,
+        status: initialDataForForm?.status || "active"
       };
 
       if (isEditMode) {
@@ -273,11 +209,10 @@ export const CapitalContracts: React.FC = () => {
       }
 
       setIsModalOpen(false);
+      setInitialDataForForm(null);
       fetchContracts();
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể lưu hợp đồng góp vốn.");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -668,267 +603,19 @@ export const CapitalContracts: React.FC = () => {
       </div>
 
       {/* CREATE & EDIT MODAL (Hợp đồng góp vốn) */}
-      {isModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-2xl shadow-2xl p-6 relative">
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="font-bold text-base text-slate-850 border-b pb-2.5 flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-blue-600" />
-              <span>Hợp đồng góp vốn</span>
-            </h3>
-            
-            <form onSubmit={handleSave} className="space-y-4 mt-6">
-              <div className="grid grid-cols-12 gap-y-4 items-center">
-                
-                {/* Investor Type selectors: Khách mới vs Khách cũ */}
-                <div className="col-span-3"></div>
-                <div className="col-span-9 flex items-center gap-6 py-1">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-semibold">
-                    <input
-                      type="radio"
-                      name="investorType"
-                      checked={investorType === "new"}
-                      onChange={() => {
-                        setInvestorType("new");
-                      }}
-                      className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
-                    />
-                    <span>Khách mới</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-semibold">
-                    <input
-                      type="radio"
-                      name="investorType"
-                      checked={investorType === "existing"}
-                      onChange={() => {
-                        setInvestorType("existing");
-                      }}
-                      className="radio radio-xs checked:bg-blue-600 checked:border-blue-600"
-                    />
-                    <span>Khách cũ</span>
-                  </label>
-                  
-                  {/* Eye icon next to lookup selection */}
-                  {investorType === "existing" && (
-                    <button
-                      type="button"
-                      onClick={() => handleOpenHistory(investorName)}
-                      className={`text-blue-600 hover:text-blue-800 shrink-0 ${!investorName ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      title="Xem lịch sử hợp đồng của khách"
-                      disabled={!investorName}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Name */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
-                  Tên khách hàng <span className="text-red-500">*</span>
-                </div>
-                <div className="col-span-9">
-                  {investorType === "existing" ? (
-                    <CustomerLookup
-                      value={customerSearchQuery}
-                      onChange={setCustomerSearchQuery}
-                      onSelect={(c) => {
-                        setSelectedCustomerId(c.id);
-                        setCustomerSearchQuery(c.full_name);
-                        setInvestorName(c.full_name);
-                        setInvestorIdCard(c.identity_card_number || "");
-                        setInvestorPhone(c.phone || "");
-                        setInvestorAddress(c.address || "");
-                      }}
-                      onClear={() => {
-                        setSelectedCustomerId("");
-                        setInvestorName("");
-                        setInvestorIdCard("");
-                        setInvestorPhone("");
-                        setInvestorAddress("");
-                      }}
-                      required
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder="Nhập họ và tên"
-                      value={investorName}
-                      onChange={(e) => setInvestorName(e.target.value)}
-                      className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
-                      required
-                    />
-                  )}
-                </div>
-
-                {/* CCCD and Phone in a two-column row */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
-                  Số CCCD/Hộ chiếu
-                </div>
-                <div className="col-span-4">
-                  <input
-                    type="text"
-                    placeholder="CCCD/Hộ chiếu"
-                    value={investorIdCard}
-                    onChange={(e) => setInvestorIdCard(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg disabled:bg-slate-50 disabled:text-slate-500"
-                    disabled={investorType === "existing"}
-                  />
-                </div>
-                <div className="col-span-2 text-right pr-2 text-xs font-semibold text-slate-650">
-                  Số điện thoại
-                </div>
-                <div className="col-span-3">
-                  <input
-                    type="text"
-                    placeholder="Điện thoại"
-                    value={investorPhone}
-                    onChange={(e) => setInvestorPhone(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg disabled:bg-slate-50 disabled:text-slate-500"
-                    disabled={investorType === "existing"}
-                  />
-                </div>
-
-                {/* Address */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
-                  Địa chỉ
-                </div>
-                <div className="col-span-9">
-                  <input
-                    type="text"
-                    placeholder="Nhập địa chỉ"
-                    value={investorAddress}
-                    onChange={(e) => setInvestorAddress(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg disabled:bg-slate-50 disabled:text-slate-500"
-                    disabled={investorType === "existing"}
-                  />
-                </div>
-
-                {/* Section Header: THÔNG TIN HỢP ĐỒNG */}
-                <div className="col-span-12 flex items-center gap-1.5 text-xs text-blue-700 font-bold tracking-tight uppercase py-2 border-t border-slate-100 mt-2">
-                  <BookOpen className="w-4 h-4 text-blue-700" />
-                  <span>Thông tin hợp đồng</span>
-                </div>
-
-                {/* Investment Capital Amount */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
-                  Số tiền đầu tư <span className="text-red-500">*</span>
-                </div>
-                <div className="col-span-9">
-                  <MoneyInput
-                    value={amount}
-                    onChange={(val) => setAmount(val)}
-                    placeholder="0"
-                    required
-                  />
-                </div>
-
-                {/* Date of investment */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-655">
-                  Ngày góp <span className="text-red-500">*</span>
-                </div>
-                <div className="col-span-9">
-                  <input
-                    type="date"
-                    value={investmentDate}
-                    onChange={(e) => setInvestmentDate(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg"
-                    required
-                  />
-                </div>
-
-                {/* Interest plan types */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-655">
-                  Hình thức lãi <span className="text-red-500">*</span>
-                </div>
-                <div className="col-span-9 flex items-center gap-6">
-                  <select
-                    value={interestTypeId}
-                    onChange={(e) => setInterestTypeId(e.target.value)}
-                    className="select select-bordered select-sm flex-1 bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
-                  >
-                    <option value="">Vốn Đầu tư (không lãi)</option>
-                    {interestTypes.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-
-                  {/* Upfront interest checkbox */}
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={isUpfront}
-                      onChange={(e) => setIsUpfront(e.target.checked)}
-                      className="checkbox checkbox-xs border-slate-300 rounded checked:bg-emerald-500 checked:border-emerald-500"
-                    />
-                    <span>Thu lãi trước</span>
-                  </label>
-                </div>
-
-                {/* Notes */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
-                  Ghi chú
-                </div>
-                <div className="col-span-9">
-                  <textarea
-                    placeholder="Ghi chú chi tiết..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="textarea textarea-bordered w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-16"
-                  />
-                </div>
-
-                {/* Edit Mode Status input */}
-                {isEditMode && (
-                  <>
-                    <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-650">
-                      Trạng thái
-                    </div>
-                    <div className="col-span-9">
-                      <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="select select-bordered select-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]"
-                      >
-                        <option value="active">Đang đầu tư (Hoạt động)</option>
-                        <option value="completed">Đã trả xong (Tất toán)</option>
-                        <option value="cancelled">Đã hủy/xóa</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {/* Submit button row */}
-                <div className="col-span-3"></div>
-                <div className="col-span-9 pt-4 border-t border-slate-100 mt-4 flex gap-2">
-                  <button 
-                    type="submit" 
-                    disabled={saving}
-                    className="btn btn-primary bg-emerald-500 hover:bg-emerald-600 border-none text-white btn-sm rounded-lg font-semibold px-6 text-xs shadow-sm shadow-emerald-500/10 gap-1.5"
-                  >
-                    {saving && <span className="loading loading-spinner btn-xs"></span>}
-                    <span>{isEditMode ? "Cập nhật" : "+ Thêm mới"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="btn btn-outline border-slate-200 text-slate-550 btn-sm rounded-lg text-xs"
-                  >
-                    Đóng
-                  </button>
-                </div>
-
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ContractForm
+        config={contractConfigs.capital}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setInitialDataForForm(null);
+        }}
+        onSubmit={handleSaveCapitalContract}
+        initialData={initialDataForForm}
+        staffs={[]}
+        collaborators={[]}
+        interestTypes={interestTypes}
+      />
       <CustomerHistoryModal
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}

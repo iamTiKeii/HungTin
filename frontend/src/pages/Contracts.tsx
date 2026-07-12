@@ -15,13 +15,10 @@ import {
   FileSpreadsheet, 
   Filter, 
   MoreHorizontal, 
-  User, 
   BookOpen, 
   Coins,
   X,
-  Car,
   Printer,
-  Eye
 } from "lucide-react";
 import { ActionMenu } from "../components/shared/ActionMenu";
 import { useAuth } from "../context/AuthContext";
@@ -29,11 +26,10 @@ import { PawnDetail } from "./PawnDetail";
 import { UnsecuredDetail } from "./UnsecuredDetail";
 import { InstallmentDetail } from "./InstallmentDetail";
 import { toast } from "../lib/toast";
-import { MoneyInput } from "../components/shared/MoneyInput";
-import { CustomerLookup } from "../components/shared/CustomerLookup";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 import { useConfirm } from "../context/ConfirmContext";
 import { getCompiledHtml } from "../services/print/PrintService";
+import { ContractForm, contractConfigs } from "../components/contracts";
 
 export const Contracts: React.FC = () => {
   const { activeStore } = useAuth();
@@ -87,71 +83,11 @@ export const Contracts: React.FC = () => {
 
   // Pawn form fields (Create & Edit)
   const [editingId, setEditingId] = useState<string | null>(null);
-  
-  // Customer type (existing vs new)
-  const [customerType, setCustomerType] = useState<"existing" | "new">("existing");
-  // New customer fields
-  const [newCustName, setNewCustName] = useState("");
-  const [newCustPhone, setNewCustPhone] = useState("");
-  const [newCustCard, setNewCustCard] = useState("");
-  const [newCustCardDate, setNewCustCardDate] = useState("");
-  const [newCustCardPlace, setNewCustCardPlace] = useState("");
-  const [showCardDetails, setShowCardDetails] = useState(false);
-  const [newCustAddress, setNewCustAddress] = useState("");
-
-  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [editingContract, setEditingContract] = useState<any>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedHistoryCustomerId, setSelectedHistoryCustomerId] = useState("");
   const [selectedHistoryCustomerName, setSelectedHistoryCustomerName] = useState("");
-
-  const [pCustomerId, setPCustomerId] = useState("");
-  const [pContractCodeNumber, setPContractCodeNumber] = useState<number>(5);
-  const [pCommodityId, setPCommodityId] = useState("");
-  const [pAssetName, setPAssetName] = useState("");
-  const [pLoanAmount, setPLoanAmount] = useState("");
-  const [pInterestTypeId, setPInterestTypeId] = useState("");
-  const [pIsUpfront, setPIsUpfront] = useState(false);
-  const [pLoanDays, setPLoanDays] = useState("90");
-  const [pPeriodValue, setPPeriodValue] = useState("10");
-  const [pInterestRate, setPInterestRate] = useState("1"); // e.g. 1k / million or 1%
-  const [pLoanDate, setPLoanDate] = useState("");
-  const [pCollectorId, setPCollectorId] = useState("");
-  const [pCollaboratorId, setPCollaboratorId] = useState("");
-  const [pLicensePlate, setPLicensePlate] = useState("");
-  const [pChassisNumber, setPChassisNumber] = useState("");
-  const [pEngineNumber, setPEngineNumber] = useState("");
-  const [pNotes, setPNotes] = useState("");
-
-  // Unsecured form fields
-  const [uCustomerId, setUCustomerId] = useState("");
-  const [uCommodityId, setUCommodityId] = useState("");
-  const [uLoanAmount, setULoanAmount] = useState("");
-  const [uInterestTypeId, setUInterestTypeId] = useState("");
-  const [uIsUpfront, setUIsUpfront] = useState(false);
-  const [uLoanDays, setULoanDays] = useState("30");
-  const [uPeriodValue, setUPeriodValue] = useState("10");
-  const [uInterestRate, setUInterestRate] = useState("3");
-  const [uLoanDate, setULoanDate] = useState("");
-  const [uCollectorId, setUCollectorId] = useState("");
-  const [uCollaboratorId, setUCollaboratorId] = useState("");
-  const [uNotes, setUNotes] = useState("");
-  const [uContractCodeNumber, setUContractCodeNumber] = useState<number>(1);
-
-
-  // Installment form fields
-  const [iCustomerId, setICustomerId] = useState("");
-  const [iRepaymentAmount, setIRepaymentAmount] = useState("");
-  const [iDisbursedAmount, setIDisbursedAmount] = useState("");
-  const [iPeriodType, setIPeriodType] = useState("daily"); // daily, weekly, monthly
-  const [iLoanDuration, setILoanDuration] = useState("40");
-  const [iCycleDays, setICycleDays] = useState("1");
-  const [iIsUpfront, setIIsUpfront] = useState(false);
-  const [iLoanDate, setILoanDate] = useState("");
-  const [iCollectorId, setICollectorId] = useState("");
-  const [iCollaboratorId, setICollaboratorId] = useState("");
-  const [iNotes, setINotes] = useState("");
-  const [iContractCodeNumber, setIContractCodeNumber] = useState<number>(1);
-
+  
   // Details Modal Popup State
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null);
   const [detailDefaultTab, setDetailDefaultTab] = useState<string>("interest");
@@ -364,133 +300,17 @@ export const Contracts: React.FC = () => {
 
   const openCreateModal = () => {
     setEditingId(null);
-    setCustomerType("new");
-    setNewCustName("");
-    setNewCustPhone("");
-    setNewCustCard("");
-    setNewCustCardDate("");
-    setNewCustCardPlace("");
-    setShowCardDetails(false);
-    setNewCustAddress("");
-    setCustomerSearchQuery("");
-
+    setEditingContract(null);
     if (activeTab === "pawn") {
-      setPCustomerId("");
-      setPCommodityId("");
-      setPAssetName("");
-      setPLoanAmount("");
-      if (interestTypes.length > 0) {
-        const dailyKMil = interestTypes.find(t => t.code === "daily_k_million");
-        setPInterestTypeId(dailyKMil ? dailyKMil.id : interestTypes[0].id);
-      } else {
-        setPInterestTypeId("");
-      }
-      setPIsUpfront(false);
-      setPLoanDays("90");
-      setPPeriodValue("10");
-      setPInterestRate("1");
-      setPLoanDate(new Date().toISOString().split("T")[0]);
-      if (employees.length > 0) {
-        setPCollectorId(employees[0].id);
-      } else {
-        setPCollectorId("");
-      }
-      setPCollaboratorId("");
-      setPLicensePlate("");
-      setPChassisNumber("");
-      setPEngineNumber("");
-      setPNotes("");
-      
-      // Compute next serial code
-      const maxNum = pawnList.reduce((max, item) => {
-        const match = item.contract_code?.match(/\d+/);
-        const num = match ? Number(match[0]) : 0;
-        return num > max ? num : max;
-      }, 0);
-      setPContractCodeNumber(maxNum + 1);
-
       setIsPawnOpen(true);
     } else if (activeTab === "unsecured") {
-      setUCustomerId("");
-      setUCommodityId("");
-
-      setULoanAmount("");
-      if (interestTypes.length > 0) {
-        const dailyKMil = interestTypes.find(t => t.code === "daily_k_million");
-        setUInterestTypeId(dailyKMil ? dailyKMil.id : interestTypes[0].id);
-      } else {
-        setUInterestTypeId("");
-      }
-      setUIsUpfront(false);
-      setULoanDays("90");
-      setUPeriodValue("10");
-      setUInterestRate("1");
-      setULoanDate(new Date().toISOString().split("T")[0]);
-      if (employees.length > 0) {
-        setUCollectorId(employees[0].id);
-      } else {
-        setUCollectorId("");
-      }
-      setUCollaboratorId("");
-      setUNotes("");
-
-      // Compute next serial code for Unsecured (TC-)
-      const maxNum = unsecuredList.reduce((max, item) => {
-        const match = item.contract_code?.match(/\d+/);
-        const num = match ? Number(match[0]) : 0;
-        return num > max ? num : max;
-      }, 0);
-      setUContractCodeNumber(maxNum + 1);
-
       setIsUnsecuredOpen(true);
     } else if (activeTab === "installment") {
-      setICustomerId("");
-      setIRepaymentAmount("");
-      setIDisbursedAmount("");
-      setIPeriodType("daily");
-      setILoanDuration("40");
-      setICycleDays("1");
-      setIIsUpfront(false);
-      setILoanDate(new Date().toISOString().split("T")[0]);
-      if (employees.length > 0) {
-        setICollectorId(employees[0].id);
-      } else {
-        setICollectorId("");
-      }
-      setICollaboratorId("");
-      setINotes("");
-      setEditingId("");
-      setCustomerType("new");
-      setNewCustName("");
-      setNewCustCard("");
-      setNewCustPhone("");
-      setNewCustAddress("");
-
-      const maxNum = installmentList.reduce((max, item) => {
-        const match = item.contract_code?.match(/\d+/);
-        const num = match ? Number(match[0]) : 0;
-        return num > max ? num : max;
-      }, 0);
-      setIContractCodeNumber(maxNum + 1);
-
       setIsInstallmentOpen(true);
     }
   };
 
-  const handleUnsecuredCommodityChange = (commId: string) => {
-    setUCommodityId(commId);
-    if (!editingId && commId) {
-      const comm = commodities.find(c => c.id === commId);
-      if (comm) {
-        setULoanAmount(String(Number(comm.default_amount || 0)));
-        setUInterestRate(String(Number(comm.default_interest_rate || 0)));
-        setUPeriodValue(String(comm.default_period_value || 10));
-        setULoanDays(String(comm.default_loan_days || 30));
-        setUIsUpfront(!!comm.is_upfront_interest);
-        setUInterestTypeId(comm.interest_type_id || "");
-      }
-    }
-  };
+
 
   const handleDeleteUnsecuredRow = (contractId: string, contractCode: string, e: React.MouseEvent) => {
     confirm({
@@ -507,140 +327,35 @@ export const Contracts: React.FC = () => {
     });
   };
 
-  const handleCommodityChange = (commId: string) => {
-    setPCommodityId(commId);
-    setPLicensePlate("");
-    setPChassisNumber("");
-    setPEngineNumber("");
 
-    if (!editingId && commId) {
-      const comm = commodities.find(c => c.id === commId);
-      if (comm) {
-        setPLoanAmount(String(Number(comm.default_amount || 0)));
-        setPInterestRate(String(Number(comm.default_interest_rate || 0)));
-        setPPeriodValue(String(comm.default_period_value || 10));
-        setPLoanDays(String(comm.default_loan_days || 30));
-        setPIsUpfront(!!comm.is_upfront_interest);
-        setPInterestTypeId(comm.interest_type_id || "");
-      }
-    }
-  };
 
   const openEditModal = (item: any) => {
     setEditingId(item.id);
-    setCustomerType("existing");
-
+    setEditingContract(item);
     if (activeTab === "pawn") {
-      setPCustomerId(item.customer_id);
-      setCustomerSearchQuery(item.customer?.full_name || "");
-      setNewCustName(item.customer?.full_name || "");
-      setNewCustCard(item.customer?.identity_card_number || "");
-      setNewCustPhone(item.customer?.phone || "");
-      setNewCustAddress(item.customer?.address || "");
-      
-      setPCommodityId(item.commodity_id);
-      setPAssetName(item.asset_name);
-      setPLoanAmount(String(Number(item.loan_amount)));
-      setPInterestTypeId(item.interest_type_id);
-      setPIsUpfront(item.is_upfront_interest);
-      setPLoanDays(String(item.loan_days));
-      setPPeriodValue(String(item.period_value));
-      setPInterestRate(String(Number(item.interest_rate)));
-      
-      const d = new Date(item.loan_date);
-      const dateStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      setPLoanDate(dateStr);
-      
-      setPCollectorId(item.collector_id);
-      setPCollaboratorId(item.collaborator_id || "");
-      setPLicensePlate(item.license_plate || "");
-      setPChassisNumber(item.chassis_number || "");
-      setPEngineNumber(item.engine_number || "");
-      setPNotes(item.notes || "");
-      
-      const match = item.contract_code?.match(/\d+/);
-      if (match) {
-        setPContractCodeNumber(Number(match[0]));
-      }
       setIsPawnOpen(true);
     } else if (activeTab === "unsecured") {
-      setUCustomerId(item.customer_id);
-      setCustomerSearchQuery(item.customer?.full_name || "");
-      setNewCustName(item.customer?.full_name || "");
-      setNewCustCard(item.customer?.identity_card_number || "");
-      setNewCustPhone(item.customer?.phone || "");
-      setNewCustAddress(item.customer?.address || "");
-
-      setUCommodityId(item.commodity_id || "");
-      setULoanAmount(String(Number(item.loan_amount)));
-      setUInterestTypeId(item.interest_type_id);
-      setUIsUpfront(item.is_upfront_interest);
-      setULoanDays(String(item.loan_days));
-      setUPeriodValue(String(item.period_value));
-      setUInterestRate(String(Number(item.interest_rate)));
-      
-      const d = new Date(item.loan_date);
-      const dateStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      setULoanDate(dateStr);
-      
-      setUCollectorId(item.collector_id);
-      setUCollaboratorId(item.collaborator_id || "");
-      setUNotes(item.notes || "");
-      
-      const match = item.contract_code?.match(/\d+/);
-      if (match) {
-        setUContractCodeNumber(Number(match[0]));
-      }
       setIsUnsecuredOpen(true);
     } else if (activeTab === "installment") {
-      setICustomerId(item.customer_id);
-      setCustomerSearchQuery(item.customer?.full_name || "");
-      setNewCustName(item.customer?.full_name || "");
-      setNewCustCard(item.customer?.identity_card_number || "");
-      setNewCustPhone(item.customer?.phone || "");
-      setNewCustAddress(item.customer?.address || "");
-
-      setIRepaymentAmount(String(Number(item.repayment_amount)));
-      setIDisbursedAmount(String(Number(item.disbursed_amount)));
-      setIPeriodType(item.period_type);
-      setILoanDuration(String(item.loan_duration));
-      setICycleDays(String(item.cycle_days));
-      setIIsUpfront(item.is_upfront_collected);
-
-      const d = new Date(item.loan_date);
-      const dateStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      setILoanDate(dateStr);
-
-      setICollectorId(item.collector_id);
-      setICollaboratorId(item.collaborator_id || "");
-      setINotes(item.notes || "");
-
-      const match = item.contract_code?.match(/\d+/);
-      if (match) {
-        setIContractCodeNumber(Number(match[0]));
-      } else {
-        setIContractCodeNumber(1);
-      }
       setIsInstallmentOpen(true);
     }
   };
 
-  const handleCreatePawn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSavePawnContract = async (formData: any) => {
     try {
-      let finalCustomerId = pCustomerId;
-      if (customerType === "new") {
-        if (!newCustName) {
+      let finalCustomerId = formData.customerId;
+      if (formData.customerType === "new") {
+        if (!formData.customerName) {
           toast.warning("Vui lòng nhập tên khách hàng mới");
           return;
         }
         const custRes = await axios.post("/api/customers", {
-          full_name: newCustName,
-          phone: newCustPhone || undefined,
-          identity_card_number: newCustCard || undefined,
-          identity_card_date: newCustCardDate || undefined,
-          identity_card_place: newCustCardPlace || undefined,
-          address: newCustAddress || undefined,
+          full_name: formData.customerName,
+          phone: formData.customerPhone || undefined,
+          identity_card_number: formData.customerIdCard || undefined,
+          identity_card_date: formData.customerIdCardDate || undefined,
+          identity_card_place: formData.customerIdCardPlace || undefined,
+          address: formData.customerAddress || undefined,
         });
         finalCustomerId = custRes.data.id;
         fetchHelpers();
@@ -653,22 +368,22 @@ export const Contracts: React.FC = () => {
 
       const payload = {
         customer_id: finalCustomerId,
-        commodity_id: pCommodityId,
-        asset_name: pAssetName,
-        loan_amount: Number(pLoanAmount),
-        interest_type_id: pInterestTypeId,
-        is_upfront_interest: pIsUpfront,
-        loan_days: Number(pLoanDays),
-        period_value: Number(pPeriodValue),
-        interest_rate: Number(pInterestRate),
-        loan_date: pLoanDate || undefined,
-        collector_id: pCollectorId,
-        collaborator_id: pCollaboratorId || undefined,
-        license_plate: pLicensePlate || undefined,
-        chassis_number: pChassisNumber || undefined,
-        engine_number: pEngineNumber || undefined,
-        notes: pNotes || undefined,
-        contract_code: `CĐ-${pContractCodeNumber}`
+        commodity_id: formData.commodityId,
+        asset_name: formData.assetName,
+        loan_amount: Number(formData.loanAmount),
+        interest_type_id: formData.interestType,
+        is_upfront_interest: formData.isUpfrontInterest,
+        loan_days: Number(formData.loanDays),
+        period_value: Number(formData.interestPeriod),
+        interest_rate: Number(formData.interestRate),
+        loan_date: formData.loanDate || undefined,
+        collector_id: formData.staffId,
+        collaborator_id: formData.collaboratorId || undefined,
+        license_plate: formData.licensePlate || undefined,
+        chassis_number: formData.chassisNumber || undefined,
+        engine_number: formData.engineNumber || undefined,
+        notes: formData.notes || undefined,
+        contract_code: `CĐ-${formData.contractCodeNumber}`
       };
 
       if (editingId) {
@@ -680,10 +395,8 @@ export const Contracts: React.FC = () => {
       }
 
       setIsPawnOpen(false);
-      setNewCustName("");
-      setNewCustPhone("");
-      setNewCustCard("");
-      setNewCustAddress("");
+      setEditingContract(null);
+      setEditingId(null);
       fetchContracts();
       fetchCashSummary();
     } catch (err: any) {
@@ -691,22 +404,21 @@ export const Contracts: React.FC = () => {
     }
   };
 
-  const handleCreateUnsecured = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveUnsecuredContract = async (formData: any) => {
     try {
-      let finalCustomerId = uCustomerId;
-      if (customerType === "new") {
-        if (!newCustName) {
+      let finalCustomerId = formData.customerId;
+      if (formData.customerType === "new") {
+        if (!formData.customerName) {
           toast.warning("Vui lòng nhập tên khách hàng mới");
           return;
         }
         const custRes = await axios.post("/api/customers", {
-          full_name: newCustName,
-          phone: newCustPhone || undefined,
-          identity_card_number: newCustCard || undefined,
-          identity_card_date: newCustCardDate || undefined,
-          identity_card_place: newCustCardPlace || undefined,
-          address: newCustAddress || undefined,
+          full_name: formData.customerName,
+          phone: formData.customerPhone || undefined,
+          identity_card_number: formData.customerIdCard || undefined,
+          identity_card_date: formData.customerIdCardDate || undefined,
+          identity_card_place: formData.customerIdCardPlace || undefined,
+          address: formData.customerAddress || undefined,
         });
         finalCustomerId = custRes.data.id;
         fetchHelpers();
@@ -719,18 +431,18 @@ export const Contracts: React.FC = () => {
 
       const payload = {
         customer_id: finalCustomerId,
-        commodity_id: uCommodityId || undefined,
-        loan_amount: Number(uLoanAmount),
-        interest_type_id: uInterestTypeId,
-        is_upfront_interest: uIsUpfront,
-        loan_days: Number(uLoanDays),
-        period_value: Number(uPeriodValue),
-        interest_rate: Number(uInterestRate),
-        loan_date: uLoanDate || undefined,
-        collector_id: uCollectorId,
-        collaborator_id: uCollaboratorId || undefined,
-        notes: uNotes || undefined,
-        contract_code: `TC-${uContractCodeNumber}`
+        commodity_id: formData.commodityId || undefined,
+        loan_amount: Number(formData.loanAmount),
+        interest_type_id: formData.interestType,
+        is_upfront_interest: formData.isUpfrontInterest,
+        loan_days: Number(formData.loanDays),
+        period_value: Number(formData.interestPeriod),
+        interest_rate: Number(formData.interestRate),
+        loan_date: formData.loanDate || undefined,
+        collector_id: formData.staffId,
+        collaborator_id: formData.collaboratorId || undefined,
+        notes: formData.notes || undefined,
+        contract_code: `TC-${formData.contractCodeNumber}`
       };
 
       if (editingId) {
@@ -742,10 +454,8 @@ export const Contracts: React.FC = () => {
       }
 
       setIsUnsecuredOpen(false);
-      setNewCustName("");
-      setNewCustPhone("");
-      setNewCustCard("");
-      setNewCustAddress("");
+      setEditingContract(null);
+      setEditingId(null);
       fetchContracts();
       fetchCashSummary();
     } catch (err: any) {
@@ -753,39 +463,44 @@ export const Contracts: React.FC = () => {
     }
   };
 
-  const handleCreateInstallment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveInstallmentContract = async (formData: any) => {
     try {
-      let finalCustomerId = iCustomerId;
-      if (customerType === "new") {
-        if (!newCustName) {
+      let finalCustomerId = formData.customerId;
+      if (formData.customerType === "new") {
+        if (!formData.customerName) {
           toast.warning("Vui lòng nhập tên khách hàng mới");
           return;
         }
         const custRes = await axios.post("/api/customers", {
-          full_name: newCustName,
-          identity_card_number: newCustCard || undefined,
-          identity_card_date: newCustCardDate || undefined,
-          identity_card_place: newCustCardPlace || undefined,
-          phone: newCustPhone || undefined,
-          address: newCustAddress || undefined,
+          full_name: formData.customerName,
+          phone: formData.customerPhone || undefined,
+          identity_card_number: formData.customerIdCard || undefined,
+          identity_card_date: formData.customerIdCardDate || undefined,
+          identity_card_place: formData.customerIdCardPlace || undefined,
+          address: formData.customerAddress || undefined,
         });
         finalCustomerId = custRes.data.id;
+        fetchHelpers();
+      }
+
+      if (!finalCustomerId) {
+        toast.warning("Vui lòng chọn hoặc nhập khách hàng");
+        return;
       }
 
       const payload = {
         customer_id: finalCustomerId,
-        contract_code: `TG-${iContractCodeNumber}`,
-        repayment_amount: Number(iRepaymentAmount),
-        disbursed_amount: Number(iDisbursedAmount),
-        period_type: iPeriodType,
-        loan_duration: Number(iLoanDuration),
-        cycle_days: Number(iCycleDays),
-        is_upfront_collected: iIsUpfront,
-        loan_date: iLoanDate || undefined,
-        collector_id: iCollectorId,
-        collaborator_id: iCollaboratorId || undefined,
-        notes: iNotes || undefined,
+        contract_code: `TG-${formData.contractCodeNumber}`,
+        repayment_amount: Number(formData.repaymentAmount),
+        disbursed_amount: Number(formData.loanAmount),
+        period_type: formData.installmentPeriodType,
+        loan_duration: Number(formData.loanDays),
+        cycle_days: Number(formData.installmentPeriod),
+        is_upfront_collected: formData.isUpfrontInterest,
+        loan_date: formData.loanDate || undefined,
+        collector_id: formData.staffId,
+        collaborator_id: formData.collaboratorId || undefined,
+        notes: formData.notes || undefined,
       };
 
       if (editingId) {
@@ -795,8 +510,10 @@ export const Contracts: React.FC = () => {
         await axios.post("/api/contracts/installment", payload);
         toast.success("Tạo mới hợp đồng trả góp thành công!");
       }
+
       setIsInstallmentOpen(false);
-      setEditingId("");
+      setEditingContract(null);
+      setEditingId(null);
       fetchContracts();
       fetchCashSummary();
     } catch (err: any) {
@@ -1742,1413 +1459,83 @@ export const Contracts: React.FC = () => {
         )
       )}
 
-      {/* PAWN CREATE / EDIT MODAL matching Image 2 */}
-      {isPawnOpen && (() => {
-        const labelClass = "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+      <ContractForm
+        config={contractConfigs.pawn}
+        isOpen={isPawnOpen}
+        onClose={() => {
+          setIsPawnOpen(false);
+          setEditingContract(null);
+          setEditingId(null);
+        }}
+        onSubmit={handleSavePawnContract}
+        initialData={editingContract}
+        staffs={employees}
+        collaborators={collaborators}
+        commodities={commodities}
+        interestTypes={interestTypes}
+        onViewHistory={(cid, name) => {
+          setSelectedHistoryCustomerId(cid);
+          setSelectedHistoryCustomerName(name);
+          setIsHistoryOpen(true);
+        }}
+        defaultCodeNumber={pawnList.reduce((max, item) => {
+          const match = item.contract_code?.match(/\\d+/);
+          const num = match ? Number(match[0]) : 0;
+          return num > max ? num : max;
+        }, 0) + 1}
+      />
 
-        return (
-          <div className="modal modal-open">
-            <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl p-6 relative">
-              <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
-                <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-slate-800" />
-                  Hợp đồng cầm đồ
-                </h3>
-                <button onClick={() => setIsPawnOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <ContractForm
+        config={contractConfigs.unsecured}
+        isOpen={isUnsecuredOpen}
+        onClose={() => {
+          setIsUnsecuredOpen(false);
+          setEditingContract(null);
+          setEditingId(null);
+        }}
+        onSubmit={handleSaveUnsecuredContract}
+        initialData={editingContract}
+        staffs={employees}
+        collaborators={collaborators}
+        commodities={commodities}
+        interestTypes={interestTypes}
+        onViewHistory={(cid, name) => {
+          setSelectedHistoryCustomerId(cid);
+          setSelectedHistoryCustomerName(name);
+          setIsHistoryOpen(true);
+        }}
+        defaultCodeNumber={unsecuredList.reduce((max, item) => {
+          const match = item.contract_code?.match(/\\d+/);
+          const num = match ? Number(match[0]) : 0;
+          return num > max ? num : max;
+        }, 0) + 1}
+      />
 
-              <form onSubmit={handleCreatePawn} className="space-y-6 text-xs text-slate-700">
-                
-                {/* Centered Radio selection */}
-                <div className="flex justify-center gap-6 mt-2 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
-                    <input
-                      type="radio"
-                      name="customer_type"
-                      checked={customerType === "new"}
-                      onChange={() => {
-                        setCustomerType("new");
-                        setNewCustName("");
-                        setNewCustCard("");
-                        setNewCustPhone("");
-                        setNewCustAddress("");
-                        setCustomerSearchQuery("");
-                        setPCustomerId("");
-                      }}
-                      className="radio radio-xs radio-primary"
-                    />
-                    <span>Khách mới</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
-                    <input
-                      type="radio"
-                      name="customer_type"
-                      checked={customerType === "existing"}
-                      onChange={() => {
-                        setCustomerType("existing");
-                        setNewCustName("");
-                        setNewCustCard("");
-                        setNewCustPhone("");
-                        setNewCustAddress("");
-                        setCustomerSearchQuery("");
-                        setPCustomerId("");
-                      }}
-                      className="radio radio-xs radio-primary"
-                    />
-                    <span>Khách cũ</span>
-                  </label>
-                  
-                  {/* Eye icon next to lookup selection */}
-                  {customerType === "existing" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (pCustomerId) {
-                          setSelectedHistoryCustomerId(pCustomerId);
-                          setSelectedHistoryCustomerName(newCustName);
-                          setIsHistoryOpen(true);
-                        }
-                      }}
-                      className={`text-blue-600 hover:text-blue-800 shrink-0 ${!pCustomerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      title="Xem lịch sử hợp đồng của khách"
-                      disabled={!pCustomerId}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* SECTION 1: CUSTOMER GROUP */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                  {/* Row 1, Col 1: Tên khách hàng */}
-                  <div className="flex items-center">
-                    <label className={labelClass}>
-                      Tên khách hàng <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grow">
-                      {customerType === "new" ? (
-                        <input
-                          type="text"
-                          placeholder="Nhập họ và tên"
-                          value={newCustName}
-                          onChange={(e) => setNewCustName(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
-                          required={customerType === "new"}
-                        />
-                      ) : (
-                        <CustomerLookup
-                          value={customerSearchQuery}
-                          onChange={setCustomerSearchQuery}
-                          onSelect={(c) => {
-                            setPCustomerId(c.id);
-                            setCustomerSearchQuery(c.full_name);
-                            setNewCustName(c.full_name);
-                            setNewCustCard(c.identity_card_number || "");
-                            setNewCustPhone(c.phone || "");
-                            setNewCustAddress(c.address || "");
-                          }}
-                          onClear={() => {
-                            setPCustomerId("");
-                            setNewCustName("");
-                            setNewCustCard("");
-                            setNewCustPhone("");
-                            setNewCustAddress("");
-                          }}
-                          required
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Row 1, Col 2: Mã hợp đồng */}
-                  <div className="flex items-center">
-                    <label className={labelClass}>
-                      Mã hợp đồng <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden h-8 w-fit bg-white">
-                      <button
-                        type="button"
-                        onClick={() => setPContractCodeNumber((prev) => Math.max(1, prev - 1))}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-3 flex items-center justify-center transition-colors select-none"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        value={pContractCodeNumber}
-                        onChange={(e) => setPContractCodeNumber(Math.max(1, Number(e.target.value)))}
-                        className="text-center bg-white w-14 text-slate-855 h-full font-bold focus:outline-none border-x border-slate-200 text-xs"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setPContractCodeNumber((prev) => prev + 1)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-3 flex items-center justify-center transition-colors select-none"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Row 2, Col 1: Số CCCD/Hộ chiếu */}
-                  <div className="flex items-center">
-                    <label className={labelClass}>Số CCCD/Hộ chiếu</label>
-                    <div className="grow">
-                      <input
-                        type="text"
-                        placeholder="CCCD/CMND khách hàng..."
-                        value={newCustCard}
-                        onChange={(e) => setNewCustCard(e.target.value)}
-                        onFocus={() => setShowCardDetails(true)}
-                        readOnly={customerType === "existing"}
-                        disabled={customerType === "existing"}
-                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
-                          customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {showCardDetails && customerType === "new" && (
-                    <>
-                      {/* Ngày cấp */}
-                      <div className="flex items-center">
-                        <label className={labelClass}>Ngày cấp</label>
-                        <div className="grow">
-                          <input
-                            type="date"
-                            value={newCustCardDate}
-                            onChange={(e) => setNewCustCardDate(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none text-xs"
-                          />
-                        </div>
-                      </div>
-                      {/* Nơi cấp */}
-                      <div className="flex items-center">
-                        <label className={labelClass}>Nơi cấp</label>
-                        <div className="grow">
-                          <input
-                            type="text"
-                            placeholder="Nơi cấp..."
-                            value={newCustCardPlace}
-                            onChange={(e) => setNewCustCardPlace(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none text-xs"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Row 2, Col 2: Số điện thoại */}
-                  <div className="flex items-center">
-                    <label className={labelClass}>Số điện thoại</label>
-                    <div className="grow">
-                      <input
-                        type="text"
-                        placeholder="Số điện thoại khách hàng..."
-                        value={newCustPhone}
-                        onChange={(e) => setNewCustPhone(e.target.value)}
-                        readOnly={customerType === "existing"}
-                        disabled={customerType === "existing"}
-                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
-                          customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 3: Địa chỉ */}
-                  <div className="col-span-1 md:col-span-2 flex items-center">
-                    <label className={labelClass}>Địa chỉ</label>
-                    <div className="grow">
-                      <input
-                        type="text"
-                        placeholder="Địa chỉ hộ khẩu/tạm trú..."
-                        value={newCustAddress}
-                        onChange={(e) => setNewCustAddress(e.target.value)}
-                        readOnly={customerType === "existing"}
-                        disabled={customerType === "existing"}
-                        className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
-                          customerType === "existing" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* SECTION 2: THÔNG TIN KHOẢN VAY */}
-                <div className="pt-4 border-t border-slate-100 space-y-4">
-                  <h4 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-2">
-                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                    THÔNG TIN KHOẢN VAY
-                  </h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    {/* Row 1: Loại tài sản & Tên tài sản */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>
-                        Loại tài sản <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <select
-                          value={pCommodityId}
-                          onChange={(e) => handleCommodityChange(e.target.value)}
-                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
-                          required
-                        >
-                          <option value="">-- Chọn loại hàng hóa --</option>
-                          {commodities.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name.split("|")[0]} ({c.code})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="grow">
-                        <input
-                          type="text"
-                          placeholder="Tên tài sản. VD: Honda SH 150i"
-                          value={pAssetName}
-                          onChange={(e) => setPAssetName(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Row 2: Tổng tiền vay & Quick buttons */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>
-                        Tổng tiền vay <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
-                          <MoneyInput
-                            value={pLoanAmount}
-                            onChange={(val) => setPLoanAmount(String(val))}
-                            placeholder="0"
-                            required
-                            className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
-                            suffix=""
-                          />
-                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
-                            VNĐ
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="grow flex flex-wrap gap-1">
-                        {[
-                          { label: "-5", val: -5000000 },
-                          { label: "+5", val: 5000000 },
-                          { label: "10", val: 10000000 },
-                          { label: "20", val: 20000000 },
-                          { label: "30", val: 30000000 },
-                          { label: "40", val: 40000000 },
-                          { label: "50", val: 50000000 },
-                        ].map((item, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              let curr = Number(pLoanAmount) || 0;
-                              if (item.label.startsWith("-") || item.label.startsWith("+")) {
-                                setPLoanAmount(String(Math.max(0, curr + item.val)));
-                              } else {
-                                setPLoanAmount(String(item.val));
-                              }
-                            }}
-                            className="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Row 3: Hình thức lãi & Checkbox */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>
-                        Hình thức lãi <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <select
-                          value={pInterestTypeId}
-                          onChange={(e) => setPInterestTypeId(e.target.value)}
-                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
-                          required
-                        >
-                          <option value="">-- Lọc hình thức --</option>
-                          {interestTypes.map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="grow">
-                        <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-600 select-none">
-                          <input
-                            type="checkbox"
-                            checked={pIsUpfront}
-                            onChange={(e) => setPIsUpfront(e.target.checked)}
-                            className="checkbox checkbox-sm checkbox-primary border-slate-300 rounded checked:bg-blue-600 checked:border-blue-600 focus:outline-none"
-                          />
-                          <span>Thu lãi trước</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Row 4: Số ngày vay */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>
-                        Số ngày vay <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
-                          <input
-                            type="number"
-                            placeholder="90"
-                            value={pLoanDays}
-                            onChange={(e) => setPLoanDays(e.target.value)}
-                            className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs"
-                            required
-                          />
-                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
-                            Ngày
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center"></div>
-
-                    {/* Row 5: Kỳ lãi & Description */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>
-                        Kỳ lãi <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
-                          <input
-                            type="number"
-                            placeholder="10"
-                            value={pPeriodValue}
-                            onChange={(e) => setPPeriodValue(e.target.value)}
-                            className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs"
-                            required
-                          />
-                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
-                            Ngày
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-slate-400 text-xs italic font-semibold select-none">
-                        (VD : 10 ngày đóng lãi 1 lần thì điền số 10)
-                      </span>
-                    </div>
-
-                    {/* Row 6: Lãi phí & Warning */}
-                    <div className="flex items-start">
-                      <label className={`${labelClass} mt-1.5`}>
-                        Lãi phí <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
-                          <input
-                            type="number"
-                            step="0.01"
-                            placeholder="1"
-                            value={pInterestRate}
-                            onChange={(e) => setPInterestRate(e.target.value)}
-                            className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs"
-                            required
-                          />
-                          <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
-                            k/1 triệu
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-red-500 text-[10px] leading-relaxed font-semibold block grow mt-0.5 max-w-md select-none">
-                        * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật Hình sự.
-                      </span>
-                    </div>
-
-                    {/* Row 7: Ngày vay */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>
-                        Ngày vay <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grow">
-                        <input
-                          type="date"
-                          value={pLoanDate}
-                          onChange={(e) => setPLoanDate(e.target.value)}
-                          className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center"></div>
-                  </div>
-                </div>
-
-                {/* SECTION 3: THÔNG TIN KHÁC */}
-                <div className="pt-4 border-t border-slate-100 space-y-4">
-                  <h4 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-2">
-                    <User className="w-3.5 h-3.5 text-blue-600" />
-                    THÔNG TIN KHÁC
-                  </h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    {/* Row 1: Nhân viên thu & Cộng tác viên */}
-                    <div className="flex items-center">
-                      <label className={labelClass}>Nhân viên thu</label>
-                      <div className="grow">
-                        <select
-                          value={pCollectorId}
-                          onChange={(e) => setPCollectorId(e.target.value)}
-                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
-                          required
-                        >
-                          <option value="">-- Chọn nhân viên --</option>
-                          {employees.map((emp) => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.full_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <label className={labelClass}>Cộng tác viên</label>
-                      <div className="grow">
-                        <select
-                          value={pCollaboratorId}
-                          onChange={(e) => setPCollaboratorId(e.target.value)}
-                          className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
-                        >
-                          <option value="">-- Chọn cộng tác viên --</option>
-                          {collaborators.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.full_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Row 2: Ghi chú */}
-                    <div className="col-span-1 md:col-span-2 flex items-start">
-                      <label className={`${labelClass} mt-1.5`}>Ghi chú</label>
-                      <div className="grow">
-                        <textarea
-                          placeholder="Nhập ghi chú chi tiết..."
-                          value={pNotes}
-                          onChange={(e) => setPNotes(e.target.value)}
-                          className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-16 focus:outline-none text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SECTION 4: THÔNG TIN TÀI SẢN (DYNAMIC BASED ON COMMODITY CONFIG) */}
-                {(() => {
-                  const selectedComm = commodities.find((c) => c.id === pCommodityId);
-                  const parts = selectedComm ? selectedComm.name.split("|") : [];
-                  const commAttrs = parts[1] ? parts[1].split(",") : [];
-
-                  if (commAttrs.length === 0) return null;
-
-                  return (
-                    <div className="pt-4 border-t border-slate-100 space-y-4">
-                      <h4 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-2">
-                        <Car className="w-3.5 h-3.5 text-blue-600" />
-                        THÔNG TIN TÀI SẢN
-                      </h4>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        {commAttrs[0] && (
-                          <div className="flex items-center">
-                            <label className={labelClass}>{commAttrs[0]}</label>
-                            <div className="grow">
-                              <input
-                                type="text"
-                                placeholder={`Nhập ${commAttrs[0].toLowerCase()}...`}
-                                value={pLicensePlate}
-                                onChange={(e) => setPLicensePlate(e.target.value)}
-                                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-                        )}
-                        {commAttrs[1] && (
-                          <div className="flex items-center">
-                            <label className={labelClass}>{commAttrs[1]}</label>
-                            <div className="grow">
-                              <input
-                                type="text"
-                                placeholder={`Nhập ${commAttrs[1].toLowerCase()}...`}
-                                value={pChassisNumber}
-                                onChange={(e) => setPChassisNumber(e.target.value)}
-                                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-                        )}
-                        {commAttrs[2] && (
-                          <div className="flex items-center">
-                            <label className={labelClass}>{commAttrs[2]}</label>
-                            <div className="grow">
-                              <input
-                                type="text"
-                                placeholder={`Nhập ${commAttrs[2].toLowerCase()}...`}
-                                value={pEngineNumber}
-                                onChange={(e) => setPEngineNumber(e.target.value)}
-                                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Modal Footer buttons */}
-                <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-6">
-                  <button
-                    type="submit"
-                    className="btn bg-[#1abc9c] hover:bg-[#16a085] border-none text-white btn-sm px-5 font-bold rounded-lg transition-colors"
-                  >
-                    {editingId ? "Cập nhật" : "+ Thêm mới"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsPawnOpen(false)}
-                    className="btn bg-slate-400 hover:bg-slate-500 border-none text-white btn-sm px-5 font-bold rounded-lg transition-colors"
-                  >
-                    X Đóng
-                  </button>
-                </div>
-
-              </form>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* UNSECURED CREATE / EDIT MODAL matching Image 2 */}
-      {isUnsecuredOpen && (() => {
-        const labelClass = "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
-
-        return (
-          <div className="modal modal-open">
-            <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl p-6 relative">
-              <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
-                <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-slate-800" />
-                  Hợp đồng tín chấp
-                </h3>
-                <button onClick={() => setIsUnsecuredOpen(false)} className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateUnsecured} className="space-y-6 text-xs text-slate-700">
-                
-                {/* Centered Radio selection */}
-                <div className="flex justify-center gap-6 mt-2 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
-                    <input
-                      type="radio"
-                      name="u_customer_type"
-                      checked={customerType === "new"}
-                      onChange={() => {
-                        setCustomerType("new");
-                        setNewCustName("");
-                        setNewCustCard("");
-                        setNewCustPhone("");
-                        setNewCustAddress("");
-                        setCustomerSearchQuery("");
-                        setUCustomerId("");
-                      }}
-                      className="radio radio-xs radio-primary"
-                    />
-                    <span>Khách mới</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
-                    <input
-                      type="radio"
-                      name="u_customer_type"
-                      checked={customerType === "existing"}
-                      onChange={() => {
-                        setCustomerType("existing");
-                        setNewCustName("");
-                        setNewCustCard("");
-                        setNewCustPhone("");
-                        setNewCustAddress("");
-                        setCustomerSearchQuery("");
-                        setUCustomerId("");
-                      }}
-                      className="radio radio-xs radio-primary"
-                    />
-                    <span>Khách cũ</span>
-                  </label>
-
-                  {/* Eye icon next to lookup selection */}
-                  {customerType === "existing" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (uCustomerId) {
-                          setSelectedHistoryCustomerId(uCustomerId);
-                          setSelectedHistoryCustomerName(newCustName);
-                          setIsHistoryOpen(true);
-                        }
-                      }}
-                      className={`text-blue-600 hover:text-blue-800 shrink-0 ${!uCustomerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      title="Xem lịch sử hợp đồng của khách"
-                      disabled={!uCustomerId}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* SECTION 1: THÔNG TIN KHÁCH HÀNG */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className={labelClass}>Tên khách hàng *</label>
-                      {customerType === "existing" ? (
-                        <CustomerLookup
-                          value={customerSearchQuery}
-                          onChange={setCustomerSearchQuery}
-                          onSelect={(c) => {
-                            setUCustomerId(c.id);
-                            setCustomerSearchQuery(c.full_name);
-                            setNewCustName(c.full_name);
-                            setNewCustCard(c.identity_card_number || "");
-                            setNewCustPhone(c.phone || "");
-                            setNewCustAddress(c.address || "");
-                          }}
-                          onClear={() => {
-                            setUCustomerId("");
-                            setNewCustName("");
-                            setNewCustCard("");
-                            setNewCustPhone("");
-                            setNewCustAddress("");
-                          }}
-                          required
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="Nhập họ và tên"
-                          value={newCustName}
-                          onChange={(e) => setNewCustName(e.target.value)}
-                          className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          required
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center">
-                      <label className={labelClass}>Mã hợp đồng *</label>
-                      <div className="flex-1 flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white h-8">
-                        <button
-                          type="button"
-                          onClick={() => setUContractCodeNumber(prev => Math.max(1, prev - 1))}
-                          className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-full px-3 text-xs"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          value={uContractCodeNumber}
-                          onChange={(e) => setUContractCodeNumber(Math.max(1, Number(e.target.value)))}
-                          className="input input-bordered border-none text-center bg-white w-full text-slate-800 h-full font-extrabold focus:outline-none text-xs"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setUContractCodeNumber(prev => prev + 1)}
-                          className="btn btn-outline border-none rounded-none btn-xs text-blue-500 font-black h-full px-3 text-xs"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className={labelClass}>Số CCCD/Hộ chiếu</label>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={newCustCard}
-                        onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
-                        onFocus={() => setShowCardDetails(true)}
-                        disabled={customerType === "existing"}
-                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
-                      />
-                    </div>
-
-                    {showCardDetails && customerType === "new" && (
-                      <>
-                        <div className="flex items-center">
-                          <label className={labelClass}>Ngày cấp</label>
-                          <input
-                            type="date"
-                            value={newCustCardDate}
-                            onChange={(e) => setNewCustCardDate(e.target.value)}
-                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className={labelClass}>Nơi cấp</label>
-                          <input
-                            type="text"
-                            placeholder="Nơi cấp..."
-                            value={newCustCardPlace}
-                            onChange={(e) => setNewCustCardPlace(e.target.value)}
-                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          />
-                        </div>
-                      </>
-                    )}
-                    <div className="flex items-center">
-                      <label className={labelClass}>Số điện thoại</label>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={newCustPhone}
-                        onChange={(e) => customerType === "new" && setNewCustPhone(e.target.value)}
-                        disabled={customerType === "existing"}
-                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Địa chỉ</label>
-                    <input
-                      type="text"
-                      placeholder=""
-                      value={newCustAddress}
-                      onChange={(e) => customerType === "new" && setNewCustAddress(e.target.value)}
-                      disabled={customerType === "existing"}
-                      className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
-                    />
-                  </div>
-                </div>
-
-                {/* SECTION 2: THÔNG TIN KHOÁN VAY */}
-                <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
-                  <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
-                    <Coins className="w-3 h-3 text-blue-600" />
-                    THÔNG TIN KHOÁN VAY
-                  </span>
-
-                  <div className="flex items-center pt-2">
-                    <label className={labelClass}>Loại tài sản *</label>
-                    <select
-                      value={uCommodityId}
-                      onChange={(e) => handleUnsecuredCommodityChange(e.target.value)}
-                      className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 font-semibold text-xs h-8 min-h-[32px] focus:outline-none"
-                      required
-                    >
-                      <option value="">-- Chọn loại hàng hóa --</option>
-                      {commodities.filter(c => c.category === "unsecured").map((c) => (
-                        <option key={c.id} value={c.id}>{c.name.split("|")[0]} ({c.code})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Tổng tiền vay *</label>
-                    <div className="flex-1 flex gap-4 items-center">
-                      <div className="relative w-1/2">
-                        <MoneyInput
-                          value={uLoanAmount}
-                          onChange={(val) => setULoanAmount(String(val))}
-                          placeholder="0"
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-bold text-xs h-8 focus:outline-none"
-                          required
-                        />
-                        <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 font-extrabold text-[10px]">VNĐ</span>
-                      </div>
-                      <div className="flex-1 flex flex-wrap gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setULoanAmount(prev => String(Math.max(0, Number(prev || 0) - 5000000)))}
-                          className="btn btn-outline border-slate-200 btn-xs text-slate-600 rounded font-bold"
-                        >
-                          -5
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setULoanAmount(prev => String(Number(prev || 0) + 5000000))}
-                          className="btn btn-outline border-slate-200 btn-xs text-slate-600 rounded font-bold"
-                        >
-                          +5
-                        </button>
-                        {[10, 20, 30, 40, 50].map((num) => (
-                          <button
-                            key={num}
-                            type="button"
-                            onClick={() => setULoanAmount(String(num * 1000000))}
-                            className="btn btn-outline border-slate-200 btn-xs text-slate-600 rounded font-bold"
-                          >
-                            {num}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Hình thức lãi *</label>
-                    <div className="flex-1 flex items-center gap-4">
-                      <select
-                        value={uInterestTypeId}
-                        onChange={(e) => setUInterestTypeId(e.target.value)}
-                        className="select select-bordered select-sm w-1/2 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 min-h-[32px] focus:outline-none font-semibold"
-                        required
-                      >
-                        <option value="">-- Chọn hình thức lãi --</option>
-                        {interestTypes.map((i) => (
-                          <option key={i.id} value={i.id}>{i.name}</option>
-                        ))}
-                      </select>
-                      <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-600">
-                        <input
-                          type="checkbox"
-                          checked={uIsUpfront}
-                          onChange={(e) => setUIsUpfront(e.target.checked)}
-                          className="checkbox checkbox-sm checkbox-primary border-slate-200 rounded checked:border-amber-500 checked:bg-amber-500 w-4 h-4"
-                        />
-                        <span>Thu lãi trước</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Số ngày vay *</label>
-                    <div className="w-1/2 relative">
-                      <input
-                        type="number"
-                        placeholder="30"
-                        value={uLoanDays}
-                        onChange={(e) => setULoanDays(e.target.value)}
-                        className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
-                        required
-                      />
-                      <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">Ngày</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Kỳ lãi *</label>
-                    <div className="flex-1 flex items-center gap-4">
-                      <div className="w-1/2 relative">
-                        <input
-                          type="number"
-                          placeholder="10"
-                          value={uPeriodValue}
-                          onChange={(e) => setUPeriodValue(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
-                          required
-                        />
-                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">Ngày</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-semibold leading-none">
-                        (VD : 10 ngày đóng lãi 1 lần thì điền số 10)
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Lãi phí *</label>
-                    <div className="flex-1 flex gap-4 items-center">
-                      <div className="w-1/2 relative">
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="1"
-                          value={uInterestRate}
-                          onChange={(e) => setUInterestRate(e.target.value)}
-                          className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 font-bold text-xs h-8 focus:outline-none"
-                          required
-                        />
-                        <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400">k/1 triệu</span>
-                      </div>
-                      <div className="flex-1 text-[10px] text-red-500 leading-normal font-semibold">
-                        * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật Hình sự.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className={labelClass}>Ngày vay *</label>
-                    <input
-                      type="date"
-                      value={uLoanDate}
-                      onChange={(e) => setULoanDate(e.target.value)}
-                      className="input input-bordered input-sm w-1/2 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* SECTION 3: THÔNG TIN KHÁCH */}
-                <div className="border border-slate-200/80 p-4 rounded-xl space-y-4 relative bg-slate-50/20">
-                  <span className="absolute -top-3 left-3 bg-white px-2 text-[10px] font-extrabold text-blue-600 border border-slate-200 rounded-full flex items-center gap-1">
-                    <User className="w-3 h-3 text-blue-600" />
-                    THÔNG TIN KHÁC
-                  </span>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <div className="flex items-center">
-                      <label className={labelClass}>Nhân viên thu</label>
-                      <select
-                        value={uCollectorId}
-                        onChange={(e) => setUCollectorId(e.target.value)}
-                        className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 min-h-[32px] focus:outline-none"
-                        required
-                      >
-                        <option value="">-- Chọn nhân viên --</option>
-                        {employees.map((emp) => (
-                          <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-center">
-                      <label className={labelClass}>Cộng tác viên</label>
-                      <select
-                        value={uCollaboratorId}
-                        onChange={(e) => setUCollaboratorId(e.target.value)}
-                        className="select select-bordered select-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 text-xs h-8 min-h-[32px] focus:outline-none"
-                      >
-                        <option value="">-- Chọn cộng tác viên --</option>
-                        {collaborators.map((c) => (
-                          <option key={c.id} value={c.id}>{c.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start">
-                    <label className={`${labelClass} pt-2`}>Ghi chú</label>
-                    <textarea
-                      placeholder="Mô tả ghi chú..."
-                      value={uNotes}
-                      onChange={(e) => setUNotes(e.target.value)}
-                      className="textarea textarea-bordered flex-1 bg-white border-slate-200 text-slate-800 rounded-lg h-16 text-xs focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Modal Footer buttons */}
-                <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
-                  <button
-                    type="submit"
-                    className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 border-none text-white btn-sm px-5 font-bold rounded-lg text-xs"
-                  >
-                    {editingId ? "Cập nhật" : "+ Thêm mới"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsUnsecuredOpen(false)}
-                    className="btn btn-neutral bg-slate-200 hover:bg-slate-300 border-none text-slate-700 btn-sm px-5 font-bold rounded-lg text-xs"
-                  >
-                    Đóng
-                  </button>
-                </div>
-
-              </form>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* INSTALLMENT CREATE MODAL */}
-      {isInstallmentOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl max-w-4xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              {editingId ? "Cập Nhật Hợp Đồng Trả Góp" : "Lập Hợp Đồng Trả Góp Mới"}
-            </h3>
-            <form onSubmit={handleCreateInstallment} className="space-y-4 text-xs">
-              
-              {/* Centered Radio selection */}
-              <div className="flex justify-center gap-6 mt-2 mb-2 bg-slate-50 border border-slate-100 p-2.5 rounded-xl">
-                <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-xs">
-                  <input
-                    type="radio"
-                    name="i_customer_type"
-                    checked={customerType === "new"}
-                    onChange={() => {
-                      setCustomerType("new");
-                      setNewCustName("");
-                      setNewCustCard("");
-                      setNewCustPhone("");
-                      setNewCustAddress("");
-                      setCustomerSearchQuery("");
-                      setICustomerId("");
-                    }}
-                    className="radio radio-xs radio-primary"
-                  />
-                  <span>Khách mới</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-xs">
-                  <input
-                    type="radio"
-                    name="i_customer_type"
-                    checked={customerType === "existing"}
-                    onChange={() => {
-                      setCustomerType("existing");
-                      setNewCustName("");
-                      setNewCustCard("");
-                      setNewCustPhone("");
-                      setNewCustAddress("");
-                      setCustomerSearchQuery("");
-                      setICustomerId("");
-                    }}
-                    className="radio radio-xs radio-primary"
-                  />
-                  <span>Khách cũ</span>
-                </label>
-                
-                {customerType === "existing" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (iCustomerId) {
-                        setSelectedHistoryCustomerId(iCustomerId);
-                        setSelectedHistoryCustomerName(newCustName);
-                        setIsHistoryOpen(true);
-                      }
-                    }}
-                    className={`text-blue-600 hover:text-blue-800 shrink-0 flex items-center gap-1 ${!iCustomerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                    title="Xem lịch sử hợp đồng của khách"
-                    disabled={!iCustomerId}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Lịch sử vay</span>
-                  </button>
-                )}
-              </div>
-
-              {/* SECTION 1: THÔNG TIN KHÁCH HÀNG */}
-              <div>
-                <h4 className="font-extrabold text-[11px] text-amber-500 uppercase tracking-wider mb-3 pb-1.5 border-b border-slate-100">
-                  THÔNG TIN KHÁCH HÀNG
-                </h4>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Tên khách hàng *</label>
-                      <div className="grow">
-                        {customerType === "new" ? (
-                          <input
-                            type="text"
-                            placeholder="Nhập họ và tên"
-                            value={newCustName}
-                            onChange={(e) => setNewCustName(e.target.value)}
-                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                            required={customerType === "new"}
-                          />
-                        ) : (
-                          <CustomerLookup
-                            value={customerSearchQuery}
-                            onChange={setCustomerSearchQuery}
-                            onSelect={(c) => {
-                              setICustomerId(c.id);
-                              setCustomerSearchQuery(c.full_name);
-                              setNewCustName(c.full_name);
-                              setNewCustCard(c.identity_card_number || "");
-                              setNewCustPhone(c.phone || "");
-                              setNewCustAddress(c.address || "");
-                            }}
-                            onClear={() => {
-                              setICustomerId("");
-                              setNewCustName("");
-                              setNewCustCard("");
-                              setNewCustPhone("");
-                              setNewCustAddress("");
-                            }}
-                            required
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Mã hợp đồng</label>
-                      <div className="flex items-center gap-1.5 grow">
-                        <button
-                          type="button"
-                          onClick={() => setIContractCodeNumber(prev => Math.max(1, prev - 1))}
-                          className="btn btn-outline border-slate-200 hover:bg-slate-50 btn-xs text-slate-600 rounded-lg h-8 px-2.5"
-                        >
-                          -
-                        </button>
-                        <span className="font-extrabold text-xs text-slate-800 px-3 bg-slate-50 border border-slate-200/80 rounded-lg h-8 flex items-center justify-center min-w-[70px]">
-                          TG-{iContractCodeNumber}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIContractCodeNumber(prev => prev + 1)}
-                          className="btn btn-outline border-slate-200 hover:bg-slate-50 btn-xs text-slate-600 rounded-lg h-8 px-2.5"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Số CCCD/Hộ chiếu</label>
-                      <input
-                        type="text"
-                        placeholder="CCCD/CMND..."
-                        value={newCustCard}
-                        onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
-                        onFocus={() => setShowCardDetails(true)}
-                        disabled={customerType === "existing"}
-                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
-                      />
-                    </div>
-
-                    {showCardDetails && customerType === "new" && (
-                      <>
-                        <div className="flex items-center">
-                          <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Ngày cấp</label>
-                          <input
-                            type="date"
-                            value={newCustCardDate}
-                            onChange={(e) => setNewCustCardDate(e.target.value)}
-                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Nơi cấp</label>
-                          <input
-                            type="text"
-                            placeholder="Nơi cấp..."
-                            value={newCustCardPlace}
-                            onChange={(e) => setNewCustCardPlace(e.target.value)}
-                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          />
-                        </div>
-                      </>
-                    )}
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Số điện thoại</label>
-                      <input
-                        type="text"
-                        placeholder="Số điện thoại..."
-                        value={newCustPhone}
-                        onChange={(e) => customerType === "new" && setNewCustPhone(e.target.value)}
-                        disabled={customerType === "existing"}
-                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Địa chỉ</label>
-                    <input
-                      type="text"
-                      placeholder="Địa chỉ hộ khẩu/tạm trú..."
-                      value={newCustAddress}
-                      onChange={(e) => customerType === "new" && setNewCustAddress(e.target.value)}
-                      disabled={customerType === "existing"}
-                      className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 2: THÔNG TIN TRẢ GÓP */}
-              <div>
-                <h4 className="font-extrabold text-[11px] text-amber-500 uppercase tracking-wider mb-3 pb-1.5 border-b border-slate-100">
-                  THÔNG TIN TRẢ GÓP
-                </h4>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Trả Góp *</label>
-                      <div className="grow">
-                        <MoneyInput
-                          value={Number(iRepaymentAmount) || 0}
-                          onChange={(val) => setIRepaymentAmount(String(val))}
-                          placeholder="Tổng tiền phải trả góp (Gốc + Lãi)"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Tiền đưa khách *</label>
-                      <div className="grow">
-                        <MoneyInput
-                          value={Number(iDisbursedAmount) || 0}
-                          onChange={(val) => setIDisbursedAmount(String(val))}
-                          placeholder="Tiền thực giao cho khách"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Hình thức *</label>
-                      <select
-                        value={iPeriodType}
-                        onChange={(e) => setIPeriodType(e.target.value)}
-                        className="select select-bordered select-sm w-full bg-white border-slate-200 text-slate-800 rounded-lg focus:border-amber-500 focus:outline-none text-xs h-8"
-                        required
-                      >
-                        <option value="daily">Theo ngày</option>
-                        <option value="weekly">Theo tuần</option>
-                        <option value="monthly">Theo tháng</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 pl-[125px]">
-                      <input
-                        type="checkbox"
-                        checked={iIsUpfront}
-                        onChange={(e) => setIIsUpfront(e.target.checked)}
-                        className="checkbox checkbox-xs checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
-                        id="iIsUpfront"
-                      />
-                      <label htmlFor="iIsUpfront" className="text-slate-600 font-bold cursor-pointer text-xs">Thu tiền trước</label>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Thời gian vay *</label>
-                      <div className="flex items-center gap-1.5 grow">
-                        <input
-                          type="number"
-                          placeholder="40"
-                          value={iLoanDuration}
-                          onChange={(e) => setILoanDuration(e.target.value)}
-                          className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          required
-                        />
-                        <span className="text-slate-500 font-bold shrink-0">kỳ</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Số ngày đóng tiền *</label>
-                      <div className="flex items-center gap-1.5 grow">
-                        <input
-                          type="number"
-                          placeholder="1"
-                          value={iCycleDays}
-                          onChange={(e) => setICycleDays(e.target.value)}
-                          className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                          required
-                        />
-                        <span className="text-slate-500 font-bold shrink-0">ngày/kỳ</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Ngày vay *</label>
-                      <input
-                        type="date"
-                        value={iLoanDate}
-                        onChange={(e) => setILoanDate(e.target.value)}
-                        className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 3: THÔNG TIN KHÁC */}
-              <div>
-                <h4 className="font-extrabold text-[11px] text-amber-500 uppercase tracking-wider mb-3 pb-1.5 border-b border-slate-100">
-                  THÔNG TIN KHÁC
-                </h4>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Nhân viên thu</label>
-                      <select
-                        value={iCollectorId}
-                        onChange={(e) => setICollectorId(e.target.value)}
-                        className="select select-bordered select-sm w-full bg-white border-slate-200 text-slate-800 rounded-lg focus:border-amber-500 focus:outline-none text-xs h-8"
-                        required
-                      >
-                        <option value="">-- Chọn nhân viên --</option>
-                        {employees.map((emp) => (
-                          <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-center">
-                      <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Cộng tác viên</label>
-                      <select
-                        value={iCollaboratorId}
-                        onChange={(e) => setICollaboratorId(e.target.value)}
-                        className="select select-bordered select-sm w-full bg-white border-slate-200 text-slate-800 rounded-lg focus:border-amber-500 focus:outline-none text-xs h-8"
-                      >
-                        <option value="">-- Chọn cộng tác viên --</option>
-                        {collaborators.map((c) => (
-                          <option key={c.id} value={c.id}>{c.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start">
-                    <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs mt-1.5">Ghi chú</label>
-                    <textarea
-                      placeholder="Mô tả hiện trạng tài sản, ghi chú liên quan..."
-                      value={iNotes}
-                      onChange={(e) => setINotes(e.target.value)}
-                      className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-16 text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-action border-t border-slate-100 pt-3">
-                <button type="button" onClick={() => setIsInstallmentOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl btn-sm font-semibold">
-                  Hủy bỏ
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 hover:bg-amber-600 border-none text-slate-950 rounded-xl font-extrabold btn-sm">
-                  {editingId ? "Cập nhật hợp đồng" : "Ký kết hợp đồng"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ContractForm
+        config={contractConfigs.installment}
+        isOpen={isInstallmentOpen}
+        onClose={() => {
+          setIsInstallmentOpen(false);
+          setEditingContract(null);
+          setEditingId(null);
+        }}
+        onSubmit={handleSaveInstallmentContract}
+        initialData={editingContract}
+        staffs={employees}
+        collaborators={collaborators}
+        commodities={commodities}
+        interestTypes={interestTypes}
+        onViewHistory={(cid, name) => {
+          setSelectedHistoryCustomerId(cid);
+          setSelectedHistoryCustomerName(name);
+          setIsHistoryOpen(true);
+        }}
+        defaultCodeNumber={installmentList.reduce((max, item) => {
+          const match = item.contract_code?.match(/\\d+/);
+          const num = match ? Number(match[0]) : 0;
+          return num > max ? num : max;
+        }, 0) + 1}
+      />
 
       {/* PRINT CONFIG MODAL */}
       {isPrintTemplateModalOpen && (

@@ -6,3 +6,12 @@ export * from "./ContractSection";
 export * from "./ContractActionBar";
 export * from "./ContractTabs";
 export * from "./ContractAuditInfo";
+export * from "./contract.config";
+export * from "./ContractForm";
+export * from "./ContractCustomerSection";
+export * from "./ContractGoodsSection";
+export * from "./ContractLoanSection";
+export * from "./ContractInterestSection";
+export * from "./ContractFinanceSection";
+export * from "./ContractNoteSection";
+
