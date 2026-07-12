@@ -1150,7 +1150,7 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
     }
 });
 // 20. Delete Unsecured Contract
-router.delete("/:id", (0, permission_1.requirePermission)(["SETTINGS_MANAGE"]), async (req, res) => {
+router.delete("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), async (req, res) => {
     try {
         const contractId = req.params.id;
         const employeeId = req.user.id;

@@ -5,8 +5,6 @@ import { useConfirm } from "../context/ConfirmContext";
 import {
   Trash,
   Upload,
-  ArrowLeft,
-  RefreshCw,
   X,
   Coins,
   ArrowDown,
@@ -22,6 +20,16 @@ import {
 } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
+import {
+  ContractDetailLayout,
+  ContractHeader,
+  ContractSummaryGrid,
+  ContractTabs,
+  ContractSection,
+  ContractActionBar,
+  ContractAuditInfo
+} from "../components/contracts";
+
 
 interface PawnDetailProps {
   idProp?: string;
@@ -654,108 +662,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     );
   };
 
-  const contentJSX = (
-    <div className="space-y-5 text-sm">
-      {/* Grid summary stats matching screenshot */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200/60 p-4 rounded-xl text-slate-700 text-xs">
-        <div className="space-y-2 md:border-r md:border-slate-200/50 md:pr-6">
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-red-500 font-bold">Tên khách:</span>
-            <Link to={`/customer-list`} className="text-red-500 font-bold hover:underline">
-              {contract.customer?.full_name}
-            </Link>
-          </div>
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-slate-400 font-medium">Tiền cầm:</span>
-            <span className="font-bold text-slate-800">{formatVND(contract.loan_amount)}</span>
-          </div>
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-slate-400 font-medium">Vay từ ngày:</span>
-            <span className="font-bold text-slate-800">
-              {new Date(contract.loan_date).toLocaleDateString("vi-VN")} → {
-                new Date(new Date(contract.loan_date).getTime() + contract.loan_days * 24 * 60 * 60 * 1000).toLocaleDateString("vi-VN")
-              }
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400 font-medium">Ngày trả lãi gần nhất:</span>
-            <span className="font-semibold text-slate-600">
-              {lastPaid ? new Date(lastPaid.paid_date).toLocaleDateString("vi-VN") : "Chưa đóng lãi kỳ nào"}
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-2 md:pl-2">
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-slate-400 font-medium">Lãi suất:</span>
-            <span className="font-bold text-slate-800">{rateLabel}</span>
-          </div>
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-slate-400 font-medium">Tiền lãi đã đóng:</span>
-            <span className="font-bold text-slate-800">
-              {formatVND(contract.interest_payments?.filter((p: any) => p.is_paid).reduce((sum: number, p: any) => sum + Number(p.actual_paid || 0), 0))}
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-red-500 font-bold">Nợ cũ KH:</span>
-            <span className="font-bold text-red-500">
-              {formatVND(contract.customer?.debt_amount || 0)}
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-slate-200/30 pb-1">
-            <span className="text-red-500 font-bold">Nợ cũ HĐ:</span>
-            <span className="font-bold text-red-500">
-              {formatVND(contract.debt_amount)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-slate-400 font-medium">Trạng thái:</span>
-            <span className={`badge badge-sm text-[10px] font-bold text-white bg-blue-500 border-none px-2 rounded-md`}>
-              {contract.status === "active" ? "Đang cầm" : "Đã tất toán"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {getAssetDetailsList()}
-
-      {/* Reusable Toolbar list tabs of 11 buttons */}
-      <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-2">
-        {[
-          { id: "interest", label: "Đóng tiền lãi", icon: Coins, color: "text-[#3b82f6]" },
-          { id: "pay_down", label: "Trả bớt gốc", icon: ArrowDown, color: "text-[#10b981]" },
-          { id: "borrow_more", label: "Vay thêm", icon: ArrowUp, color: "text-[#ef4444]" },
-          { id: "extend", label: "Gia hạn", icon: Calendar, color: "text-[#f59e0b]" },
-          { id: "redeem", label: "Chuộc đồ", icon: Anchor, color: "text-[#0ea5e9]" },
-          { id: "liquidate", label: "Thanh lý", icon: AlertTriangle, color: "text-amber-500" },
-          { id: "debt", label: "Nợ", icon: AlertTriangle, color: "text-[#9c27b0]" },
-          { id: "docs", label: "Chứng từ", icon: FileText, color: "text-slate-500" },
-          { id: "history", label: "Lịch sử", icon: History, color: "text-slate-500" },
-          { id: "timer", label: "Hẹn giờ", icon: Bell, color: "text-[#f59e0b]" },
-          { id: "blacklist", label: "Báo xấu", icon: AlertTriangle, color: "text-red-600" },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border transition-all ${
-                isActive 
-                  ? "bg-[#2563eb] text-white border-[#2563eb] shadow-sm" 
-                  : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
-              }`}
-              type="button"
-            >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : tab.color}`} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Panels content details */}
-      <div className="bg-white border border-slate-200/80 rounded-xl p-4 min-h-[300px]">
+  const renderTabContent = () => {
+    return (
+      <>
         
         {/* TAB 1: Đóng tiền lãi */}
         {activeTab === "interest" && (
@@ -1677,72 +1586,118 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
             </div>
           </form>
         )}
-      </div>
-
-      {/* Delete contract button */}
-      <div className="flex justify-end pt-2">
-        <button
-          onClick={(e) => handleDeleteContract(e)}
-          className="btn btn-outline border-red-200 hover:bg-red-500/10 text-red-500 btn-sm rounded-lg font-bold gap-1"
-          type="button"
-        >
-          <Trash className="w-3.5 h-3.5" />
-          <span>Xóa hợp đồng cầm đồ này</span>
-        </button>
-      </div>
-    </div>
-  );
-
-  // Standalone layout wrapper vs Modal layout wrapper
-  if (isModal) {
-    return (
-      <div className="modal modal-open">
-        <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl w-11/12 max-w-[1320px] max-h-[95vh] overflow-y-auto p-6 relative" style={{ zoom: 0.92 }}>
-          <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4">
-            <h3 className="font-black text-lg text-slate-800 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-amber-500" />
-              Bảng chi tiết hợp đồng cầm đồ {contract.contract_code}
-            </h3>
-            <button 
-              onClick={onClose} 
-              className="btn btn-ghost btn-circle btn-sm text-slate-400 hover:bg-slate-100"
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          {contentJSX}
-        </div>
-      </div>
+      </>
     );
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Back button and page title */}
-      <div className="flex justify-between items-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-4">
-          <Link to="/contracts" className="btn btn-outline border-slate-200 hover:bg-slate-50 text-slate-600 btn-circle btn-sm">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
-              HĐ Cầm Đồ: <span className="text-amber-500">{contract.contract_code}</span>
-              <span className={`badge badge-sm font-bold uppercase ${contract.status === "active" ? "badge-success text-white" : "badge-neutral text-slate-500"}`}>
-                {contract.status === "active" ? "Đang hoạt động" : "Đã tất toán"}
-              </span>
-            </h1>
-            <p className="text-slate-500 text-xs mt-1">
-              Khách hàng: <span className="text-slate-700 font-bold">{contract.customer?.full_name}</span> | Ngày vay: {new Date(contract.loan_date).toLocaleDateString("vi-VN")}
-            </p>
-          </div>
-        </div>
-        <button onClick={fetchContractDetails} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
-          <RefreshCw className="w-4 h-4 animate-spin-hover" />
-        </button>
-      </div>
-
-      {contentJSX}
-    </div>
+    <ContractDetailLayout
+      isModal={isModal}
+      header={
+        <ContractHeader
+          title="HĐ Cầm Đồ"
+          code={contract.contract_code}
+          status={contract.status}
+          statusLabel={contract.status === "active" ? "Đang cầm" : "Đã tất toán"}
+          loanDate={new Date(contract.loan_date).toLocaleDateString("vi-VN")}
+          customerName={contract.customer?.full_name}
+          onRefresh={fetchContractDetails}
+          onClose={onClose}
+          isModal={isModal}
+        />
+      }
+      actionBar={
+        <ContractActionBar
+          actions={[
+            {
+              label: "Xóa hợp đồng",
+              icon: Trash,
+              onClick: handleDeleteContract,
+              colorClass: "bg-red-50 hover:bg-red-100 text-red-600 border-none",
+            },
+          ]}
+        />
+      }
+      summaryGrid={
+        <ContractSummaryGrid
+          leftItems={[
+            {
+              label: "Tên khách:",
+              value: (
+                <Link to={`/customer-list`} className="text-red-500 font-bold hover:underline">
+                  {contract.customer?.full_name}
+                </Link>
+              ),
+            },
+            { label: "Tiền cầm:", value: formatVND(contract.loan_amount) },
+            {
+              label: "Vay từ ngày:",
+              value: `${new Date(contract.loan_date).toLocaleDateString("vi-VN")} → ${new Date(
+                new Date(contract.loan_date).getTime() + contract.loan_days * 24 * 60 * 60 * 1000
+              ).toLocaleDateString("vi-VN")}`,
+            },
+            {
+              label: "Ngày trả lãi gần nhất:",
+              value: lastPaid ? new Date(lastPaid.paid_date).toLocaleDateString("vi-VN") : "Chưa đóng lãi kỳ nào",
+            },
+          ]}
+          rightItems={[
+            { label: "Lãi suất:", value: rateLabel },
+            {
+              label: "Tiền lãi đã đóng:",
+              value: formatVND(
+                contract.interest_payments
+                  ?.filter((p: any) => p.is_paid)
+                  .reduce((sum: number, p: any) => sum + Number(p.actual_paid || 0), 0)
+              ),
+            },
+            { label: "Nợ cũ KH:", value: formatVND(contract.customer?.debt_amount || 0), isRed: true },
+            { label: "Nợ cũ HĐ:", value: formatVND(contract.debt_amount), isRed: true },
+            {
+              label: "Trạng thái:",
+              value: (
+                <span className="badge badge-sm text-[10px] font-bold text-white bg-blue-500 border-none px-2 rounded-md">
+                  {contract.status === "active" ? "Đang cầm" : "Đã tất toán"}
+                </span>
+              ),
+            },
+          ]}
+        />
+      }
+      infoSections={
+        <ContractSection title="Danh sách tài sản cầm cố" icon={Anchor}>
+          {getAssetDetailsList()}
+        </ContractSection>
+      }
+      tabs={
+        <ContractTabs
+          tabs={[
+            { id: "interest", label: "Đóng tiền lãi", icon: Coins, color: "text-[#3b82f6]" },
+            { id: "pay_down", label: "Trả bớt gốc", icon: ArrowDown, color: "text-[#10b981]" },
+            { id: "borrow_more", label: "Vay thêm", icon: ArrowUp, color: "text-[#ef4444]" },
+            { id: "extend", label: "Gia hạn", icon: Calendar, color: "text-[#f59e0b]" },
+            { id: "redeem", label: "Chuộc đồ", icon: Anchor, color: "text-[#0ea5e9]" },
+            { id: "liquidate", label: "Thanh lý", icon: AlertTriangle, color: "text-amber-500" },
+            { id: "debt", label: "Nợ", icon: AlertTriangle, color: "text-[#9c27b0]" },
+            { id: "docs", label: "Chứng từ", icon: FileText, color: "text-slate-500" },
+            { id: "history", label: "Lịch sử", icon: History, color: "text-slate-500" },
+            { id: "timer", label: "Hẹn giờ", icon: Bell, color: "text-[#f59e0b]" },
+            { id: "blacklist", label: "Báo xấu", icon: AlertTriangle, color: "text-red-600" },
+          ]}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+      }
+      tabContent={renderTabContent()}
+      auditInfo={
+        <ContractAuditInfo
+          createdBy={contract.created_by?.username}
+          createdAt={contract.created_at}
+          updatedBy={contract.updated_by?.username}
+          updatedAt={contract.updated_at}
+        />
+      }
+    />
   );
 };
+

@@ -5,7 +5,6 @@ import { useConfirm } from "../context/ConfirmContext";
 import {
   Trash,
   Upload,
-  ArrowLeft,
   PhoneCall,
   Check,
   Printer,
@@ -27,6 +26,15 @@ import { useAuth } from "../context/AuthContext";
 import { useReactToPrint } from "react-to-print";
 import { getCompiledHtml } from "../services/print/PrintService";
 import { useRef } from "react";
+import {
+  ContractDetailLayout,
+  ContractHeader,
+  ContractSummaryGrid,
+  ContractTabs,
+  ContractActionBar,
+  ContractAuditInfo
+} from "../components/contracts";
+
 
 interface InstallmentDetailProps {
   idProp?: string;
@@ -665,134 +673,9 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
 
   const activeTimer = contract.reminders?.find((r: any) => r.status === "active");
 
-  const contentJSX = (
-    <div className="space-y-6 text-xs text-slate-700">
-      {/* Top summary layout matching Image 3 */}
-      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-slate-800 shadow-inner">
-        {/* Left Column */}
-        <div className="space-y-2.5">
-          <h2 className="text-red-500 font-extrabold text-base mb-3 hover:underline cursor-pointer">
-            {contract.customer?.full_name}
-          </h2>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Trả góp:</span>
-            <span className="font-bold text-slate-800">{formatCurrency(contract.repayment_amount)}</span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Tỷ lệ:</span>
-            <span className="font-bold text-slate-800">
-              {contract.repayment_amount && contract.disbursed_amount
-                ? `${((Number(contract.repayment_amount) / Number(contract.disbursed_amount)) * 10).toFixed(0)}-10`
-                : "--"}
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Thời gian:</span>
-            <span className="font-bold text-slate-800">
-              {new Date(contract.loan_date).toLocaleDateString("vi-VN")} ➔ {new Date(new Date(contract.loan_date).setDate(new Date(contract.loan_date).getDate() + contract.loan_duration)).toLocaleDateString("vi-VN")} ({contract.loan_duration} ngày)
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Nợ cũ KH:</span>
-            <span className="font-bold text-red-500">0 VNĐ</span>
-          </div>
-          <div className="flex justify-between pb-1.5">
-            <span className="text-slate-500">Nợ cũ HĐ:</span>
-            <span className="font-bold text-red-500">{formatCurrency(contract.debt_amount)}</span>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-2.5">
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5 pt-6">
-            <span className="text-slate-500">Số tiền giao khách:</span>
-            <span className="font-bold text-slate-800">{formatCurrency(contract.disbursed_amount)}</span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Tổng tiền phải đóng:</span>
-            <span className="font-bold text-red-500">{formatCurrency(contract.repayment_amount)}</span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Đã đóng được:</span>
-            <span className="font-bold text-emerald-600">
-              {formatCurrency(contract.payments?.filter((p: any) => p.is_paid).reduce((sum: number, p: any) => sum + Number(p.actual_paid), 0) || 0)}
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Còn lại phải đóng:</span>
-            <span className="font-bold text-red-500">
-              {formatCurrency(Number(contract.repayment_amount) - (contract.payments?.filter((p: any) => p.is_paid).reduce((sum: number, p: any) => sum + Number(p.actual_paid), 0) || 0))}
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-dashed border-slate-200 pb-1.5">
-            <span className="text-slate-500">Tổng lãi:</span>
-            <span className="font-bold text-slate-800">
-              {formatCurrency(Math.max(0, Number(contract.repayment_amount) - Number(contract.disbursed_amount)))}
-            </span>
-          </div>
-          <div className="flex justify-between pb-1.5">
-            <span className="text-slate-500">Trạng thái:</span>
-            <span className={`badge badge-sm font-bold uppercase ${contract.status === "closed" ? "bg-slate-100 text-slate-500" : (contract.is_overdue || contract.status === "overdue") ? "bg-amber-500 text-white" : "bg-emerald-500 text-white"}`}>
-              {contract.status === "closed" ? "Đã đóng" : (contract.is_overdue || contract.status === "overdue") ? "Chậm trả" : "Đang hoạt động"}
-            </span>
-          </div>
-
-          <div className="flex gap-2 justify-end pt-3">
-            <button
-              type="button"
-              onClick={() => setIsPrintModalOpen(true)}
-              className="btn btn-outline border-slate-200 text-slate-600 btn-xs rounded-lg flex items-center gap-1 h-7 text-[10px]"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              In hợp đồng
-            </button>
-            <button
-              type="button"
-              onClick={(e) => handleDeleteContract(e)}
-              className="btn btn-error bg-red-50 hover:bg-red-100 border-none text-red-600 btn-xs rounded-lg flex items-center gap-1 h-7 text-[10px]"
-            >
-              <Trash className="w-3.5 h-3.5" />
-              Xóa HĐ
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-        <div className="flex border-b border-slate-200/80 bg-slate-50/60 p-2 overflow-x-auto">
-          {[
-            { id: "schedule", label: "Lịch đóng tiền", icon: Calendar },
-            { id: "redeem", label: "Đóng HĐ", icon: Lock },
-            { id: "renew", label: "Trả góp HĐ mới", icon: FilePlus },
-            { id: "debt", label: "Nợ", icon: CreditCard, count: contract.debt_history?.length },
-            { id: "docs", label: "Chứng từ", icon: FileImage, count: contract.documents?.length },
-            { id: "ledger", label: "Lịch sử", icon: History, count: contract.transaction_ledgers?.length },
-            { id: "reminders", label: "Hẹn giờ", icon: Bell, count: contract.debt_reminders?.length },
-            { id: "blacklist", label: "Báo xấu", icon: AlertTriangle }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeSubTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveSubTab(tab.id as any)}
-                className={`flex-1 min-w-[110px] py-3 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
-                  isActive
-                    ? "text-blue-600 border-blue-600 font-extrabold"
-                    : "text-slate-500 border-transparent hover:text-slate-700"
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
-                <span>{tab.label}</span>
-                {tab.count !== undefined && <span className="opacity-60 text-[10px]">({tab.count})</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="p-6">
+  const renderTabContent = () => {
+    return (
+      <>
           {activeSubTab === "schedule" && (
             <div className="space-y-4">
               {/* Inline Schedule Header buttons */}
@@ -1439,86 +1322,150 @@ export const InstallmentDetail: React.FC<InstallmentDetailProps> = ({
               </div>
             </form>
           )}
-        </div>
-      </div>
-
-      {/* TIMER APPOINTMENT MODAL */}
-      {isTimerOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 border border-slate-200/80 text-slate-800 rounded-2xl">
-            <h3 className="font-extrabold text-lg text-amber-500 mb-4">Hẹn Ngày Trả / Đóng Lãi</h3>
-            <form onSubmit={handleSetTimer} className="space-y-4">
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Ngày hẹn trả mới *</label>
-                <input
-                  type="date"
-                  value={timerDate}
-                  onChange={(e) => setTimerDate(e.target.value)}
-                  className="input input-bordered w-full bg-slate-50 border-slate-200/80 text-slate-700 rounded-xl"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label text-slate-500 text-sm py-1">Chi tiết hẹn</label>
-                <input
-                  type="text"
-                  placeholder="Khách hứa trả nợ..."
-                  value={timerNotes}
-                  onChange={(e) => setTimerNotes(e.target.value)}
-                  className="input input-bordered w-full bg-slate-50 border-slate-200/80 text-slate-700 rounded-xl"
-                />
-              </div>
-              <div className="modal-action">
-                <button type="button" onClick={() => setIsTimerOpen(false)} className="btn btn-outline border-slate-200 text-slate-600 rounded-xl">
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary bg-amber-500 border-none text-slate-950 font-bold rounded-xl">
-                  Đặt lịch hẹn
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  if (isModal) {
-    return (
-      <div className="modal modal-open">
-        <div className="modal-box max-w-6xl bg-white border border-slate-200 text-slate-800 rounded-2xl relative p-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 btn btn-ghost btn-circle btn-sm"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          
-          {contentJSX}
-          {renderModals()}
-        </div>
-      </div>
+      </>
     );
-  }
+  };
+
+  const actionButtons = [
+    {
+      label: "In hợp đồng",
+      icon: Printer,
+      onClick: () => setIsPrintModalOpen(true),
+    },
+    {
+      label: "Xóa hợp đồng",
+      icon: Trash,
+      onClick: handleDeleteContract,
+      colorClass: "bg-red-50 hover:bg-red-100 text-red-650 border-none",
+    }
+  ];
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl space-y-6">
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          type="button"
-          onClick={() => navigate("/contracts")}
-          className="btn btn-outline border-slate-200 text-slate-600 btn-xs rounded-xl flex items-center gap-1.5 h-8 px-3"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Quay lại danh sách
-        </button>
-        <span className="text-slate-400 font-bold">/</span>
-        <span className="text-slate-600 font-bold text-xs">Chi tiết hợp đồng {contract.contract_code}</span>
-      </div>
-
-      {contentJSX}
-      {renderModals()}
-    </div>
+    <ContractDetailLayout
+      isModal={isModal}
+      header={
+        <ContractHeader
+          title="HĐ Trả Góp"
+          code={contract.contract_code}
+          status={contract.status}
+          statusLabel={contract.status === "closed" ? "Đã đóng" : (contract.is_overdue || contract.status === "overdue") ? "Chậm trả" : "Đang hoạt động"}
+          loanDate={new Date(contract.loan_date).toLocaleDateString("vi-VN")}
+          customerName={contract.customer?.full_name}
+          onRefresh={fetchContractDetails}
+          onClose={onClose}
+          isModal={isModal}
+        />
+      }
+      actionBar={<ContractActionBar actions={actionButtons} />}
+      summaryGrid={
+        <ContractSummaryGrid
+          leftItems={[
+            {
+              label: "Tên khách:",
+              value: (
+                <span className="text-red-500 font-extrabold text-base hover:underline cursor-pointer">
+                  {contract.customer?.full_name}
+                </span>
+              ),
+            },
+            { label: "Trả góp:", value: formatCurrency(contract.repayment_amount) },
+            {
+              label: "Tỷ lệ:",
+              value:
+                contract.repayment_amount && contract.disbursed_amount
+                  ? `${((Number(contract.repayment_amount) / Number(contract.disbursed_amount)) * 10).toFixed(0)}-10`
+                  : "--",
+            },
+            {
+              label: "Thời gian:",
+              value: `${new Date(contract.loan_date).toLocaleDateString("vi-VN")} ➔ ${new Date(
+                new Date(contract.loan_date).setDate(new Date(contract.loan_date).getDate() + contract.loan_duration)
+              ).toLocaleDateString("vi-VN")} (${contract.loan_duration} ngày)`,
+            },
+            { label: "Nợ cũ KH:", value: "0 VNĐ", isRed: true },
+            { label: "Nợ cũ HĐ:", value: formatCurrency(contract.debt_amount), isRed: true },
+          ]}
+          rightItems={[
+            { label: "Số tiền giao khách:", value: formatCurrency(contract.disbursed_amount) },
+            { label: "Tổng tiền phải đóng:", value: formatCurrency(contract.repayment_amount), valueClass: "text-red-500" },
+            {
+              label: "Đã đóng được:",
+              value: formatCurrency(
+                contract.payments
+                  ?.filter((p: any) => p.is_paid)
+                  .reduce((sum: number, p: any) => sum + Number(p.actual_paid), 0) || 0
+              ),
+              valueClass: "text-emerald-600",
+            },
+            {
+              label: "Còn lại phải đóng:",
+              value: formatCurrency(
+                Number(contract.repayment_amount) -
+                  (contract.payments
+                    ?.filter((p: any) => p.is_paid)
+                    .reduce((sum: number, p: any) => sum + Number(p.actual_paid), 0) || 0)
+              ),
+              valueClass: "text-red-500",
+            },
+            {
+              label: "Tổng lãi:",
+              value: formatCurrency(
+                Math.max(0, Number(contract.repayment_amount) - Number(contract.disbursed_amount))
+              ),
+            },
+            {
+              label: "Trạng thái:",
+              value: (
+                <span
+                  className={`badge badge-sm font-bold uppercase ${
+                    contract.status === "closed"
+                      ? "bg-slate-100 text-slate-500"
+                      : contract.is_overdue || contract.status === "overdue"
+                      ? "bg-amber-500 text-white"
+                      : "bg-emerald-500 text-white"
+                  }`}
+                >
+                  {contract.status === "closed"
+                    ? "Đã đóng"
+                    : contract.is_overdue || contract.status === "overdue"
+                    ? "Chậm trả"
+                    : "Đang hoạt động"}
+                </span>
+              ),
+            },
+          ]}
+        />
+      }
+      tabs={
+        <ContractTabs
+          tabs={[
+            { id: "schedule", label: "Lịch đóng tiền", icon: Calendar },
+            { id: "redeem", label: "Đóng HĐ", icon: Lock },
+            { id: "renew", label: "Trả góp HĐ mới", icon: FilePlus },
+            { id: "debt", label: `Nợ (${contract.debt_history?.length || 0})`, icon: CreditCard },
+            { id: "docs", label: `Chứng từ (${contract.documents?.length || 0})`, icon: FileImage },
+            { id: "ledger", label: `Lịch sử (${contract.transaction_ledgers?.length || 0})`, icon: History },
+            { id: "reminders", label: `Hẹn giờ (${contract.debt_reminders?.length || 0})`, icon: Bell },
+            { id: "blacklist", label: "Báo xấu", icon: AlertTriangle },
+          ]}
+          activeTab={activeSubTab}
+          setActiveTab={(id) => setActiveSubTab(id as any)}
+        />
+      }
+      tabContent={
+        <>
+          {renderTabContent()}
+          {renderModals()}
+        </>
+      }
+      auditInfo={
+        <ContractAuditInfo
+          createdBy={contract.created_by?.username}
+          createdAt={contract.created_at}
+          updatedBy={contract.updated_by?.username}
+          updatedAt={contract.updated_at}
+        />
+      }
+    />
   );
 };

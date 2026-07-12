@@ -94,6 +94,9 @@ export const Contracts: React.FC = () => {
   const [newCustName, setNewCustName] = useState("");
   const [newCustPhone, setNewCustPhone] = useState("");
   const [newCustCard, setNewCustCard] = useState("");
+  const [newCustCardDate, setNewCustCardDate] = useState("");
+  const [newCustCardPlace, setNewCustCardPlace] = useState("");
+  const [showCardDetails, setShowCardDetails] = useState(false);
   const [newCustAddress, setNewCustAddress] = useState("");
 
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
@@ -365,6 +368,9 @@ export const Contracts: React.FC = () => {
     setNewCustName("");
     setNewCustPhone("");
     setNewCustCard("");
+    setNewCustCardDate("");
+    setNewCustCardPlace("");
+    setShowCardDetails(false);
     setNewCustAddress("");
     setCustomerSearchQuery("");
 
@@ -632,6 +638,8 @@ export const Contracts: React.FC = () => {
           full_name: newCustName,
           phone: newCustPhone || undefined,
           identity_card_number: newCustCard || undefined,
+          identity_card_date: newCustCardDate || undefined,
+          identity_card_place: newCustCardPlace || undefined,
           address: newCustAddress || undefined,
         });
         finalCustomerId = custRes.data.id;
@@ -696,6 +704,8 @@ export const Contracts: React.FC = () => {
           full_name: newCustName,
           phone: newCustPhone || undefined,
           identity_card_number: newCustCard || undefined,
+          identity_card_date: newCustCardDate || undefined,
+          identity_card_place: newCustCardPlace || undefined,
           address: newCustAddress || undefined,
         });
         finalCustomerId = custRes.data.id;
@@ -755,6 +765,8 @@ export const Contracts: React.FC = () => {
         const custRes = await axios.post("/api/customers", {
           full_name: newCustName,
           identity_card_number: newCustCard || undefined,
+          identity_card_date: newCustCardDate || undefined,
+          identity_card_place: newCustCardPlace || undefined,
           phone: newCustPhone || undefined,
           address: newCustAddress || undefined,
         });
@@ -1889,6 +1901,7 @@ export const Contracts: React.FC = () => {
                         placeholder="CCCD/CMND khách hàng..."
                         value={newCustCard}
                         onChange={(e) => setNewCustCard(e.target.value)}
+                        onFocus={() => setShowCardDetails(true)}
                         readOnly={customerType === "existing"}
                         disabled={customerType === "existing"}
                         className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
@@ -1897,6 +1910,36 @@ export const Contracts: React.FC = () => {
                       />
                     </div>
                   </div>
+
+                  {showCardDetails && customerType === "new" && (
+                    <>
+                      {/* Ngày cấp */}
+                      <div className="flex items-center">
+                        <label className={labelClass}>Ngày cấp</label>
+                        <div className="grow">
+                          <input
+                            type="date"
+                            value={newCustCardDate}
+                            onChange={(e) => setNewCustCardDate(e.target.value)}
+                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+                      {/* Nơi cấp */}
+                      <div className="flex items-center">
+                        <label className={labelClass}>Nơi cấp</label>
+                        <div className="grow">
+                          <input
+                            type="text"
+                            placeholder="Nơi cấp..."
+                            value={newCustCardPlace}
+                            onChange={(e) => setNewCustCardPlace(e.target.value)}
+                            className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Row 2, Col 2: Số điện thoại */}
                   <div className="flex items-center">
@@ -2457,10 +2500,35 @@ export const Contracts: React.FC = () => {
                         placeholder=""
                         value={newCustCard}
                         onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
+                        onFocus={() => setShowCardDetails(true)}
                         disabled={customerType === "existing"}
                         className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
                       />
                     </div>
+
+                    {showCardDetails && customerType === "new" && (
+                      <>
+                        <div className="flex items-center">
+                          <label className={labelClass}>Ngày cấp</label>
+                          <input
+                            type="date"
+                            value={newCustCardDate}
+                            onChange={(e) => setNewCustCardDate(e.target.value)}
+                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className={labelClass}>Nơi cấp</label>
+                          <input
+                            type="text"
+                            placeholder="Nơi cấp..."
+                            value={newCustCardPlace}
+                            onChange={(e) => setNewCustCardPlace(e.target.value)}
+                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
+                          />
+                        </div>
+                      </>
+                    )}
                     <div className="flex items-center">
                       <label className={labelClass}>Số điện thoại</label>
                       <input
@@ -2861,10 +2929,35 @@ export const Contracts: React.FC = () => {
                         placeholder="CCCD/CMND..."
                         value={newCustCard}
                         onChange={(e) => customerType === "new" && setNewCustCard(e.target.value)}
+                        onFocus={() => setShowCardDetails(true)}
                         disabled={customerType === "existing"}
                         className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 text-xs h-8"
                       />
                     </div>
+
+                    {showCardDetails && customerType === "new" && (
+                      <>
+                        <div className="flex items-center">
+                          <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Ngày cấp</label>
+                          <input
+                            type="date"
+                            value={newCustCardDate}
+                            onChange={(e) => setNewCustCardDate(e.target.value)}
+                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Nơi cấp</label>
+                          <input
+                            type="text"
+                            placeholder="Nơi cấp..."
+                            value={newCustCardPlace}
+                            onChange={(e) => setNewCustCardPlace(e.target.value)}
+                            className="input input-bordered input-sm flex-1 bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none text-xs h-8"
+                          />
+                        </div>
+                      </>
+                    )}
                     <div className="flex items-center">
                       <label className="w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs">Số điện thoại</label>
                       <input

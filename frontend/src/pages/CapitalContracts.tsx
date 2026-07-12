@@ -18,6 +18,13 @@ import { useConfirm } from "../context/ConfirmContext";
 import { MoneyInput } from "../components/shared/MoneyInput";
 import { CustomerLookup } from "../components/shared/CustomerLookup";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
+import {
+  ContractDetailLayout,
+  ContractHeader,
+  ContractSummaryGrid,
+  ContractTabs,
+  ContractAuditInfo
+} from "../components/contracts";
 
 interface InterestType {
   id: string;
@@ -53,6 +60,7 @@ interface CapitalContract {
   status: string;
   notes?: string;
   created_at: string;
+  updated_at?: string;
   transactions?: CapitalTransaction[];
 }
 
@@ -929,112 +937,13 @@ export const CapitalContracts: React.FC = () => {
       />
 
       {/* LEDGER DETAILS MODAL (Bảng chi tiết hợp đồng nguồn vốn - Images 4 & 5) */}
-      {isDetailLedgerOpen && selectedContractDetail && (
-        <div className="modal modal-open">
-          <div className="modal-box bg-white border border-slate-200 text-slate-800 rounded-3xl max-w-4xl shadow-2xl p-6 relative">
-            <button 
-              onClick={() => setIsDetailLedgerOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {renderDetailLedgerModal()}
+    </div>
+  );
 
-            {/* Modal Title */}
-            <h3 className="font-semibold text-slate-850 border-b pb-3 text-sm flex items-center gap-1.5">
-              <span className="p-1 bg-slate-100 rounded text-slate-650">
-                <BookOpen className="w-4 h-4" />
-              </span>
-              <span>Bảng chi tiết hợp đồng nguồn vốn</span>
-            </h3>
-
-            {/* Header info layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4 pb-4 border-b border-slate-100 text-xs">
-              
-              {/* Left Column */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-450 font-medium">Tên khách</span>
-                  <span className="font-bold text-red-500 text-right">{selectedContractDetail.investor_name}</span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-slate-50">
-                  <span className="text-slate-450 font-medium">Tiền đầu tư</span>
-                  <span className="font-extrabold text-slate-850 text-right">{formatNumber(selectedContractDetail.amount)} VNĐ</span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-slate-50">
-                  <span className="text-slate-450 font-medium">Lãi suất</span>
-                  <span className="text-slate-700 font-semibold text-right">
-                    {selectedContractDetail.interest_type ? selectedContractDetail.interest_type.name : "Không tính lãi"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-slate-50">
-                  <span className="text-slate-450 font-medium">Vay từ ngày</span>
-                  <span className="text-slate-600 font-medium text-right">
-                    {formatDate(selectedContractDetail.investment_date)} &rarr; {getEndDate(selectedContractDetail.investment_date)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-450 font-medium">Tổng lãi</span>
-                  <span className="font-bold text-slate-800 text-right">0 VNĐ</span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-slate-50">
-                  <span className="text-slate-450 font-medium">Đã thanh toán</span>
-                  <span className="font-bold text-slate-800 text-right">0 VNĐ</span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-slate-50">
-                  <span className="text-slate-450 font-medium">
-                    Nợ cũ KH: <span className="text-red-500 font-bold ml-1">0 VNĐ</span>
-                  </span>
-                  <span className="text-slate-450 font-medium">
-                    Nợ cũ HĐ: <span className="text-red-500 font-bold ml-1">0 VNĐ</span>
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-slate-50 items-center">
-                  <span className="text-slate-450 font-medium">Trạng thái</span>
-                  <span className="badge font-semibold badge-xs py-2.5 px-3 border-none bg-blue-500 text-white rounded-lg uppercase text-[9px] text-right">
-                    {selectedContractDetail.status === "active" ? "Đang đầu tư" : selectedContractDetail.status === "completed" ? "Đã trả xong" : "Đã hủy"}
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Navigation Tabs (Images 4 & 5) */}
-            <div className="flex flex-wrap gap-1.5 border-b border-slate-200 mt-6 pb-px">
-              {[
-                { id: "interest", label: "Trả tiền lãi", icon: <Coins className="w-3.5 h-3.5" /> },
-                { id: "withdraw_principal", label: "Rút bớt gốc", icon: <ChevronsUpDown className="w-3.5 h-3.5" /> }, 
-                { id: "add_principal", label: "Vay thêm", icon: <Plus className="w-3.5 h-3.5" /> },
-                { id: "extend", label: "Gia hạn", icon: <BookOpen className="w-3.5 h-3.5" /> },
-                { id: "withdraw_all", label: "Rút vốn", icon: <X className="w-3.5 h-3.5" /> },
-                { id: "history", label: "Lịch sử", icon: <BookOpen className="w-3.5 h-3.5" /> }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveDetailTab(t.id);
-                    setTxAmount(0);
-                    setTxNotes("");
-                  }}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border-b-2 -mb-px transition-all ${
-                    activeDetailTab === t.id
-                      ? "border-blue-600 text-blue-600 font-bold"
-                      : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                  }`}
-                >
-                  {t.icon}
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Tab content area */}
-            <div className="py-6 min-h-[260px]">
+  function renderDetailLedgerTabContent() {
+    return (
+      <>
               
               {/* Interest payment view */}
               {activeDetailTab === "interest" && (
@@ -1465,23 +1374,101 @@ export const CapitalContracts: React.FC = () => {
                 </div>
               )}
 
-            </div>
+      </>
+    );
+  };
 
-            {/* Modal Actions Footer */}
-            <div className="modal-action border-t pt-4 mt-2">
-              <button
-                type="button"
-                onClick={() => setIsDetailLedgerOpen(false)}
-                className="btn btn-outline border-slate-200 text-slate-550 btn-sm rounded-lg text-xs"
-              >
-                Đóng
-              </button>
-            </div>
+  function renderDetailLedgerModal() {
+    if (!isDetailLedgerOpen || !selectedContractDetail) return null;
 
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+    return (
+      <ContractDetailLayout
+        isModal={true}
+        header={
+          <ContractHeader
+            title="HĐ Nguồn Vốn"
+            code={""}
+            status={selectedContractDetail.status}
+            statusLabel={
+              selectedContractDetail.status === "active"
+                ? "Đang hoạt động"
+                : selectedContractDetail.status === "completed"
+                ? "Đã trả xong"
+                : "Đã hủy"
+            }
+            loanDate={formatDate(selectedContractDetail.investment_date)}
+            customerName={selectedContractDetail.investor_name}
+            onClose={() => setIsDetailLedgerOpen(false)}
+            isModal={true}
+          />
+        }
+        summaryGrid={
+          <ContractSummaryGrid
+            leftItems={[
+              {
+                label: "Tên khách:",
+                value: <span className="font-bold text-red-500">{selectedContractDetail.investor_name}</span>,
+              },
+              { label: "Tiền đầu tư:", value: `${formatNumber(selectedContractDetail.amount)} VNĐ` },
+              {
+                label: "Lãi suất:",
+                value: selectedContractDetail.interest_type
+                  ? selectedContractDetail.interest_type.name
+                  : "Không tính lãi",
+              },
+              {
+                label: "Vay từ ngày:",
+                value: `${formatDate(selectedContractDetail.investment_date)} ➔ ${getEndDate(
+                  selectedContractDetail.investment_date
+                )}`,
+              },
+            ]}
+            rightItems={[
+              { label: "Tổng lãi:", value: "0 VNĐ" },
+              { label: "Đã thanh toán:", value: "0 VNĐ" },
+              { label: "Nợ cũ KH:", value: "0 VNĐ", isRed: true },
+              { label: "Nợ cũ HĐ:", value: "0 VNĐ", isRed: true },
+              {
+                label: "Trạng thái:",
+                value: (
+                  <span className="badge font-semibold badge-xs py-2.5 px-3 border-none bg-blue-500 text-white rounded-lg uppercase text-[9px]">
+                    {selectedContractDetail.status === "active"
+                      ? "Đang đầu tư"
+                      : selectedContractDetail.status === "completed"
+                      ? "Đã trả xong"
+                      : "Đã hủy"}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        }
+        tabs={
+          <ContractTabs
+            tabs={[
+              { id: "interest", label: "Trả tiền lãi", icon: Coins },
+              { id: "withdraw_principal", label: "Rút bớt gốc", icon: ChevronsUpDown },
+              { id: "add_principal", label: "Vay thêm", icon: Plus },
+              { id: "extend", label: "Gia hạn", icon: BookOpen },
+              { id: "withdraw_all", label: "Rút vốn", icon: X },
+              { id: "history", label: "Lịch sử", icon: BookOpen },
+            ]}
+            activeTab={activeDetailTab}
+            setActiveTab={(id) => {
+              setActiveDetailTab(id);
+              setTxAmount(0);
+              setTxNotes("");
+            }}
+          />
+        }
+        tabContent={renderDetailLedgerTabContent()}
+        auditInfo={
+          <ContractAuditInfo
+            createdAt={selectedContractDetail.created_at}
+            updatedAt={selectedContractDetail.updated_at}
+          />
+        }
+      />
+    );
+  }
 };

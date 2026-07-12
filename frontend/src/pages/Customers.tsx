@@ -85,6 +85,7 @@ export const Customers: React.FC = () => {
   const [identityCardNumber, setIdentityCardNumber] = useState("");
   const [identityCardDate, setIdentityCardDate] = useState("");
   const [identityCardPlace, setIdentityCardPlace] = useState("");
+  const [showCardDetails, setShowCardDetails] = useState(false);
   const [status, setStatus] = useState("active");
 
   const [spouseName, setSpouseName] = useState("");
@@ -162,6 +163,7 @@ export const Customers: React.FC = () => {
     setIdentityCardNumber("");
     setIdentityCardDate("");
     setIdentityCardPlace("");
+    setShowCardDetails(false);
     setStatus("active");
 
     setSpouseName("");
@@ -738,36 +740,41 @@ export const Customers: React.FC = () => {
                     placeholder="Nhập CCCD/Hộ chiếu"
                     value={identityCardNumber}
                     onChange={(e) => setIdentityCardNumber(e.target.value)}
+                    onFocus={() => setShowCardDetails(true)}
                     className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
                   />
                 </div>
 
-                {/* Identity Card Issue Date */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
-                  Ngày cấp
-                </div>
-                <div className="col-span-9">
-                  <input
-                    type="date"
-                    value={identityCardDate}
-                    onChange={(e) => setIdentityCardDate(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg h-[32px]"
-                  />
-                </div>
+                {(showCardDetails || !!identityCardNumber) && (
+                  <>
+                    {/* Identity Card Issue Date */}
+                    <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                      Ngày cấp
+                    </div>
+                    <div className="col-span-9">
+                      <input
+                        type="date"
+                        value={identityCardDate}
+                        onChange={(e) => setIdentityCardDate(e.target.value)}
+                        className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg h-[32px]"
+                      />
+                    </div>
 
-                {/* Identity Card Issue Place */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
-                  Nơi cấp
-                </div>
-                <div className="col-span-9">
-                  <input
-                    type="text"
-                    placeholder="Nhập nơi cấp"
-                    value={identityCardPlace}
-                    onChange={(e) => setIdentityCardPlace(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
-                  />
-                </div>
+                    {/* Identity Card Issue Place */}
+                    <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                      Nơi cấp
+                    </div>
+                    <div className="col-span-9">
+                      <input
+                        type="text"
+                        placeholder="Nhập nơi cấp"
+                        value={identityCardPlace}
+                        onChange={(e) => setIdentityCardPlace(e.target.value)}
+                        className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Status radio list */}
                 <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
@@ -1055,36 +1062,41 @@ export const Customers: React.FC = () => {
                     placeholder="Nhập CCCD/Hộ chiếu"
                     value={identityCardNumber}
                     onChange={(e) => setIdentityCardNumber(e.target.value)}
+                    onFocus={() => setShowCardDetails(true)}
                     className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
                   />
                 </div>
 
-                {/* Identity Card Issue Date */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
-                  Ngày cấp
-                </div>
-                <div className="col-span-9">
-                  <input
-                    type="date"
-                    value={identityCardDate}
-                    onChange={(e) => setIdentityCardDate(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg h-[32px]"
-                  />
-                </div>
+                {(showCardDetails || !!identityCardNumber) && (
+                  <>
+                    {/* Identity Card Issue Date */}
+                    <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                      Ngày cấp
+                    </div>
+                    <div className="col-span-9">
+                      <input
+                        type="date"
+                        value={identityCardDate}
+                        onChange={(e) => setIdentityCardDate(e.target.value)}
+                        className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg h-[32px]"
+                      />
+                    </div>
 
-                {/* Identity Card Issue Place */}
-                <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
-                  Nơi cấp
-                </div>
-                <div className="col-span-9">
-                  <input
-                    type="text"
-                    placeholder="Nhập nơi cấp"
-                    value={identityCardPlace}
-                    onChange={(e) => setIdentityCardPlace(e.target.value)}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
-                  />
-                </div>
+                    {/* Identity Card Issue Place */}
+                    <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
+                      Nơi cấp
+                    </div>
+                    <div className="col-span-9">
+                      <input
+                        type="text"
+                        placeholder="Nhập nơi cấp"
+                        value={identityCardPlace}
+                        onChange={(e) => setIdentityCardPlace(e.target.value)}
+                        className="input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-850 text-xs rounded-lg"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Status radio list */}
                 <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
