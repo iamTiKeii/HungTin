@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { 
-  ShieldCheck, 
   Save, 
   ChevronDown, 
-  ChevronRight,
-  X
+  ChevronRight
 } from "lucide-react";
+import { toast } from "../lib/toast";
 
 interface Employee {
   id: string;

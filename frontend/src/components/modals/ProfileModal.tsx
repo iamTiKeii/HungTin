@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { X, User, Phone, Mail, MapPin, Calendar, Heart } from "lucide-react";
+import { toast } from "../../lib/toast";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -18,8 +19,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const [address, setAddress] = useState("");
   
   const [loading, setLoading] = useState(false);
-  const setError = (msg: string) => { if (msg) toast.error(msg); };
-  const setSuccess = (msg: string) => { if (msg) toast.success(msg); };
 
   useEffect(() => {
     if (user && isOpen) {
@@ -36,8 +35,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
         setBirthday("");
       }
       setAddress((user as any).address || "");
-      setError("");
-      setSuccess("");
     }
   }, [user, isOpen]);
 
@@ -46,8 +43,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     try {
       await axios.put("/api/profile", {
@@ -60,12 +55,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       });
       
       await fetchProfile();
-      setSuccess("Cập nhật thông tin cá nhân thành công!");
+      toast.success("Cập nhật thông tin cá nhân thành công!");
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Có lỗi xảy ra khi cập nhật thông tin.");
+      toast.error(err.response?.data?.error || "Có lỗi xảy ra khi cập nhật thông tin.");
     } finally {
       setLoading(false);
     }
@@ -87,17 +82,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <span>Thông Tin Cá Nhân</span>
         </h3>
 
-        {error && (
-          <div className="alert alert-error bg-red-50 text-red-700 text-sm py-2.5 px-4 mb-4 rounded-xl border border-red-100">
-            <span>{error}</span>
-          </div>
-        )}
 
-        {success && (
-          <div className="alert alert-success bg-emerald-50 text-emerald-700 text-sm py-2.5 px-4 mb-4 rounded-xl border border-emerald-100">
-            <span>{success}</span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username (Read Only) */}

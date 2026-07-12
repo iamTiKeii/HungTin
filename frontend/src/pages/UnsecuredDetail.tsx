@@ -83,19 +83,7 @@ export const UnsecuredDetail: React.FC = () => {
     fetchContractDetails();
   }, [id]);
 
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
 
   // Actions
   const handlePayInterest = async (e: React.FormEvent) => {

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { 
   Plus, 
-  Save, 
   X,
   Edit2,
   Trash2,
@@ -14,6 +13,8 @@ import {
   Coins
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "../lib/toast";
+import { MoneyInput } from "../components/shared/MoneyInput";
 
 interface InterestType {
   id: string;
@@ -97,7 +98,7 @@ export const CapitalContracts: React.FC = () => {
   const [selectedContractDetail, setSelectedContractDetail] = useState<CapitalContract | null>(null);
   const [activeDetailTab, setActiveDetailTab] = useState<string>("interest");
   const [txDate, setTxDate] = useState("");
-  const [txAmount, setTxAmount] = useState("0");
+  const [txAmount, setTxAmount] = useState<number>(0);
   const [txNotes, setTxNotes] = useState("");
   const [txExtendToDate, setTxExtendToDate] = useState("");
 
@@ -114,7 +115,7 @@ export const CapitalContracts: React.FC = () => {
   const [investorPhone, setInvestorPhone] = useState("");
   const [investorAddress, setInvestorAddress] = useState("");
   
-  const [amount, setAmount] = useState("0");
+  const [amount, setAmount] = useState<number>(0);
   const [investmentDate, setInvestmentDate] = useState("");
   const [interestTypeId, setInterestTypeId] = useState("");
   const [isUpfront, setIsUpfront] = useState(false);
@@ -191,7 +192,7 @@ export const CapitalContracts: React.FC = () => {
     setInvestorIdCard("");
     setInvestorPhone("");
     setInvestorAddress("");
-    setAmount("0");
+    setAmount(0);
     // set investment date to today's date formatted as YYYY-MM-DD
     const today = new Date().toISOString().split("T")[0];
     setInvestmentDate(today);
@@ -516,19 +517,7 @@ export const CapitalContracts: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="alert alert-error text-xs p-3 rounded-xl border border-red-200 bg-red-50 text-red-800 flex items-start gap-2 shadow-sm">
-          <X className="w-4 h-4 shrink-0 mt-0.5 text-red-650" />
-          <span>{error}</span>
-        </div>
-      )}
 
-      {success && (
-        <div className="alert alert-success text-xs p-3 rounded-xl border border-green-200 bg-green-50 text-green-800 flex items-start gap-2 shadow-sm">
-          <Save className="w-4 h-4 shrink-0 mt-0.5 text-green-650" />
-          <span>{success}</span>
-        </div>
-      )}
 
       {/* Contracts Main Table List */}
       <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">

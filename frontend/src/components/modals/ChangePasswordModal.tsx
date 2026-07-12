@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { X, KeyRound, Lock, Eye, EyeOff } from "lucide-react";
+import { toast } from "../../lib/toast";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -12,8 +13,6 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const setError = (msg: string) => { if (msg) toast.error(msg); };
-  const setSuccess = (msg: string) => { if (msg) toast.success(msg); };
   
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -23,16 +22,14 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
 
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu mới và mật khẩu xác nhận không khớp.");
+      toast.warning("Mật khẩu mới và mật khẩu xác nhận không khớp.");
       return;
     }
 
     if (newPassword.length < 6) {
-      setError("Mật khẩu mới phải từ 6 ký tự trở lên.");
+      toast.warning("Mật khẩu mới phải từ 6 ký tự trở lên.");
       return;
     }
 
@@ -44,7 +41,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
         newPassword,
       });
 
-      setSuccess("Thay đổi mật khẩu thành công!");
+      toast.success("Thay đổi mật khẩu thành công!");
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -53,7 +50,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
         onClose();
       }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Mật khẩu hiện tại không chính xác.");
+      toast.error(err.response?.data?.error || "Mật khẩu hiện tại không chính xác.");
     } finally {
       setLoading(false);
     }
@@ -75,17 +72,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
           <span>Đổi Mật Khẩu</span>
         </h3>
 
-        {error && (
-          <div className="alert alert-error bg-red-50 text-red-700 text-sm py-2.5 px-4 mb-4 rounded-xl border border-red-100">
-            <span>{error}</span>
-          </div>
-        )}
 
-        {success && (
-          <div className="alert alert-success bg-emerald-50 text-emerald-700 text-sm py-2.5 px-4 mb-4 rounded-xl border border-emerald-100">
-            <span>{success}</span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Old Password */}

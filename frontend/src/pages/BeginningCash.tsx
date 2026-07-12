@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { CheckCircle, AlertCircle, Wrench, X, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wrench, X, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
 import { useAuth } from "../context/AuthContext";
@@ -200,23 +200,7 @@ export const BeginningCash: React.FC = () => {
         </h2>
       </div>
 
-      {/* Toast notifications in top right corner */}
-      {(error || success) && (
-        <div className="toast toast-top toast-end z-[9999] mt-16 mr-4 space-y-2">
-          {success && (
-            <div className="alert alert-success bg-[#0fbc98] text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
-              <CheckCircle className="w-4 h-4 text-white shrink-0" />
-              <span>{success}</span>
-            </div>
-          )}
-          {error && (
-            <div className="alert alert-error bg-red-500 text-white shadow-lg text-xs rounded-xl py-3 border-none flex items-center gap-2.5 min-w-[280px]">
-              <AlertCircle className="w-4 h-4 text-white shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* Two cards side-by-side layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

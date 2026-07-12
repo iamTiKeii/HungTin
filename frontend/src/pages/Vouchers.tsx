@@ -309,7 +309,7 @@ export const Vouchers: React.FC = () => {
                         {/* Cancel / Delete */}
                         <button
                           type="button"
-                          onClick={() => handleDelete(v.id)}
+                          onClick={() => handleDelete(v.id, v.voucher_code)}
                           className="btn btn-xs btn-ghost border border-red-100 bg-red-50/50 hover:bg-red-100/80 text-red-600 rounded p-1"
                           title="Hủy phiếu"
                         >
@@ -354,7 +354,7 @@ export const Vouchers: React.FC = () => {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-12 gap-y-4 items-center">
                 {/* Recipient */}
                 <div className="col-span-3 text-right pr-4 text-xs font-semibold text-slate-600">
@@ -411,8 +411,8 @@ export const Vouchers: React.FC = () => {
                 <div className="col-span-9">
                   <textarea
                     placeholder="Nhập lý do thu / chi"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
                     className="textarea textarea-bordered w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-24"
                     required
                   />
@@ -420,11 +420,16 @@ export const Vouchers: React.FC = () => {
               </div>
 
               {/* Form Buttons */}
-              <div className="flex gap-3 justify-start pt-4 border-t border-slate-100 pl-[25%]">
-                {/* Submit 1: Save & Continue */}
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(false)}
+                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 rounded-lg px-6"
+                >
+                  Hủy bỏ
+                </button>
                 <button
                   type="submit"
-                  onClick={() => setExitAfterSubmit(false)}
                   className={`btn btn-sm text-xs font-bold gap-1 rounded-lg px-6 ${
                     isExpensePage
                       ? "btn-error bg-red-600 hover:bg-red-700 text-white border-none"
@@ -432,19 +437,6 @@ export const Vouchers: React.FC = () => {
                   }`}
                 >
                   {isExpensePage ? "Chi tiền" : "Thu tiền"}
-                </button>
-
-                {/* Submit 2: Save & Exit */}
-                <button
-                  type="submit"
-                  onClick={() => setExitAfterSubmit(true)}
-                  className={`btn btn-outline btn-sm text-xs font-bold gap-1 rounded-lg px-6 ${
-                    isExpensePage
-                      ? "border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-700"
-                      : "border-[#0fbc98] text-[#0fbc98] hover:bg-emerald-50 hover:text-[#0da686] hover:border-[#0da686]"
-                  }`}
-                >
-                  {isExpensePage ? "Chi tiền & Thoát" : "Thu tiền & Thoát"}
                 </button>
               </div>
             </form>

@@ -491,8 +491,6 @@ export const Contracts: React.FC = () => {
   const handleCreatePawn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setError("");
-      
       let finalCustomerId = pCustomerId;
       if (customerType === "new") {
         if (!newCustName) {
@@ -1891,24 +1889,21 @@ export const Contracts: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label text-slate-600 font-semibold py-1">Tổng tiền phải trả góp (Gốc + Lãi) *</label>
-                  <input
-                <MoneyInput
-                  value={iRepaymentAmount}
-                  onChange={(val) => setIRepaymentAmount(String(val))}
-                  placeholder="12000000"
-                  required
-                  className="bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="label text-slate-600 font-semibold py-1">Tiền thực giao cho khách vay *</label>
-                <MoneyInput
-                  value={iDisbursedAmount}
-                  onChange={(val) => setIDisbursedAmount(String(val))}
-                  placeholder="10000000"
-                  required
-                  className="bg-white border-slate-200 text-slate-800 rounded-xl input-sm focus:border-amber-500"
-                />
+                  <MoneyInput
+                    value={Number(iRepaymentAmount) || 0}
+                    onChange={(val) => setIRepaymentAmount(String(val))}
+                    placeholder="12000000"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label text-slate-600 font-semibold py-1">Tiền thực giao cho khách vay *</label>
+                  <MoneyInput
+                    value={Number(iDisbursedAmount) || 0}
+                    onChange={(val) => setIDisbursedAmount(String(val))}
+                    placeholder="10000000"
+                    required
+                  />
                 </div>
               </div>
 

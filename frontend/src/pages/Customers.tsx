@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, Search, Edit3, X, Upload, List, AlertOctagon } from "lucide-react";
+import { Plus, Search, Edit3, X, Upload, List, AlertOctagon, CheckCircle } from "lucide-react";
 import { toast } from "../lib/toast";
 
 interface Customer {

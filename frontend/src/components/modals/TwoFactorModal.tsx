@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { X, ShieldAlert, ShieldCheck, QrCode, Clipboard } from "lucide-react";
+import { toast } from "../../lib/toast";
 
 interface TwoFactorModalProps {
   isOpen: boolean;
@@ -15,10 +16,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [secret, setSecret] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  
   const [loading, setLoading] = useState(false);
-  const setError = (msg: string) => { if (msg) toast.error(msg); };
-  const setSuccess = (msg: string) => { if (msg) toast.success(msg); };
   const [copied, setCopied] = useState(false);
 
   const checkStatus = () => {
@@ -30,8 +28,6 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
   useEffect(() => {
     if (isOpen) {
       checkStatus();
-      setError("");
-      setSuccess("");
       setOtpCode("");
       setQrCodeUrl("");
       setSecret("");
@@ -47,13 +43,12 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
 
   const loadSetup = async () => {
     setLoading(true);
-    setError("");
     try {
       const res = await axios.post("/api/profile/2fa/setup");
       setQrCodeUrl(res.data.qrCodeUrl);
       setSecret(res.data.secret);
     } catch (err: any) {
-      setError("Không thể tải mã QR thiết lập 2FA.");
+      toast.error("Không thể tải mã QR thiết lập 2FA.");
     } finally {
       setLoading(false);
     }
@@ -65,18 +60,16 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!otpCode) return;
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     try {
       await axios.post("/api/profile/2fa/verify", { code: otpCode });
-      setSuccess("Bật bảo mật 2 lớp thành công!");
+      toast.success("Bật bảo mật 2 lớp thành công!");
       await fetchProfile();
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Mã OTP không hợp lệ, vui lòng thử lại.");
+      toast.error(err.response?.data?.error || "Mã OTP không hợp lệ, vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -87,17 +80,15 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
       return;
     }
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     try {
       await axios.delete("/api/profile/2fa");
-      setSuccess("Đã tắt bảo mật 2 lớp thành công.");
+      toast.success("Đã tắt bảo mật 2 lớp thành công.");
       await fetchProfile();
       setIsEnabled(false);
       loadSetup();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tắt bảo mật 2 lớp.");
+      toast.error(err.response?.data?.error || "Không thể tắt bảo mật 2 lớp.");
     } finally {
       setLoading(false);
     }
@@ -125,17 +116,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
           <span>Bảo Mật 2 Lớp (2FA)</span>
         </h3>
 
-        {error && (
-          <div className="alert alert-error bg-red-50 text-red-700 text-sm py-2.5 px-4 mb-4 rounded-xl border border-red-100">
-            <span>{error}</span>
-          </div>
-        )}
 
-        {success && (
-          <div className="alert alert-success bg-emerald-50 text-emerald-700 text-sm py-2.5 px-4 mb-4 rounded-xl border border-emerald-100">
-            <span>{success}</span>
-          </div>
-        )}
 
         {isEnabled ? (
           /* Active State */

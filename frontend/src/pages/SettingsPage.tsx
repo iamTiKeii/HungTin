@@ -8,10 +8,9 @@ import {
   Save, 
   Upload, 
   Image as ImageIcon,
-  CheckCircle, 
-  AlertCircle,
   HelpCircle
 } from "lucide-react";
+import { toast } from "../lib/toast";
 
 const BANK_LIST = [
   "Vietcombank (Ngoại thương Việt Nam)",

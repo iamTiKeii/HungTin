@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
-import { useToastStore, ToastItem, toast } from '../../lib/toast';
+import { useToastStore, toast } from '../../lib/toast';
+import type { ToastItem } from '../../lib/toast';
 
 // ─── Toast Icon & Color Map ──────────────────────────────────────
 const TOAST_CONFIG: Record<string, {

@@ -17,10 +17,7 @@ import {
   History,
   Bell,
   Printer,
-  Save,
-  CheckCircle,
-  AlertCircle,
-  FileSpreadsheet
+  Save
 } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";

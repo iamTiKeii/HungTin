@@ -10,7 +10,8 @@ import {
   EyeOff, 
   ChevronsUpDown, 
   Mail, 
-  X 
+  X,
+  ShieldCheck
 } from "lucide-react";
 import { toast } from "../lib/toast";
 
