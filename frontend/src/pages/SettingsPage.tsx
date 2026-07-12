@@ -253,7 +253,7 @@ export const SettingsPage: React.FC = () => {
               <div className="md:col-span-1 flex flex-col items-center justify-center border border-slate-200 border-dashed rounded-2xl p-4 bg-slate-50/50">
                 <label className="label text-slate-500 text-xs font-bold mb-2">Ảnh Logo Hệ thống</label>
                 <div className="w-32 h-32 border bg-white rounded-2xl flex items-center justify-center overflow-hidden relative shadow-inner group">
-                  {systemLogo ? (
+                  {systemLogo && !systemLogo.startsWith("blob:") ? (
                     <img src={systemLogo} alt="System Logo" className="object-contain w-full h-full p-2" />
                   ) : (
                     <ImageIcon className="w-10 h-10 text-slate-600" />
@@ -359,7 +359,7 @@ export const SettingsPage: React.FC = () => {
                 {/* Avatar uploader */}
                 <div className="md:col-span-1 flex flex-col items-center justify-center border border-slate-200 border-dashed rounded-2xl p-4 bg-slate-50/50">
                   <div className="w-24 h-24 rounded-full border bg-white flex items-center justify-center overflow-hidden relative shadow-md">
-                    {avatarUrl ? (
+                    {avatarUrl && !avatarUrl.startsWith("blob:") ? (
                       <img src={avatarUrl} alt="Avatar" className="object-cover w-full h-full" />
                     ) : (
                       <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-2xl uppercase">

@@ -122,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
         {/* Brand Logo Header */}
         <div className={`mb-6 flex items-center border-b border-slate-100 pb-4 ${isOpen ? "px-2 gap-3" : "justify-center"}`}>
-          {systemLogo ? (
+          {systemLogo && !systemLogo.startsWith("blob:") ? (
             <img src={systemLogo} alt="System Logo" className="w-8 h-8 object-contain rounded-lg shadow-sm" />
           ) : (
             <Shield className="w-8 h-8 text-amber-500 animate-pulse shrink-0" />

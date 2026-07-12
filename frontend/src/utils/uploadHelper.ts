@@ -15,14 +15,19 @@ export const uploadImageToDrive = async (file: File): Promise<UploadResult> => {
     console.warn(
       "VITE_GOOGLE_SCRIPT_URL is not defined. Falling back to local Mock Upload."
     );
-    // Simulate web delay and return local object URL
-    return new Promise((resolve) => {
-      setTimeout(() => {
+    // Simulate web delay and return base64 data URL
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
         resolve({
-          image_url: URL.createObjectURL(file),
+          image_url: reader.result as string,
           file_id: "mock-google-drive-id-" + Math.random().toString(36).substring(2, 9),
         });
-      }, 1000);
+      };
+      reader.onerror = (error) => {
+        reject(new Error("Lỗi đọc tệp tin mock: " + error));
+      };
     });
   }
 
