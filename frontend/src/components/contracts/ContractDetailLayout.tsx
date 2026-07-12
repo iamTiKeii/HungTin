@@ -65,7 +65,7 @@ export const ContractDetailLayout: React.FC<ContractDetailLayoutProps> = ({
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center items-center p-4">
         <div
           className="modal-box bg-white border border-slate-200 text-slate-800 rounded-2xl w-11/12 max-w-[1320px] max-h-[95vh] overflow-y-auto p-6 relative"
-          style={{ zoom: 0.92 }}
+          style={{ zoom: 1.02 }}
         >
           {content}
         </div>
