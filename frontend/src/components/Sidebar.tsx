@@ -34,8 +34,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   useEffect(() => {
     axios.get("/api/settings")
       .then(res => {
-        setSystemLogo(res.data.system_logo || "");
+        const logo = res.data.system_logo || "";
+        setSystemLogo(logo);
         setSystemName(res.data.system_name || "Hưng Tín");
+
+        // Dynamically update browser tab favicon link
+        if (logo) {
+          let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.getElementsByTagName('head')[0].appendChild(link);
+          }
+          link.href = logo;
+        }
       })
       .catch(err => console.error("Error fetching logo in sidebar", err));
   }, []);

@@ -67,12 +67,24 @@ export const SettingsPage: React.FC = () => {
       setLoading(true);
       const res = await axios.get("/api/settings");
       setSystemName(res.data.system_name || "");
-      setSystemLogo(res.data.system_logo || "");
+      const logo = res.data.system_logo || "";
+      setSystemLogo(logo);
       setSystemHotline(res.data.system_hotline || "");
       setSystemEmail(res.data.system_email || "");
       setSystemBankName(res.data.system_bank_name || "");
       setSystemBankAccountNumber(res.data.system_bank_account_number || "");
       setSystemBankAccountHolder(res.data.system_bank_account_holder || "");
+
+      // Dynamically update browser tab favicon link
+      if (logo) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = logo;
+      }
     } catch (err: any) {
       toast.error("Không thể tải cấu hình hệ thống.");
     } finally {
@@ -107,6 +119,17 @@ export const SettingsPage: React.FC = () => {
         system_bank_account_holder: systemBankAccountHolder,
       });
       toast.success("Lưu cấu hình hệ thống thành công!");
+
+      // Dynamically update browser tab favicon link
+      if (systemLogo) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = systemLogo;
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Cập nhật cấu hình hệ thống thất bại.");
     } finally {
