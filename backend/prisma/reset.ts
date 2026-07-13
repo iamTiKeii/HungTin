@@ -29,9 +29,7 @@ const transactionalTables = [
   "installment_transaction_ledger",
   "installment_debt_reminders",
   "installment_contract_documents",
-  "installment_interest_payments",
-  "installment_contract_extensions",
-  "installment_principal_transactions",
+  "installment_payments",
   "installment_redemptions",
   "installment_debt_history",
   "installment_contracts",
@@ -45,14 +43,16 @@ const transactionalTables = [
   "customer_blacklist",
   "customers",
   "collaborators",
-  "warnings_reminders"
+  "warnings_reminders",
+  
+  // These must be cleared to allow new customer onboarding (triggering /bootstrap)
+  "employee_permissions",
+  "employees",
+  "stores"
 ];
 
 const masterTables = [
-  "stores",
-  "employees",
   "permissions",
-  "employee_permissions",
   "system_settings",
   "interest_types",
   "commodities",

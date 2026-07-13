@@ -27,10 +27,10 @@ export interface InterestCalculationResult {
 }
 
 export interface CalculatorParams {
-  loanAmount: number;
-  interestRate: number;
-  loanDays: number;
-  periodValue: number;
+  loanAmount: any;
+  interestRate: any;
+  loanDays: any;
+  periodValue: any;
   loanDateInput: Date | string;
   isUpfront: boolean;
 }
@@ -38,6 +38,24 @@ export interface CalculatorParams {
 export interface IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult;
   getDailyRate(loanAmount: number, interestRate: number, periodValue: number): number;
+}
+
+// Utility: Normalize numeric inputs (handles strings with dots/commas/percentages/garbage)
+export function normalizeNumericInput(value: any): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") {
+    return isNaN(value) ? 0 : value;
+  }
+  if (typeof value === "string") {
+    let cleaned = value.trim();
+    // Strip percentage signs
+    cleaned = cleaned.replace(/%/g, "");
+    // Replace commas with dots
+    cleaned = cleaned.replace(/,/g, ".");
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 // HELPER: Generate cycle dates
@@ -79,8 +97,12 @@ export function getCycleDates(
 // 1. Lãi ngày (k/triệu)
 export class DailyPerMillionInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -119,8 +141,12 @@ export class DailyPerMillionInterestCalculator implements IInterestCalculator {
 // 2. Lãi ngày (k/ngày)
 export class DailyFixedInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -159,8 +185,12 @@ export class DailyFixedInterestCalculator implements IInterestCalculator {
 // 3. Lãi tháng (%) (30 ngày)
 export class MonthlyPercentStandardInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -199,8 +229,12 @@ export class MonthlyPercentStandardInterestCalculator implements IInterestCalcul
 // 4. Lãi tháng (%) (Định kỳ)
 export class MonthlyPercentPeriodicInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -240,8 +274,12 @@ export class MonthlyPercentPeriodicInterestCalculator implements IInterestCalcul
 // 5. Lãi tháng (VNĐ) (Định kỳ)
 export class MonthlyFixedPeriodicInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -280,8 +318,12 @@ export class MonthlyFixedPeriodicInterestCalculator implements IInterestCalculat
 // 6. Lãi tuần (%)
 export class WeeklyPercentInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -321,8 +363,12 @@ export class WeeklyPercentInterestCalculator implements IInterestCalculator {
 // 7. Lãi tuần (VNĐ)
 export class WeeklyFixedInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const schedule: PaymentScheduleItem[] = [];
     let totalInterestPayable = 0;
 
@@ -361,8 +407,12 @@ export class WeeklyFixedInterestCalculator implements IInterestCalculator {
 // 8. Lãi phẳng (Kỳ lãi theo tháng)
 export class FlatMonthlyInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const totalCycles = dateCycles.length;
     const schedule: PaymentScheduleItem[] = [];
 
@@ -415,8 +465,12 @@ export class FlatMonthlyInterestCalculator implements IInterestCalculator {
 // 9. Lãi phẳng (Kỳ lãi theo ngày)
 export class FlatDailyInterestCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const totalCycles = dateCycles.length;
     const schedule: PaymentScheduleItem[] = [];
 
@@ -469,8 +523,12 @@ export class FlatDailyInterestCalculator implements IInterestCalculator {
 // 10. Dư nợ giảm dần (Gốc lãi cố định - EMI)
 export class ReducingBalanceEMICalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const totalCycles = dateCycles.length;
     const schedule: PaymentScheduleItem[] = [];
 
@@ -531,8 +589,12 @@ export class ReducingBalanceEMICalculator implements IInterestCalculator {
 // 11. Dư nợ giảm dần (Gốc cố định)
 export class ReducingBalanceFixedPrincipalCalculator implements IInterestCalculator {
   calculate(params: CalculatorParams): InterestCalculationResult {
-    const { loanAmount, interestRate, loanDays, periodValue, loanDateInput } = params;
-    const dateCycles = getCycleDates(loanDateInput, loanDays, periodValue);
+    const loanAmount = normalizeNumericInput(params.loanAmount);
+    const interestRate = normalizeNumericInput(params.interestRate);
+    const loanDays = normalizeNumericInput(params.loanDays);
+    const periodValue = normalizeNumericInput(params.periodValue);
+
+    const dateCycles = getCycleDates(params.loanDateInput, loanDays, periodValue);
     const totalCycles = dateCycles.length;
     const schedule: PaymentScheduleItem[] = [];
 
@@ -617,10 +679,10 @@ export class InterestCalculatorFactory {
 
 // WRAPPER (Backward Compatibility)
 export function generateInterestSchedule(
-  loanAmount: number,
-  interestRate: number, // rate percentage or fixed cash depending on type
-  loanDays: number,
-  periodValue: number,
+  loanAmount: any,
+  interestRate: any,
+  loanDays: any,
+  periodValue: any,
   interestTypeCode: string,
   loanDateInput: Date | string,
   isUpfront: boolean
