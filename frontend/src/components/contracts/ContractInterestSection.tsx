@@ -14,12 +14,50 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
   config,
 }) => {
   const labelClass =
-    "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+    "w-[150px] text-right pr-4 font-bold text-slate-700 shrink-0 text-sm select-none";
+
+  const selectedInterestType = interestTypes.find(
+    (i) => i.id === state.interestType
+  );
+
+  const getInterestConfig = () => {
+    if (!selectedInterestType) {
+      return { label: "Lãi phí", suffix: "k/1 triệu" };
+    }
+    const code = selectedInterestType.code;
+    switch (code) {
+      case "daily_k_million":
+        return { label: "Lãi phí (k/triệu/ngày)", suffix: "k/triệu" };
+      case "daily_k_day":
+        return { label: "Lãi phí (k/ngày)", suffix: "k/ngày" };
+      case "monthly_percent_30":
+        return { label: "Lãi suất (%/tháng)", suffix: "%/tháng" };
+      case "monthly_percent_periodic":
+        return { label: "Lãi suất (%/tháng)", suffix: "%/tháng" };
+      case "monthly_amount_periodic":
+        return { label: "Lãi phí (VNĐ/tháng)", suffix: "VNĐ/tháng" };
+      case "weekly_percent":
+        return { label: "Lãi suất (%/tuần)", suffix: "%/tuần" };
+      case "weekly_amount":
+        return { label: "Lãi phí (VNĐ/tuần)", suffix: "VNĐ/tuần" };
+      case "flat_rate_monthly":
+        return { label: "Lãi suất (%/tháng)", suffix: "%/tháng" };
+      case "flat_rate_daily":
+        return { label: "Lãi suất (%/ngày)", suffix: "%/ngày" };
+      case "reducing_balance_fixed_installment":
+      case "reducing_balance_fixed_principal":
+        return { label: "Lãi suất (%/tháng)", suffix: "%/tháng" };
+      default:
+        return { label: "Lãi phí", suffix: "k/1 triệu" };
+    }
+  };
+
+  const { label: interestLabel, suffix: interestSuffix } = getInterestConfig();
 
   if (config.type === "capital") {
     return (
       <div className="pt-4 border-t border-slate-100 space-y-4">
-        <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+        <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
           III. THÔNG TIN LÃI SUẤT
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -30,7 +68,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
               <select
                 value={state.interestType}
                 onChange={(e) => onChange({ interestType: e.target.value })}
-                className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                className="select select-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
               >
                 <option value="">-- Chọn hình thức lãi --</option>
                 {interestTypes.map((i) => (
@@ -48,7 +86,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
 
   return (
     <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
         III. THÔNG TIN LÃI SUẤT & PHÍ
       </h4>
 
@@ -62,7 +100,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
             <select
               value={state.interestType}
               onChange={(e) => onChange({ interestType: e.target.value })}
-              className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+              className="select select-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
               required
             >
               <option value="">-- Chọn hình thức --</option>
@@ -78,8 +116,8 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
         {/* Upfront interest checkbox */}
         {config.allowUpfrontInterest && (
           <div className="flex items-center">
-            <div className="grow">
-              <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-600 select-none text-xs">
+            <div className="grow pl-[150px]">
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none text-sm">
                 <input
                   type="checkbox"
                   checked={state.isUpfrontInterest}
@@ -100,7 +138,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
             Kỳ lãi <span className="text-red-500">*</span>
           </label>
           <div className="grow">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 placeholder="10"
@@ -108,10 +146,10 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
                 onChange={(e) =>
                   onChange({ interestPeriod: Number(e.target.value) })
                 }
-                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 required
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
                 Ngày
               </span>
             </div>
@@ -119,19 +157,19 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
         </div>
 
         {/* Periodic Help Note */}
-        <div className="flex items-center">
+        <div className="flex items-center pl-[150px]">
           <span className="text-slate-400 text-xs italic font-semibold select-none">
-            (VD : 10 ngày đóng lãi 1 lần thì điền số 10)
+            (VD: 10 ngày đóng lãi 1 lần thì điền số 10)
           </span>
         </div>
 
         {/* Interest Rate */}
-        <div className="flex items-start">
-          <label className={`${labelClass} mt-1.5`}>
-            Lãi phí <span className="text-red-500">*</span>
+        <div className="flex items-center">
+          <label className={labelClass}>
+            {interestLabel} <span className="text-red-500">*</span>
           </label>
           <div className="grow">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 step="0.01"
@@ -140,19 +178,19 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
                 onChange={(e) =>
                   onChange({ interestRate: Number(e.target.value) })
                 }
-                className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 required
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
-                k/1 triệu
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
+                {interestSuffix}
               </span>
             </div>
           </div>
         </div>
 
         {/* legal disclaimer warning block */}
-        <div className="flex items-start">
-          <span className="text-red-500 text-[10px] leading-relaxed font-semibold block grow mt-0.5 max-w-md select-none">
+        <div className="flex items-start pl-[150px]">
+          <span className="text-red-500 text-xs leading-relaxed font-semibold block grow mt-0.5 max-w-md select-none">
             * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ
             quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp
             luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật

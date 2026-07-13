@@ -13,7 +13,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
   commodities,
 }) => {
   const labelClass =
-    "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+    "w-[150px] text-right pr-4 font-bold text-slate-700 shrink-0 text-sm select-none";
 
   const selectedComm = commodities.find((c) => c.id === state.commodityId);
   const parts = selectedComm ? selectedComm.name.split("|") : [];
@@ -21,7 +21,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
 
   return (
     <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
         II. THÔNG TIN HÀNG HÓA & TÀI SẢN
       </h4>
 
@@ -43,7 +43,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
                   interestRate: c?.default_interest_rate || state.interestRate,
                 });
               }}
-              className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+              className="select select-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
               required
             >
               <option value="">-- Chọn loại hàng hóa --</option>
@@ -64,7 +64,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
               placeholder="Tên tài sản. VD: Honda SH 150i"
               value={state.assetName}
               onChange={(e) => onChange({ assetName: e.target.value })}
-              className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
+              className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none h-10 text-sm"
               required
             />
           </div>
@@ -74,8 +74,8 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
       {/* Dynamic Attributes Grid */}
       {commAttrs.length > 0 && (
         <div className="pt-2">
-          <h5 className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-3">
-            <Car className="w-3.5 h-3.5 text-blue-600" />
+          <h5 className="text-xs font-bold text-blue-600 uppercase flex items-center gap-1.5 mb-3">
+            <Car className="w-4 h-4 text-blue-600" />
             Chi tiết thuộc tính tài sản
           </h5>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -88,7 +88,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
                     placeholder={`Nhập ${commAttrs[0].toLowerCase()}...`}
                     value={state.licensePlate}
                     onChange={(e) => onChange({ licensePlate: e.target.value })}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                    className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none h-10 text-sm"
                   />
                 </div>
               </div>
@@ -102,7 +102,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
                     placeholder={`Nhập ${commAttrs[1].toLowerCase()}...`}
                     value={state.chassisNumber}
                     onChange={(e) => onChange({ chassisNumber: e.target.value })}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                    className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none h-10 text-sm"
                   />
                 </div>
               </div>
@@ -116,7 +116,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
                     placeholder={`Nhập ${commAttrs[2].toLowerCase()}...`}
                     value={state.engineNumber}
                     onChange={(e) => onChange({ engineNumber: e.target.value })}
-                    className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                    className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none h-10 text-sm"
                   />
                 </div>
               </div>

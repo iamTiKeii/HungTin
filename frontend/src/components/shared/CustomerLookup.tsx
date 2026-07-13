@@ -26,7 +26,7 @@ export const CustomerLookup: React.FC<CustomerLookupProps> = ({
   onSelect,
   onClear,
   placeholder = "Nhập tên, số điện thoại hoặc CCCD để tìm kiếm...",
-  className = "input input-bordered input-sm w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-xs rounded-lg h-[32px] min-h-[32px]",
+  className = "input input-bordered w-full bg-white border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm rounded-lg h-10 min-h-[40px]",
   required = false,
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -91,8 +91,8 @@ export const CustomerLookup: React.FC<CustomerLookupProps> = ({
                 }}
                 className="p-2.5 hover:bg-amber-50/50 cursor-pointer transition-colors text-left"
               >
-                <div className="font-semibold text-slate-800 text-xs">{c.full_name}</div>
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-[10px] text-slate-500 font-medium">
+                <div className="font-semibold text-slate-800 text-sm">{c.full_name}</div>
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-slate-500 font-medium">
                   {c.identity_card_number && <span>CCCD: {c.identity_card_number}</span>}
                   {c.phone && <span>SĐT: {c.phone}</span>}
                 </div>

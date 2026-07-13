@@ -191,7 +191,7 @@ export const ContractForm: React.FC<ContractFormProps> = ({
         </div>
 
         {/* Modal Content Form */}
-        <form onSubmit={handleSubmit} className="space-y-6 text-xs text-slate-700">
+        <form onSubmit={handleSubmit} className="space-y-6 text-sm text-slate-700">
           {config.showCustomer && (
             <ContractCustomerSection
               state={state}
@@ -246,14 +246,14 @@ export const ContractForm: React.FC<ContractFormProps> = ({
           <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-6">
             <button
               type="submit"
-              className="btn bg-[#1abc9c] hover:bg-[#16a085] border-none text-white btn-sm px-5 font-bold rounded-lg transition-colors"
+              className="btn bg-[#1abc9c] hover:bg-[#16a085] border-none text-white h-10 min-h-[40px] px-6 text-sm font-bold rounded-lg transition-colors"
             >
               {initialData ? "Cập nhật" : "+ Thêm mới"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="btn bg-slate-400 hover:bg-slate-500 border-none text-white btn-sm px-5 font-bold rounded-lg transition-colors"
+              className="btn bg-slate-400 hover:bg-slate-500 border-none text-white h-10 min-h-[40px] px-6 text-sm font-bold rounded-lg transition-colors"
             >
               X Đóng
             </button>

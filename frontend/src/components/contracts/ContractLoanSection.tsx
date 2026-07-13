@@ -13,12 +13,12 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
   config,
 }) => {
   const labelClass =
-    "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+    "w-[150px] text-right pr-4 font-bold text-slate-700 shrink-0 text-sm select-none";
 
   if (config.type === "capital") {
     return (
       <div className="pt-4 border-t border-slate-100 space-y-4">
-        <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+        <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
           II. THÔNG TIN ĐẦU TƯ
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -27,12 +27,13 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             <label className={labelClass}>
               Số tiền đầu tư <span className="text-red-500">*</span>
             </label>
-            <div className="grow">
+            <div className="grow max-w-md">
               <MoneyInput
                 value={state.loanAmount}
                 onChange={(val) => onChange({ loanAmount: val })}
                 placeholder="0"
                 required
+                className="h-10 text-sm rounded-lg font-bold"
               />
             </div>
           </div>
@@ -47,7 +48,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
                 type="date"
                 value={state.loanDate}
                 onChange={(e) => onChange({ loanDate: e.target.value })}
-                className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+                className="input input-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 h-10 text-sm focus:outline-none"
                 required
               />
             </div>
@@ -60,7 +61,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
   if (config.type === "installment") {
     return (
       <div className="pt-4 border-t border-slate-100 space-y-4">
-        <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+        <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
           II. THÔNG TIN TRẢ GÓP
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -69,12 +70,13 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             <label className={labelClass}>
               Tiền giao khách <span className="text-red-500">*</span>
             </label>
-            <div className="grow">
+            <div className="grow max-w-md">
               <MoneyInput
                 value={state.loanAmount}
                 onChange={(val) => onChange({ loanAmount: val })}
                 placeholder="0"
                 required
+                className="h-10 text-sm rounded-lg font-bold"
               />
             </div>
           </div>
@@ -84,12 +86,13 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             <label className={labelClass}>
               Tổng tiền phải trả <span className="text-red-500">*</span>
             </label>
-            <div className="grow">
+            <div className="grow max-w-md">
               <MoneyInput
                 value={state.repaymentAmount}
                 onChange={(val) => onChange({ repaymentAmount: val })}
                 placeholder="0"
                 required
+                className="h-10 text-sm rounded-lg font-bold"
               />
             </div>
           </div>
@@ -99,16 +102,16 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             <label className={labelClass}>
               Bốc trong vòng <span className="text-red-500">*</span>
             </label>
-            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 placeholder="50"
                 value={state.loanDays}
                 onChange={(e) => onChange({ loanDays: Number(e.target.value) })}
-                className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 required
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
                 Ngày
               </span>
             </div>
@@ -119,7 +122,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             <label className={labelClass}>
               Số kỳ đóng <span className="text-red-500">*</span>
             </label>
-            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 placeholder="50"
@@ -127,10 +130,10 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
                 onChange={(e) =>
                   onChange({ installmentCycles: Number(e.target.value) })
                 }
-                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 required
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
                 Kỳ
               </span>
             </div>
@@ -147,7 +150,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
                 onChange={(e) =>
                   onChange({ installmentPeriodType: e.target.value })
                 }
-                className="select select-bordered select-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-850 font-semibold focus:outline-none"
+                className="select select-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
                 required
               >
                 <option value="daily">Theo ngày</option>
@@ -157,17 +160,17 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pl-[125px]">
+          <div className="flex items-center gap-2 pl-[150px]">
             <input
               type="checkbox"
               checked={state.isUpfrontInterest}
               onChange={(e) =>
                 onChange({ isUpfrontInterest: e.target.checked })
               }
-              className="checkbox checkbox-xs checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
+              className="checkbox checkbox-sm checkbox-primary border-slate-200 checked:border-amber-500 checked:bg-amber-500"
               id="isUpfrontInterest"
             />
-            <label htmlFor="isUpfrontInterest" className="text-slate-650 font-bold cursor-pointer text-xs select-none">
+            <label htmlFor="isUpfrontInterest" className="text-slate-700 font-bold cursor-pointer text-sm select-none">
               Thu tiền trước
             </label>
           </div>
@@ -177,7 +180,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             <label className={labelClass}>
               Hình thức đóng <span className="text-red-500">*</span>
             </label>
-            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 placeholder="1"
@@ -185,10 +188,10 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
                 onChange={(e) =>
                   onChange({ installmentPeriod: Number(e.target.value) })
                 }
-                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 required
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
                 Ngày / 1 Kỳ
               </span>
             </div>
@@ -204,7 +207,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
                 type="date"
                 value={state.loanDate}
                 onChange={(e) => onChange({ loanDate: e.target.value })}
-                className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+                className="input input-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 h-10 text-sm focus:outline-none"
                 required
               />
             </div>
@@ -217,7 +220,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
   // Pawn & Unsecured Layout
   return (
     <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
         II. THÔNG TIN KHOẢN VAY
       </h4>
 
@@ -228,16 +231,16 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             Tổng tiền vay <span className="text-red-500">*</span>
           </label>
           <div className="grow">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <MoneyInput
                 value={state.loanAmount}
                 onChange={(val) => onChange({ loanAmount: String(val) })}
                 placeholder="0"
                 required
-                className="grow px-3 text-slate-850 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 suffix=""
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
                 VNĐ
               </span>
             </div>
@@ -267,7 +270,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
                     onChange({ loanAmount: String(item.val) });
                   }
                 }}
-                className="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
+                className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
               >
                 {item.label}
               </button>
@@ -281,16 +284,16 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
             Số ngày vay <span className="text-red-500">*</span>
           </label>
           <div className="grow">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-[220px] h-8">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 placeholder="90"
                 value={state.loanDays}
                 onChange={(e) => onChange({ loanDays: Number(e.target.value) })}
-                className="grow px-3 text-slate-855 h-full font-bold focus:outline-none bg-white text-left text-xs border-none"
+                className="grow px-3 text-slate-800 h-full font-bold focus:outline-none bg-white text-left text-sm border-none"
                 required
               />
-              <span className="bg-slate-50 text-slate-400 px-3 h-full flex items-center border-l border-slate-200 text-[10px] font-bold shrink-0 select-none">
+              <span className="bg-slate-50 text-slate-500 px-4 h-full flex items-center border-l border-slate-200 text-xs font-bold shrink-0 select-none">
                 Ngày
               </span>
             </div>
@@ -308,7 +311,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
               type="date"
               value={state.loanDate}
               onChange={(e) => onChange({ loanDate: e.target.value })}
-              className="input input-bordered input-sm w-full max-w-[220px] bg-white border-slate-200 rounded-lg text-slate-855 h-8 text-xs focus:outline-none"
+              className="input input-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 h-10 text-sm focus:outline-none"
               required
             />
           </div>

@@ -20,18 +20,18 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
   );
 
   const labelClass =
-    "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+    "w-[150px] text-right pr-4 font-bold text-slate-700 shrink-0 text-sm select-none";
 
   return (
     <div className="space-y-4">
-      <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
         I. THÔNG TIN KHÁCH HÀNG
       </h4>
 
       {/* Centered Radio Selection */}
       {!isEditMode && (
         <div className="flex justify-center gap-6 mt-2 mb-4">
-          <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-xs">
+          <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm">
             <input
               type="radio"
               name="customerType"
@@ -49,11 +49,11 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   customerSearchQuery: "",
                 })
               }
-              className="radio radio-xs radio-primary"
+              className="radio radio-sm radio-primary"
             />
             <span>Khách mới</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-xs">
+          <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm">
             <input
               type="radio"
               name="customerType"
@@ -71,7 +71,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   customerSearchQuery: "",
                 })
               }
-              className="radio radio-xs radio-primary"
+              className="radio radio-sm radio-primary"
             />
             <span>Khách cũ</span>
           </label>
@@ -85,13 +85,13 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   onViewHistory(state.customerId, state.customerName);
                 }
               }}
-              className={`text-blue-600 hover:text-blue-800 shrink-0 ${
+              className={`text-blue-600 hover:text-blue-800 shrink-0 flex items-center ${
                 !state.customerId ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
               }`}
               title="Xem lịch sử hợp đồng của khách"
               disabled={!state.customerId}
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-5 h-5" />
             </button>
           )}
         </div>
@@ -111,7 +111,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                 placeholder="Nhập họ và tên"
                 value={state.customerName}
                 onChange={(e) => onChange({ customerName: e.target.value })}
-                className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-850 focus:outline-none"
+                className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10"
                 required
               />
             ) : (
@@ -153,7 +153,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
           <label className={labelClass}>
             Mã hợp đồng <span className="text-red-500">*</span>
           </label>
-          <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden h-8 w-fit bg-white">
+          <div className="grow flex items-center border border-slate-200 rounded-lg overflow-hidden h-10 w-fit bg-white">
             <button
               type="button"
               onClick={() =>
@@ -161,7 +161,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   contractCodeNumber: Math.max(1, state.contractCodeNumber - 1),
                 })
               }
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-3 flex items-center justify-center transition-colors select-none text-sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-4 flex items-center justify-center transition-colors select-none text-base"
             >
               -
             </button>
@@ -173,7 +173,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   contractCodeNumber: Math.max(1, Number(e.target.value)),
                 })
               }
-              className="text-center bg-white w-14 text-slate-855 h-full font-bold focus:outline-none border-x border-slate-200 text-xs"
+              className="text-center bg-white w-20 text-slate-800 h-full font-bold focus:outline-none border-x border-slate-200 text-sm"
               required
             />
             <button
@@ -181,7 +181,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               onClick={() =>
                 onChange({ contractCodeNumber: state.contractCodeNumber + 1 })
               }
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-3 flex items-center justify-center transition-colors select-none text-sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-full px-4 flex items-center justify-center transition-colors select-none text-base"
             >
               +
             </button>
@@ -200,7 +200,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               onFocus={() => setShowCardDetails(true)}
               readOnly={state.customerType === "existing"}
               disabled={state.customerType === "existing"}
-              className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
+              className={`input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10 ${
                 state.customerType === "existing"
                   ? "bg-slate-50 cursor-not-allowed text-slate-500"
                   : ""
@@ -221,7 +221,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   onChange={(e) =>
                     onChange({ customerIdCardDate: e.target.value })
                   }
-                  className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
+                  className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10"
                 />
               </div>
             </div>
@@ -236,7 +236,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                   onChange={(e) =>
                     onChange({ customerIdCardPlace: e.target.value })
                   }
-                  className="input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none"
+                  className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10"
                 />
               </div>
             </div>
@@ -254,7 +254,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               onChange={(e) => onChange({ customerPhone: e.target.value })}
               readOnly={state.customerType === "existing"}
               disabled={state.customerType === "existing"}
-              className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
+              className={`input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10 ${
                 state.customerType === "existing"
                   ? "bg-slate-50 cursor-not-allowed text-slate-500"
                   : ""
@@ -274,7 +274,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               onChange={(e) => onChange({ customerAddress: e.target.value })}
               readOnly={state.customerType === "existing"}
               disabled={state.customerType === "existing"}
-              className={`input input-bordered input-sm w-full bg-white border-slate-200 rounded-lg text-slate-855 focus:outline-none ${
+              className={`input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10 ${
                 state.customerType === "existing"
                   ? "bg-slate-50 cursor-not-allowed text-slate-500"
                   : ""

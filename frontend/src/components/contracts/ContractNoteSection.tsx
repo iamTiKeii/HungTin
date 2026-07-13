@@ -10,11 +10,11 @@ export const ContractNoteSection: React.FC<NoteSectionProps> = ({
   onChange,
 }) => {
   const labelClass =
-    "w-[125px] text-right pr-4 font-bold text-slate-700 shrink-0 text-xs select-none";
+    "w-[150px] text-right pr-4 font-bold text-slate-700 shrink-0 text-sm select-none";
 
   return (
     <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-xs border-b border-slate-100 pb-2">
+      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
         V. GHI CHÚ
       </h4>
 
@@ -26,7 +26,7 @@ export const ContractNoteSection: React.FC<NoteSectionProps> = ({
               placeholder="Nhập ghi chú chi tiết..."
               value={state.notes}
               onChange={(e) => onChange({ notes: e.target.value })}
-              className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-16 focus:outline-none text-xs"
+              className="textarea textarea-bordered w-full bg-white border-slate-200 text-slate-800 rounded-lg h-20 focus:outline-none text-sm"
             />
           </div>
         </div>
