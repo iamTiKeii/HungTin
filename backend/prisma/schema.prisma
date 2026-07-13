@@ -224,6 +224,10 @@ model Customer {
   blacklist_records     CustomerBlacklist[]
   capital_contracts     CapitalContract[]
 
+  @@index([store_id])
+  @@index([status])
+  @@index([phone])
+  @@index([identity_card_number])
   @@map("customers")
 }
 
@@ -325,6 +329,11 @@ model PawnContract {
   transaction_ledgers    PawnTransactionLedger[]
   reminders              PawnContractReminder[]
 
+  @@index([store_id])
+  @@index([customer_id])
+  @@index([status])
+  @@index([loan_date])
+  @@index([created_at])
   @@map("pawn_contracts")
 }
 
@@ -345,6 +354,10 @@ model PawnInterestPayment {
   created_at         DateTime @default(now()) @db.Timestamptz
   updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([contract_id])
+  @@index([is_paid])
+  @@index([paid_date])
+  @@index([from_date, to_date])
   @@map("pawn_interest_payments")
 }
 
@@ -449,6 +462,8 @@ model PawnTransactionLedger {
   created_at  DateTime @default(now()) @db.Timestamptz
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([contract_id])
+  @@index([created_at])
   @@map("pawn_transaction_ledger")
 }
 
@@ -505,6 +520,10 @@ model UnsecuredContract {
   transaction_ledgers    UnsecuredTransactionLedger[]
   reminders              UnsecuredContractReminder[]
 
+  @@index([store_id])
+  @@index([customer_id])
+  @@index([status])
+  @@index([loan_date])
   @@map("unsecured_contracts")
 }
 
@@ -538,6 +557,8 @@ model UnsecuredInterestPayment {
   created_at         DateTime @default(now()) @db.Timestamptz
   updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([contract_id])
+  @@index([is_paid])
   @@map("unsecured_interest_payments")
 }
 
@@ -642,6 +663,8 @@ model UnsecuredTransactionLedger {
   created_at  DateTime @default(now()) @db.Timestamptz
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([contract_id])
+  @@index([created_at])
   @@map("unsecured_transaction_ledger")
 }
 
@@ -678,6 +701,10 @@ model InstallmentContract {
   transaction_ledgers InstallmentTransactionLedger[]
   reminders           InstallmentContractReminder[]
 
+  @@index([store_id])
+  @@index([customer_id])
+  @@index([status])
+  @@index([loan_date])
   @@map("installment_contracts")
 }
 
@@ -697,6 +724,8 @@ model InstallmentPayment {
   created_at      DateTime @default(now()) @db.Timestamptz
   updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([contract_id])
+  @@index([is_paid])
   @@map("installment_payments")
 }
 
@@ -771,6 +800,8 @@ model InstallmentTransactionLedger {
   created_at  DateTime @default(now()) @db.Timestamptz
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([contract_id])
+  @@index([created_at])
   @@map("installment_transaction_ledger")
 }
 
@@ -830,6 +861,9 @@ model PaymentVoucher {
   created_at     DateTime @default(now()) @db.Timestamptz
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([store_id])
+  @@index([voucher_date])
+  @@index([status])
   @@map("payment_vouchers")
 }
 
@@ -850,6 +884,9 @@ model ReceiptVoucher {
   created_at     DateTime @default(now()) @db.Timestamptz
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([store_id])
+  @@index([voucher_date])
+  @@index([status])
   @@map("receipt_vouchers")
 }
 
@@ -868,6 +905,9 @@ model Reminder {
   created_at       DateTime @default(now()) @db.Timestamptz
   updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz
 
+  @@index([employee_id])
+  @@index([appointment_date])
+  @@index([status])
   @@map("warnings_reminders")
 }
 

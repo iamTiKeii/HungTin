@@ -67,6 +67,16 @@ export const Contracts: React.FC = () => {
   const [commodityIdFilter, setCommodityIdFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all_active"); // all_active, closed, overdue, all
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const limit = 15;
+  const [contractTotals, setContractTotals] = useState({
+    totalLent: 0,
+    totalDebt: 0,
+    totalExpectedInterest: 0,
+    totalPaidInterest: 0
+  });
 
   // Helpers choice lists
 
@@ -95,20 +105,70 @@ export const Contracts: React.FC = () => {
   const [unsecuredSortField, setUnsecuredSortField] = useState<string | null>(null);
   const [unsecuredSortOrder, setUnsecuredSortOrder] = useState<"asc" | "desc">("asc");
 
-  const fetchContracts = async () => {
+  const fetchContracts = async (pageVal = currentPage) => {
     if (!activeStore) return;
     try {
       setLoading(true);
-      
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (statusFilter) params.append("status", statusFilter);
+      params.append("page", pageVal.toString());
+      params.append("limit", limit.toString());
+
+      let res;
       if (activeTab === "pawn") {
-        const res = await axios.get(`/api/contracts/pawn?search=${search}`);
-        setPawnList(res.data);
+        if (searchAsset) params.append("searchAsset", searchAsset);
+        if (commodityIdFilter) params.append("commodityId", commodityIdFilter);
+        res = await axios.get(`/api/contracts/pawn?${params.toString()}`);
       } else if (activeTab === "unsecured") {
-        const res = await axios.get(`/api/contracts/unsecured?search=${search}`);
-        setUnsecuredList(res.data);
+        res = await axios.get(`/api/contracts/unsecured?${params.toString()}`);
       } else {
-        const res = await axios.get(`/api/contracts/installment?search=${search}`);
-        setInstallmentList(res.data);
+        res = await axios.get(`/api/contracts/installment?${params.toString()}`);
+      }
+
+      let data = res.data;
+      let totals = {
+        totalLent: 0,
+        totalDebt: 0,
+        totalExpectedInterest: 0,
+        totalPaidInterest: 0
+      };
+
+      if (res.data && res.data.data) {
+        data = res.data.data;
+        totals = res.data.totals;
+        setTotalPages(res.data.pagination.totalPages || 1);
+        setTotalRecords(res.data.pagination.total || 0);
+      } else {
+        // compute totals locally for backward compatibility
+        if (activeTab === "pawn") {
+          totals.totalLent = res.data.reduce((sum: number, item: any) => sum + Number(item.loan_amount || 0), 0);
+          totals.totalDebt = res.data.reduce((sum: number, item: any) => sum + Number(item.debt_amount || 0), 0);
+          totals.totalExpectedInterest = res.data.reduce((sum: number, item: any) => sum + getAccruedInterest(item), 0);
+          totals.totalPaidInterest = res.data.reduce((sum: number, item: any) => sum + getPaidInterest(item), 0);
+        } else if (activeTab === "unsecured") {
+          totals.totalLent = res.data.reduce((sum: number, item: any) => sum + Number(item.loan_amount || 0), 0);
+          totals.totalDebt = res.data.reduce((sum: number, item: any) => sum + Number(item.debt_amount || 0), 0);
+          totals.totalExpectedInterest = res.data.filter((item: any) => item.status === "active").reduce((sum: number, item: any) => sum + getAccruedInterest(item), 0);
+          totals.totalPaidInterest = res.data.reduce((sum: number, item: any) => sum + getPaidInterest(item), 0);
+        } else {
+          totals.totalLent = res.data.reduce((sum: number, c: any) => sum + (c.remaining_amount || 0), 0);
+          totals.totalDebt = res.data.reduce((sum: number, c: any) => sum + Number(c.debt_amount || 0), 0);
+          totals.totalExpectedInterest = res.data.reduce((sum: number, c: any) => sum + (c.expected_interest || 0), 0);
+          totals.totalPaidInterest = res.data.reduce((sum: number, c: any) => sum + (c.collected_interest || 0), 0);
+        }
+        setTotalPages(1);
+        setTotalRecords(res.data.length);
+      }
+
+      setContractTotals(totals);
+
+      if (activeTab === "pawn") {
+        setPawnList(data);
+      } else if (activeTab === "unsecured") {
+        setUnsecuredList(data);
+      } else {
+        setInstallmentList(data);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Lỗi tải danh sách hợp đồng.");
@@ -293,9 +353,15 @@ export const Contracts: React.FC = () => {
     }
   }, [location.search, activeTab]);
 
+  // Trigger fetch when tab, store, search, pagination, or filters change
   useEffect(() => {
     fetchContracts();
-  }, [activeTab, search, activeStore]);
+  }, [activeTab, activeStore, search, currentPage, statusFilter, commodityIdFilter, searchAsset]);
+
+  // Reset to page 1 when tab, search, or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, statusFilter, commodityIdFilter, searchAsset]);
 
   useEffect(() => {
     fetchHelpers();
@@ -619,72 +685,18 @@ export const Contracts: React.FC = () => {
     return unpaid ? new Date(unpaid.to_date) : null;
   };
 
-  // Local filtering logic for Pawn Contracts
-  const filteredPawnList = pawnList.filter((item) => {
-    if (search) {
-      const q = search.toLowerCase();
-      const codeMatch = item.contract_code?.toLowerCase().includes(q);
-      const nameMatch = item.customer?.full_name?.toLowerCase().includes(q);
-      const phoneMatch = item.customer?.phone?.toLowerCase().includes(q);
-      const cardMatch = item.customer?.identity_card_number?.toLowerCase().includes(q);
-      if (!codeMatch && !nameMatch && !phoneMatch && !cardMatch) {
-        return false;
-      }
-    }
-    if (searchAsset) {
-      const q = searchAsset.toLowerCase();
-      const assetMatch = item.asset_name?.toLowerCase().includes(q);
-      if (!assetMatch) return false;
-    }
-    if (commodityIdFilter && item.commodity_id !== commodityIdFilter) {
-      return false;
-    }
-    if (statusFilter === "all_active") {
-      if (item.status !== "active") return false;
-    } else if (statusFilter === "closed") {
-      if (item.status !== "closed" && item.status !== "redeemed") return false;
-    } else if (statusFilter === "overdue") {
-      if (item.status !== "active") return false;
-      const nextDate = getNextPaymentDate(item);
-      if (!nextDate || nextDate.getTime() >= new Date().getTime()) {
-        return false;
-      }
-    }
-    return true;
-  });
+  // Local filtering logic for Pawn Contracts (paginated on server)
+  const filteredPawnList = pawnList;
 
   // Pawn stats calculations for summary boxes
-  const totalLent = filteredPawnList.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
-  const totalDebt = filteredPawnList.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
-  const totalExpectedInterest = filteredPawnList.reduce((sum, item) => sum + getAccruedInterest(item), 0);
-  const totalPaidInterest = filteredPawnList.reduce((sum, item) => sum + getPaidInterest(item), 0);
+  const totalLent = contractTotals.totalLent;
+  const totalDebt = contractTotals.totalDebt;
+  const totalExpectedInterest = contractTotals.totalExpectedInterest;
+  const totalPaidInterest = contractTotals.totalPaidInterest;
   const cashFundVal = cashSummary ? Number(cashSummary.current_cash || 0) : 50000000;
 
-  // Local filtering logic for Unsecured Contracts
-  const filteredUnsecuredList = unsecuredList.filter((item) => {
-    if (search) {
-      const q = search.toLowerCase();
-      const codeMatch = item.contract_code?.toLowerCase().includes(q);
-      const nameMatch = item.customer?.full_name?.toLowerCase().includes(q);
-      const phoneMatch = item.customer?.phone?.toLowerCase().includes(q);
-      const cardMatch = item.customer?.identity_card_number?.toLowerCase().includes(q);
-      if (!codeMatch && !nameMatch && !phoneMatch && !cardMatch) {
-        return false;
-      }
-    }
-    if (statusFilter === "all_active") {
-      if (item.status !== "active") return false;
-    } else if (statusFilter === "closed") {
-      if (item.status !== "closed" && item.status !== "redeemed") return false;
-    } else if (statusFilter === "overdue") {
-      if (item.status !== "active") return false;
-      const nextDate = getNextPaymentDate(item);
-      if (!nextDate || nextDate.getTime() >= new Date().getTime()) {
-        return false;
-      }
-    }
-    return true;
-  });
+  // Local filtering logic for Unsecured Contracts (paginated on server)
+  const filteredUnsecuredList = unsecuredList;
 
   const sortedUnsecuredList = React.useMemo(() => {
     if (!unsecuredSortField) return filteredUnsecuredList;
@@ -706,33 +718,14 @@ export const Contracts: React.FC = () => {
   }, [filteredUnsecuredList, unsecuredSortField, unsecuredSortOrder]);
 
   // Unsecured stats calculations
-  const totalUnsecuredLent = filteredUnsecuredList.filter(item => item.status === "active").reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
-  const totalUnsecuredDebt = filteredUnsecuredList.filter(item => item.status === "active").reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
-  const totalUnsecuredExpectedInterest = filteredUnsecuredList.filter(item => item.status === "active").reduce((sum, item) => sum + getAccruedInterest(item), 0);
-  const totalUnsecuredPaidInterest = filteredUnsecuredList.reduce((sum, item) => sum + getPaidInterest(item), 0);
-  const totalUnsecuredRepayment = filteredUnsecuredList.reduce((sum, item) => sum + Number(item.totalRepayment || 0), 0);
+  const totalUnsecuredLent = contractTotals.totalLent;
+  const totalUnsecuredDebt = contractTotals.totalDebt;
+  const totalUnsecuredExpectedInterest = contractTotals.totalExpectedInterest;
+  const totalUnsecuredPaidInterest = contractTotals.totalPaidInterest;
+  const totalUnsecuredRepayment = contractTotals.totalLent + contractTotals.totalExpectedInterest;
 
-  // Local filtering logic for Installment Contracts
-  const filteredInstallmentList = installmentList.filter((item) => {
-    if (search) {
-      const q = search.toLowerCase();
-      const codeMatch = item.contract_code?.toLowerCase().includes(q);
-      const nameMatch = item.customer?.full_name?.toLowerCase().includes(q);
-      const phoneMatch = item.customer?.phone?.toLowerCase().includes(q);
-      const cardMatch = item.customer?.identity_card_number?.toLowerCase().includes(q);
-      if (!codeMatch && !nameMatch && !phoneMatch && !cardMatch) {
-        return false;
-      }
-    }
-    if (statusFilter === "all_active") {
-      if (item.status !== "active" && item.status !== "overdue") return false;
-    } else if (statusFilter === "closed") {
-      if (item.status !== "closed" && item.status !== "redeemed") return false;
-    } else if (statusFilter === "overdue") {
-      if (item.status !== "active" && item.status !== "overdue" && !item.is_overdue) return false;
-    }
-    return true;
-  });
+  // Local filtering logic for Installment Contracts (paginated on server)
+  const filteredInstallmentList = installmentList;
 
   const getUnsecuredInterestSubtext = (item: any) => {
     if (!item.interest_type) return "";
@@ -783,29 +776,10 @@ export const Contracts: React.FC = () => {
 
       {/* SUMMARY BOXES ROW matching Image 1 */}
       {(activeTab === "pawn" || activeTab === "unsecured" || activeTab === "installment") && (() => {
-        const lent = activeTab === "pawn"
-          ? totalLent
-          : activeTab === "unsecured"
-          ? totalUnsecuredLent
-          : installmentList.reduce((sum, c) => sum + (c.remaining_amount || 0), 0);
-
-        const debt = activeTab === "pawn"
-          ? totalDebt
-          : activeTab === "unsecured"
-          ? totalUnsecuredDebt
-          : installmentList.reduce((sum, c) => sum + Number(c.debt_amount || 0), 0);
-
-        const expected = activeTab === "pawn"
-          ? totalExpectedInterest
-          : activeTab === "unsecured"
-          ? totalUnsecuredExpectedInterest
-          : installmentList.reduce((sum, c) => sum + (c.expected_interest || 0), 0);
-
-        const paid = activeTab === "pawn"
-          ? totalPaidInterest
-          : activeTab === "unsecured"
-          ? totalUnsecuredPaidInterest
-          : installmentList.reduce((sum, c) => sum + (c.collected_interest || 0), 0);
+        const lent = contractTotals.totalLent;
+        const debt = contractTotals.totalDebt;
+        const expected = contractTotals.totalExpectedInterest;
+        const paid = contractTotals.totalPaidInterest;
 
         return (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -1455,18 +1429,45 @@ export const Contracts: React.FC = () => {
               </table>
             )}
           </div>
-          
-          {/* Pagination bar */}
-          {activeTab === "pawn" && (
-            <div className="flex flex-col md:flex-row justify-between items-center bg-slate-50 p-4 border-t border-slate-100 text-xs text-slate-500 gap-2">
-              <div>Hiển thị {filteredPawnList.length}/{pawnList.length} bản ghi.</div>
-              <div className="flex items-center gap-1.5">
-                <span>Mỗi trang:</span>
-                <select className="select select-bordered select-xs w-16 bg-white border-slate-200 rounded">
-                  <option>50</option>
-                  <option>100</option>
-                  <option>200</option>
-                </select>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-4 mt-4 shadow-sm">
+              <span className="text-xs text-slate-500 font-medium">
+                Hiển thị {(currentPage - 1) * limit + 1} - {Math.min(currentPage * limit, totalRecords)} trong tổng số {totalRecords} hợp đồng
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => {
+                    setCurrentPage((prev) => {
+                      const next = prev - 1;
+                      fetchContracts(next);
+                      return next;
+                    });
+                  }}
+                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Trang trước
+                </button>
+                <span className="flex items-center text-xs font-semibold text-slate-700 px-3 bg-slate-50 border border-slate-100 rounded-lg">
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => {
+                    setCurrentPage((prev) => {
+                      const next = prev + 1;
+                      fetchContracts(next);
+                      return next;
+                    });
+                  }}
+                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Trang sau
+                </button>
               </div>
             </div>
           )}

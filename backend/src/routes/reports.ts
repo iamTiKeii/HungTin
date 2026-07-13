@@ -1071,4 +1071,47 @@ router.get("/collaborators", requirePermission(["REPORT_COLLABORATORS"]) as any,
   }
 });
 
+// 10. Dashboard Metrics (Thống kê nhanh Dashboard)
+router.get("/dashboard-metrics", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const storeId = req.user!.store_id;
+
+    const [pawnCount, unsecuredCount, installmentCount, blacklistCount] = await Promise.all([
+      prisma.pawnContract.count({
+        where: {
+          store_id: storeId,
+          status: { in: ["active", "overdue"] }
+        }
+      }),
+      prisma.unsecuredContract.count({
+        where: {
+          store_id: storeId,
+          status: { in: ["active", "overdue"] }
+        }
+      }),
+      prisma.installmentContract.count({
+        where: {
+          store_id: storeId,
+          status: { in: ["active", "overdue"] }
+        }
+      }),
+      prisma.customer.count({
+        where: {
+          store_id: storeId,
+          status: "blacklist"
+        }
+      })
+    ]);
+
+    return res.json({
+      pawnCount,
+      unsecuredCount,
+      installmentCount,
+      blacklistCount
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

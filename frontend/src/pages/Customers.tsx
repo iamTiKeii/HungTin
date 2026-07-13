@@ -54,6 +54,10 @@ interface Contract {
 export const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const limit = 15;
   const confirm = useConfirm();
 
   // Filter states
@@ -123,16 +127,26 @@ export const Customers: React.FC = () => {
   };
 
   // Fetch all customers based on search and filters
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (pageVal = currentPage) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (searchQuery) params.append("search", searchQuery);
       if (storeFilter) params.append("store_id", storeFilter);
       if (statusFilter) params.append("status", statusFilter);
+      params.append("page", pageVal.toString());
+      params.append("limit", limit.toString());
 
       const res = await axios.get(`/api/customers?${params.toString()}`);
-      setCustomers(res.data);
+      if (res.data && res.data.data) {
+        setCustomers(res.data.data);
+        setTotalPages(res.data.pagination.totalPages || 1);
+        setTotalRecords(res.data.pagination.total || 0);
+      } else {
+        setCustomers(res.data);
+        setTotalPages(1);
+        setTotalRecords(res.data.length);
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Không thể tải danh sách khách hàng.");
     } finally {
@@ -142,17 +156,19 @@ export const Customers: React.FC = () => {
 
   useEffect(() => {
     fetchStores();
-    fetchCustomers();
+    fetchCustomers(1);
   }, []);
 
   // Fetch when filters change
   useEffect(() => {
-    fetchCustomers();
+    setCurrentPage(1);
+    fetchCustomers(1);
   }, [storeFilter, statusFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCustomers();
+    setCurrentPage(1);
+    fetchCustomers(1);
   };
 
   const handleOpenCreate = () => {
@@ -641,10 +657,51 @@ export const Customers: React.FC = () => {
                       </td>
                     </tr>
                   );
-                })}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-4 mt-4 shadow-sm">
+              <span className="text-xs text-slate-500 font-medium">
+                Hiển thị {(currentPage - 1) * limit + 1} - {Math.min(currentPage * limit, totalRecords)} trong tổng số {totalRecords} khách hàng
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => {
+                    setCurrentPage((prev) => {
+                      const next = prev - 1;
+                      fetchCustomers(next);
+                      return next;
+                    });
+                  }}
+                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Trang trước
+                </button>
+                <span className="flex items-center text-xs font-semibold text-slate-700 px-3 bg-slate-50 border border-slate-100 rounded-lg">
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => {
+                    setCurrentPage((prev) => {
+                      const next = prev + 1;
+                      fetchCustomers(next);
+                      return next;
+                    });
+                  }}
+                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Trang sau
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

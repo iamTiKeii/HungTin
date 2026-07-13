@@ -41,6 +41,41 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
       ];
     }
 
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+
+    if (page !== undefined && limit !== undefined) {
+      const skip = (page - 1) * limit;
+      const total = await prisma.customer.count({ where: whereClause });
+      const customers = await prisma.customer.findMany({
+        where: whereClause,
+        include: {
+          store: { select: { name: true } },
+          _count: {
+            select: {
+              pawn_contracts: true,
+              unsecured_contracts: true,
+              installment_contracts: true,
+              capital_contracts: true,
+            }
+          }
+        },
+        orderBy: { full_name: "asc" },
+        skip,
+        take: limit,
+      });
+
+      return res.json({
+        data: customers,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        }
+      });
+    }
+
     const customers = await prisma.customer.findMany({
       where: whereClause,
       include: {

@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { prisma } from "../utils/db";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
+import { InMemoryCache } from "../utils/cache";
 
 const router = Router();
 
@@ -10,6 +11,12 @@ router.use(authenticateToken as any);
 // 1. Get all commodities
 router.get("/", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const cacheKey = "commodities_list";
+    const cached = InMemoryCache.get<any[]>(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const commodities = await prisma.commodity.findMany({
       where: {
         status: { not: "deleted" }
@@ -19,6 +26,8 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
       },
       orderBy: { name: "asc" },
     });
+
+    InMemoryCache.set(cacheKey, commodities, 5 * 60 * 1000); // 5 min TTL
     return res.json(commodities);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -28,6 +37,12 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
 // 3. Get commodity by ID
 router.get("/:id", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const cacheKey = `commodity_by_id:${req.params.id}`;
+    const cached = InMemoryCache.get<any>(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const comm = await prisma.commodity.findUnique({
       where: { id: req.params.id },
       include: { interest_type: true },
@@ -35,6 +50,8 @@ router.get("/:id", async (req: AuthenticatedRequest, res: Response) => {
     if (!comm) {
       return res.status(404).json({ error: "Commodity configuration not found" });
     }
+
+    InMemoryCache.set(cacheKey, comm, 5 * 60 * 1000); // 5 min TTL
     return res.json(comm);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -86,6 +103,9 @@ router.post("/", requirePermission(["COMMODITIES_MANAGE"]) as any, async (req: A
         liquidation_after_days: Number(liquidation_after_days) || 10,
       },
     });
+
+    // Clear caches
+    InMemoryCache.delete("commodities_list");
 
     return res.status(201).json(newComm);
   } catch (error: any) {
@@ -142,6 +162,10 @@ router.put("/:id", requirePermission(["COMMODITIES_MANAGE"]) as any, async (req:
       },
     });
 
+    // Clear caches
+    InMemoryCache.delete("commodities_list");
+    InMemoryCache.delete(`commodity_by_id:${req.params.id}`);
+
     return res.json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -169,6 +193,10 @@ router.delete("/:id", requirePermission(["COMMODITIES_MANAGE"]) as any, async (r
         where: { id },
         data: { status: "deleted" }
       });
+
+      InMemoryCache.delete("commodities_list");
+      InMemoryCache.delete(`commodity_by_id:${id}`);
+
       return res.json({ message: "Commodity has existing contract references; soft deleted successfully" });
     }
 
@@ -176,6 +204,10 @@ router.delete("/:id", requirePermission(["COMMODITIES_MANAGE"]) as any, async (r
     await prisma.commodity.delete({
       where: { id },
     });
+
+    InMemoryCache.delete("commodities_list");
+    InMemoryCache.delete(`commodity_by_id:${id}`);
+
     return res.json({ message: "Commodity configuration deleted successfully" });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

@@ -60,23 +60,153 @@ export function generateInstallmentPayments(
 
 // ================= ENDPOINTS =================
 
+function mapInstallmentContract(c: any, today: Date) {
+  const totalRepay = Number(c.repayment_amount);
+  const totalDisbursed = Number(c.disbursed_amount);
+  const totalInterest = Math.max(0, totalRepay - totalDisbursed);
+  const interestRatio = totalRepay > 0 ? totalInterest / totalRepay : 0;
+
+  const totalPaid = c.payments
+    ? c.payments
+        .filter((p: any) => p.is_paid)
+        .reduce((sum: number, p: any) => sum + Number(p.actual_paid), 0)
+    : 0;
+
+  const paidCycles = c.payments ? c.payments.filter((p: any) => p.is_paid).length : 0;
+  const remainingCycles = c.payments ? c.payments.length - paidCycles : 0;
+
+  const collectedInterest = totalPaid * interestRatio;
+  const expectedInterest = totalInterest - collectedInterest;
+
+  const unpaid = c.payments
+    ? [...c.payments]
+        .filter((p: any) => !p.is_paid)
+        .sort((a: any, b: any) => a.cycle_number - b.cycle_number)[0]
+    : null;
+  const nextPaymentDate = unpaid ? unpaid.to_date : null;
+
+  const isOverdue =
+    c.status === "active" &&
+    c.payments &&
+    c.payments.some((p: any) => !p.is_paid && new Date(p.to_date) < today);
+
+  return {
+    ...c,
+    total_paid: totalPaid,
+    paid_cycles: paidCycles,
+    remaining_amount: Math.max(0, totalRepay - totalPaid),
+    remaining_cycles: remainingCycles,
+    collected_interest: collectedInterest,
+    expected_interest: expectedInterest,
+    daily_payment: c.loan_duration > 0 ? Math.round(totalRepay / c.loan_duration) : 0,
+    next_payment_date: nextPaymentDate,
+    is_overdue: isOverdue,
+  };
+}
+
 // 1. Get Installment Contracts list
 router.get("/", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const storeId = req.user!.store_id;
-    const { status, search } = req.query;
+    const { status, search, page, limit } = req.query;
 
     const whereClause: any = { store_id: storeId };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (status) {
-      whereClause.status = status;
+      if (status === "all_active") {
+        whereClause.status = "active";
+      } else if (status === "closed") {
+        whereClause.status = { in: ["closed", "redeemed"] };
+      } else if (status === "overdue") {
+        whereClause.status = "active";
+        whereClause.payments = {
+          some: {
+            is_paid: false,
+            to_date: { lt: today }
+          }
+        };
+      } else {
+        whereClause.status = status as string;
+      }
     } else {
       whereClause.status = { not: "cancelled" };
     }
+
     if (search) {
+      const q = search as string;
       whereClause.OR = [
-        { contract_code: { contains: search as string, mode: "insensitive" } },
-        { customer: { full_name: { contains: search as string, mode: "insensitive" } } },
+        { contract_code: { contains: q, mode: "insensitive" } },
+        { customer: { full_name: { contains: q, mode: "insensitive" } } },
+        { customer: { phone: { contains: q, mode: "insensitive" } } },
+        { customer: { identity_card_number: { contains: q, mode: "insensitive" } } },
       ];
+    }
+
+    const allMatching = await prisma.installmentContract.findMany({
+      where: whereClause,
+      select: {
+        disbursed_amount: true,
+        repayment_amount: true,
+        debt_amount: true,
+        payments: {
+          select: { is_paid: true, actual_paid: true, to_date: true }
+        }
+      }
+    });
+
+    const totalLent = allMatching.reduce((sum, item) => sum + Number(item.disbursed_amount || 0), 0);
+    const totalDebt = allMatching.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
+    const totalExpectedInterest = allMatching.reduce((sum, item) => {
+      const totalRepay = Number(item.repayment_amount);
+      const totalDisbursed = Number(item.disbursed_amount);
+      return sum + Math.max(0, totalRepay - totalDisbursed);
+    }, 0);
+    const totalPaidInterest = allMatching.reduce((sum, item) => {
+      const paidSum = item.payments
+        .filter((p) => p.is_paid)
+        .reduce((s, p) => s + Number(p.actual_paid || 0), 0);
+      return sum + paidSum;
+    }, 0);
+
+    const pageNum = page ? parseInt(page as string, 10) : undefined;
+    const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+
+    if (pageNum !== undefined && limitNum !== undefined) {
+      const skip = (pageNum - 1) * limitNum;
+      const data = await prisma.installmentContract.findMany({
+        where: whereClause,
+        include: {
+          customer: {
+            select: { id: true, full_name: true, phone: true, identity_card_number: true }
+          },
+          collector: { select: { full_name: true } },
+          payments: true
+        },
+        orderBy: { created_at: "desc" },
+        skip,
+        take: limitNum,
+      });
+
+      const mappedData = data.map((c) => mapInstallmentContract(c, today));
+
+      return res.json({
+        data: mappedData,
+        totals: {
+          totalLent,
+          totalDebt,
+          totalExpectedInterest,
+          totalPaidInterest
+        },
+        pagination: {
+          total: allMatching.length,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(allMatching.length / limitNum)
+        }
+      });
     }
 
     const contracts = await prisma.installmentContract.findMany({
@@ -89,48 +219,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
       orderBy: { created_at: "desc" },
     });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const mapped = contracts.map((c) => {
-      const totalRepay = Number(c.repayment_amount);
-      const totalDisbursed = Number(c.disbursed_amount);
-      const totalInterest = Math.max(0, totalRepay - totalDisbursed);
-      const interestRatio = totalRepay > 0 ? totalInterest / totalRepay : 0;
-
-      const totalPaid = c.payments
-        .filter((p) => p.is_paid)
-        .reduce((sum, p) => sum + Number(p.actual_paid), 0);
-
-      const paidCycles = c.payments.filter((p) => p.is_paid).length;
-      const remainingCycles = c.payments.length - paidCycles;
-
-      const collectedInterest = totalPaid * interestRatio;
-      const expectedInterest = totalInterest - collectedInterest;
-
-      const unpaid = [...c.payments]
-        .filter((p) => !p.is_paid)
-        .sort((a, b) => a.cycle_number - b.cycle_number)[0];
-      const nextPaymentDate = unpaid ? unpaid.to_date : null;
-
-      const isOverdue =
-        c.status === "active" &&
-        c.payments.some((p) => !p.is_paid && new Date(p.to_date) < today);
-
-      return {
-        ...c,
-        total_paid: totalPaid,
-        paid_cycles: paidCycles,
-        remaining_amount: Math.max(0, totalRepay - totalPaid),
-        remaining_cycles: remainingCycles,
-        collected_interest: collectedInterest,
-        expected_interest: expectedInterest,
-        daily_payment: c.loan_duration > 0 ? Math.round(totalRepay / c.loan_duration) : 0,
-        next_payment_date: nextPaymentDate,
-        is_overdue: isOverdue,
-      };
-    });
-
+    const mapped = contracts.map((c) => mapInstallmentContract(c, today));
     return res.json(mapped);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

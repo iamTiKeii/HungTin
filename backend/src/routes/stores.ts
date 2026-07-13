@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { prisma } from "../utils/db";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
+import { InMemoryCache } from "../utils/cache";
 
 const router = Router();
 
@@ -11,9 +12,17 @@ router.use(authenticateToken as any);
 // 1. Get all stores
 router.get("/", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const cacheKey = "stores_list";
+    const cached = InMemoryCache.get<any[]>(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const stores = await prisma.store.findMany({
       orderBy: { name: "asc" },
     });
+
+    InMemoryCache.set(cacheKey, stores, 5 * 60 * 1000); // 5 min TTL
     return res.json(stores);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -23,6 +32,12 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
 // 2. Get store by ID
 router.get("/:id", async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const cacheKey = `store_by_id:${req.params.id}`;
+    const cached = InMemoryCache.get<any>(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const store = await prisma.store.findUnique({
       where: { id: req.params.id },
       include: {
@@ -36,6 +51,7 @@ router.get("/:id", async (req: AuthenticatedRequest, res: Response) => {
       return res.status(404).json({ error: "Store not found" });
     }
 
+    InMemoryCache.set(cacheKey, store, 5 * 60 * 1000); // 5 min TTL
     return res.json(store);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -63,6 +79,9 @@ router.post("/", requirePermission(["STORES_MANAGE"]) as any, async (req: Authen
         notes,
       },
     });
+
+    // Clear caches
+    InMemoryCache.delete("stores_list");
 
     return res.status(201).json(newStore);
   } catch (error: any) {
@@ -97,6 +116,10 @@ router.put("/:id", requirePermission(["STORES_MANAGE", "STORES_DETAIL"]) as any,
       },
     });
 
+    // Clear caches
+    InMemoryCache.delete("stores_list");
+    InMemoryCache.delete(`store_by_id:${req.params.id}`);
+
     return res.json(updatedStore);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -124,6 +147,10 @@ router.delete("/:id", requirePermission(["STORES_MANAGE"]) as any, async (req: A
     await prisma.store.delete({
       where: { id: req.params.id },
     });
+
+    // Clear caches
+    InMemoryCache.delete("stores_list");
+    InMemoryCache.delete(`store_by_id:${req.params.id}`);
 
     return res.json({ message: "Store deleted successfully" });
   } catch (error: any) {

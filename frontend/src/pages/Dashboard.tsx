@@ -25,21 +25,18 @@ export const Dashboard: React.FC = () => {
     if (!activeStore) return;
     try {
       setLoading(true);
-      const [summaryRes, historyRes, pawnRes, unsecuredRes, installmentRes, customersRes] = await Promise.all([
+      const [summaryRes, historyRes, metricsRes] = await Promise.all([
         axios.get("/api/cash/summary"),
         axios.get("/api/cash/history"),
-        axios.get("/api/contracts/pawn"),
-        axios.get("/api/contracts/unsecured"),
-        axios.get("/api/contracts/installment"),
-        axios.get("/api/customers"),
+        axios.get("/api/reports/dashboard-metrics"),
       ]);
 
       setCashSummary(summaryRes.data);
       setCashHistory(historyRes.data.slice(0, 5)); // recent 5 cash logs
-      setPawnCount(pawnRes.data.filter((c: any) => c.status === "active" || c.status === "overdue").length);
-      setUnsecuredCount(unsecuredRes.data.filter((c: any) => c.status === "active" || c.status === "overdue").length);
-      setInstallmentCount(installmentRes.data.filter((c: any) => c.status === "active" || c.status === "overdue").length);
-      setBlacklistCount(customersRes.data.filter((c: any) => c.status === "blacklist").length);
+      setPawnCount(metricsRes.data.pawnCount || 0);
+      setUnsecuredCount(metricsRes.data.unsecuredCount || 0);
+      setInstallmentCount(metricsRes.data.installmentCount || 0);
+      setBlacklistCount(metricsRes.data.blacklistCount || 0);
     } catch (err) {
       console.error("Error loading dashboard metrics", err);
     } finally {

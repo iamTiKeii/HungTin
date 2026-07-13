@@ -103,23 +103,140 @@ async function recalculateUnsecuredSchedule(
 
 // ================= ENDPOINTS =================
 
+function calculateAccruedInterest(contract: any): number {
+  if (contract.status !== "active") return 0;
+  const paidPayments = contract.interest_payments?.filter((p: any) => p.is_paid) || [];
+  let startDate = new Date(contract.loan_date);
+  if (paidPayments.length > 0) {
+    const sorted = [...paidPayments].sort((a: any, b: any) => b.cycle_number - a.cycle_number);
+    startDate = new Date(sorted[0].to_date);
+  }
+  const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diffMs = todayMidnight.getTime() - startMidnight.getTime();
+  if (diffMs < 0) return 0;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+
+  let dailyRate = 0;
+  const principal = Number(contract.loan_amount) || 0;
+  const rate = Number(contract.interest_rate) || 0;
+  const pValue = Number(contract.period_value) || 1;
+  const interestTypeCode = contract.interest_type?.code;
+
+  if (interestTypeCode === "daily_k_million") {
+    dailyRate = (principal / 1000000) * rate;
+  } else if (interestTypeCode === "daily_k_day") {
+    dailyRate = rate;
+  } else {
+    dailyRate = (principal * (rate / 100)) / pValue;
+  }
+  return Math.round(dailyRate * diffDays);
+}
+
 // 1. Get Unsecured Contracts list
 router.get("/", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const storeId = req.user!.store_id;
-    const { status, search } = req.query;
+    const { status, search, page, limit } = req.query;
 
     const whereClause: any = { store_id: storeId };
+    
     if (status) {
-      whereClause.status = status;
+      if (status === "all_active") {
+        whereClause.status = "active";
+      } else if (status === "closed") {
+        whereClause.status = { in: ["closed", "redeemed"] };
+      } else if (status === "overdue") {
+        whereClause.status = "active";
+        whereClause.interest_payments = {
+          some: {
+            is_paid: false,
+            to_date: { lt: new Date() }
+          }
+        };
+      } else {
+        whereClause.status = status as string;
+      }
     } else {
       whereClause.status = { not: "cancelled" };
     }
+
     if (search) {
+      const q = search as string;
       whereClause.OR = [
-        { contract_code: { contains: search as string, mode: "insensitive" } },
-        { customer: { full_name: { contains: search as string, mode: "insensitive" } } },
+        { contract_code: { contains: q, mode: "insensitive" } },
+        { customer: { full_name: { contains: q, mode: "insensitive" } } },
+        { customer: { phone: { contains: q, mode: "insensitive" } } },
+        { customer: { identity_card_number: { contains: q, mode: "insensitive" } } },
       ];
+    }
+
+    const allMatching = await prisma.unsecuredContract.findMany({
+      where: whereClause,
+      select: {
+        loan_amount: true,
+        debt_amount: true,
+        loan_date: true,
+        interest_rate: true,
+        period_value: true,
+        status: true,
+        interest_type: { select: { code: true } },
+        interest_payments: {
+          select: { is_paid: true, to_date: true, cycle_number: true, expected_interest: true }
+        }
+      }
+    });
+
+    const totalLent = allMatching.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
+    const totalDebt = allMatching.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
+    const totalExpectedInterest = allMatching.reduce((sum, item) => sum + calculateAccruedInterest(item), 0);
+    const totalPaidInterest = allMatching.reduce((sum, item) => {
+      const interestSum = item.interest_payments.reduce((s, p) => s + Number(p.expected_interest || 0), 0);
+      return sum + interestSum;
+    }, 0);
+
+    const pageNum = page ? parseInt(page as string, 10) : undefined;
+    const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+
+    if (pageNum !== undefined && limitNum !== undefined) {
+      const skip = (pageNum - 1) * limitNum;
+      const data = await prisma.unsecuredContract.findMany({
+        where: whereClause,
+        include: {
+          customer: {
+            select: { id: true, full_name: true, phone: true, identity_card_number: true }
+          },
+          commodity: {
+            select: { id: true, name: true }
+          },
+          interest_type: {
+            select: { id: true, code: true, name: true }
+          },
+          interest_payments: {
+            orderBy: { cycle_number: "asc" }
+          }
+        },
+        orderBy: { created_at: "desc" },
+        skip,
+        take: limitNum,
+      });
+
+      return res.json({
+        data: mapUnsecuredContracts(data),
+        totals: {
+          totalLent,
+          totalDebt,
+          totalExpectedInterest,
+          totalPaidInterest
+        },
+        pagination: {
+          total: allMatching.length,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(allMatching.length / limitNum)
+        }
+      });
     }
 
     const contracts = await prisma.unsecuredContract.findMany({
