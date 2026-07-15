@@ -9,6 +9,8 @@ export const formatCurrency = (val: number): string => {
     .trim();
 };
 
+import { formatInterestRateText } from "../../utils/interestFormatter";
+
 // Helper to convert numeric amount to Vietnamese words
 export const convertNumberToVietnameseWords = (amount: number): string => {
   if (amount === 0) return "Không đồng";
@@ -158,7 +160,7 @@ export const buildPawnContractPrintData = (
     interestRateVal = "Thỏa thuận";
   } else {
     if (contract.interest_rate !== undefined && contract.interest_rate !== null) {
-      interestRateVal = `${contract.interest_rate}% / ${contract.period_value || 30} ngày`;
+      interestRateVal = formatInterestRateText(Number(contract.interest_rate), contract.interest_type?.code, contract.period_value);
     } else {
       interestRateVal = "Thỏa thuận";
     }
@@ -227,7 +229,7 @@ export const buildLoanContractPrintData = (
 
   const interestRateVal =
     contract.interest_rate !== undefined && contract.interest_rate !== null
-      ? `${contract.interest_rate}% / ${contract.period_value || 30} ngày`
+      ? formatInterestRateText(Number(contract.interest_rate), contract.interest_type?.code, contract.period_value)
       : "Thỏa thuận";
   const loanAmt = Number(contract.loan_amount || 0);
   const loanAmountStr = formatCurrency(loanAmt);

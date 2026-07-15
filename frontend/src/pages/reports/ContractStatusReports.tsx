@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { Search, ChevronRight, RefreshCw, AlertCircle, X, AlertOctagon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "../../lib/toast";
+import { formatInterestRateText } from "../../utils/interestFormatter";
 
 export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({ overrideCategory }) => {
   const { activeStore } = useAuth();
@@ -245,7 +246,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                         <td>{c.asset_name}</td>
                         <td>{new Date(c.loan_date).toLocaleDateString("vi-VN")}</td>
                         <td className="text-amber-600 font-extrabold">{formatCurrency(c.loan_amount)}</td>
-                        <td>{c.interest_rate}% / {c.period_value} ngày ({c.interest_type.name})</td>
+                        <td>{formatInterestRateText(Number(c.interest_rate), c.interest_type?.code, c.period_value)} ({c.interest_type?.name || ""})</td>
                         <td>
                           <span
                             className={`badge badge-sm font-semibold rounded-lg px-2 py-0.5 ${
@@ -327,7 +328,7 @@ export const ContractStatusReports: React.FC<{ overrideCategory?: string }> = ({
                         <td>{new Date(c.loan_date).toLocaleDateString("vi-VN")}</td>
                         <td className="text-amber-600 font-extrabold">{formatCurrency(c.loan_amount)}</td>
                         <td className="text-amber-600 font-extrabold">{formatCurrency(c.totalRepayment)}</td>
-                        <td>{c.interest_rate}% / {c.period_value} ngày ({c.interest_type.name})</td>
+                        <td>{formatInterestRateText(Number(c.interest_rate), c.interest_type?.code, c.period_value)} ({c.interest_type?.name || ""})</td>
                         <td>
                           <span
                             className={`badge badge-sm font-semibold rounded-lg px-2 py-0.5 ${

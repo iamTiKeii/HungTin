@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useConfirm } from "../context/ConfirmContext";
+import { formatInterestRateText } from "../utils/interestFormatter";
 import {
   Trash,
   Upload,
@@ -486,9 +487,7 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     ?.filter((p: any) => p.is_paid)
     ?.sort((a: any, b: any) => b.cycle_number - a.cycle_number)[0];
 
-  const rateLabel = contract.interest_type?.code === "daily_k_million" 
-    ? `${Number(contract.interest_rate)}k /triệu`
-    : `${Number(contract.interest_rate)}% / kỳ`;
+  const rateLabel = formatInterestRateText(Number(contract.interest_rate), contract.interest_type?.code, contract.period_value);
 
   const getAssetDetailsList = () => {
     if (!contract || !contract.commodity) return null;

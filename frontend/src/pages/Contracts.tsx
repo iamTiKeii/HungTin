@@ -28,6 +28,7 @@ import { InstallmentDetail } from "./InstallmentDetail";
 import { toast } from "../lib/toast";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 import { useConfirm } from "../context/ConfirmContext";
+import { formatInterestRateText } from "../utils/interestFormatter";
 import { getCompiledHtml } from "../services/print/PrintService";
 import { ContractForm, contractConfigs } from "../components/contracts";
 
@@ -777,7 +778,7 @@ export const Contracts: React.FC = () => {
       const pct = rate * amount / 100;
       return `${formatCurrency(pct)} /ngày`;
     }
-    return `${rate}% / kỳ`;
+    return formatInterestRateText(rate, item.interest_type.code, period);
   };
 
   return (
@@ -1026,9 +1027,7 @@ export const Contracts: React.FC = () => {
                         <td>
                           <span className="font-bold text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</span>
                           <span className="block text-[10px] text-red-500 font-semibold">
-                            {item.interest_type?.code === "daily_k_million" 
-                              ? `${Number(item.interest_rate)}k /triệu`
-                              : `${Number(item.interest_rate)}% / kỳ`}
+                            {formatInterestRateText(Number(item.interest_rate), item.interest_type?.code, item.period_value)}
                           </span>
                         </td>
                         <td>

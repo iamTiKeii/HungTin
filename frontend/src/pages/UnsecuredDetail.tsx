@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, Link } from "react-router-dom";
 import { useConfirm } from "../context/ConfirmContext";
+import { formatInterestRateText } from "../utils/interestFormatter";
 import {
   Upload,
   X,
@@ -410,9 +411,7 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
   // const activeTimer = contract.reminders?.find((r: any) => r.status === "active");
   // const lastPaid = contract.interest_payments?.filter((p: any) => p.is_paid).slice(-1)[0];
 
-  const rateLabel = contract.interest_type?.code === "daily_k_million"
-    ? `${Number(contract.interest_rate)}k /triệu`
-    : `${Number(contract.interest_rate)}% / kỳ`;
+  const rateLabel = formatInterestRateText(Number(contract.interest_rate), contract.interest_type?.code, contract.period_value);
 
   // Calculate dynamic accrued interest labels
   const start = new Date(contract.loan_date);
