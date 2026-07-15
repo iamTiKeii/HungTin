@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { Prisma, prisma } from "../utils/db";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
-import { generateContractCode } from "../utils/codeGen";
+import { generateContractCode, getNextContractCodeNumber } from "../utils/codeGen";
 import { adjustDailyCash, normalizeToMidnight, checkDailyCashLock } from "../utils/cash";
 
 const router = Router();
@@ -221,6 +221,16 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
 
     const mapped = contracts.map((c) => mapInstallmentContract(c, today));
     return res.json(mapped);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 1.1. Get Next Installment Contract Code Number
+router.get("/next-code-number", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const nextNum = await getNextContractCodeNumber(prisma, "installmentContract", "TG-");
+    return res.json({ nextCodeNumber: nextNum });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

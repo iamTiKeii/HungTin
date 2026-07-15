@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { Prisma, prisma } from "../utils/db";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
-import { generateContractCode, generateVoucherCode } from "../utils/codeGen";
+import { generateContractCode, generateVoucherCode, getNextContractCodeNumber } from "../utils/codeGen";
 import { generateInterestSchedule, InterestCycle, InterestCalculatorFactory } from "../utils/interest";
 import { adjustDailyCash, normalizeToMidnight, checkDailyCashLock } from "../utils/cash";
 
@@ -259,6 +259,16 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
     });
 
     return res.json(contracts);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 1.1. Get Next Pawn Contract Code Number
+router.get("/next-code-number", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const nextNum = await getNextContractCodeNumber(prisma, "pawnContract", "CĐ-");
+    return res.json({ nextCodeNumber: nextNum });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

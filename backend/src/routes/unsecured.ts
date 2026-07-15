@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { Prisma, prisma } from "../utils/db";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
-import { generateContractCode } from "../utils/codeGen";
+import { generateContractCode, getNextContractCodeNumber } from "../utils/codeGen";
 import { generateInterestSchedule } from "../utils/interest";
 import { adjustDailyCash, normalizeToMidnight, checkDailyCashLock } from "../utils/cash";
 import { calculateDailyInterestRate } from "./pawn";
@@ -252,6 +252,16 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
     });
 
     return res.json(mapUnsecuredContracts(contracts));
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 1.1. Get Next Unsecured Contract Code Number
+router.get("/next-code-number", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const nextNum = await getNextContractCodeNumber(prisma, "unsecuredContract", "TC-");
+    return res.json({ nextCodeNumber: nextNum });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

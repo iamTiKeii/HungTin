@@ -91,6 +91,10 @@ export const Contracts: React.FC = () => {
   const [isUnsecuredOpen, setIsUnsecuredOpen] = useState(false);
   const [isInstallmentOpen, setIsInstallmentOpen] = useState(false);
 
+  const [nextPawnCodeNum, setNextPawnCodeNum] = useState(1);
+  const [nextUnsecuredCodeNum, setNextUnsecuredCodeNum] = useState(1);
+  const [nextInstallmentCodeNum, setNextInstallmentCodeNum] = useState(1);
+
   // Pawn form fields (Create & Edit)
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContract, setEditingContract] = useState<any>(null);
@@ -353,6 +357,30 @@ export const Contracts: React.FC = () => {
       navigate(location.pathname, { replace: true });
     }
   }, [location.search, activeTab]);
+
+  useEffect(() => {
+    if (isPawnOpen && !editingId) {
+      axios.get("/api/contracts/pawn/next-code-number")
+        .then(res => setNextPawnCodeNum(res.data.nextCodeNumber))
+        .catch(err => console.error("Failed to fetch next pawn code number", err));
+    }
+  }, [isPawnOpen, editingId]);
+
+  useEffect(() => {
+    if (isUnsecuredOpen && !editingId) {
+      axios.get("/api/contracts/unsecured/next-code-number")
+        .then(res => setNextUnsecuredCodeNum(res.data.nextCodeNumber))
+        .catch(err => console.error("Failed to fetch next unsecured code number", err));
+    }
+  }, [isUnsecuredOpen, editingId]);
+
+  useEffect(() => {
+    if (isInstallmentOpen && !editingId) {
+      axios.get("/api/contracts/installment/next-code-number")
+        .then(res => setNextInstallmentCodeNum(res.data.nextCodeNumber))
+        .catch(err => console.error("Failed to fetch next installment code number", err));
+    }
+  }, [isInstallmentOpen, editingId]);
 
   // Trigger fetch when tab, store, search, pagination, or filters change
   useEffect(() => {
@@ -1520,11 +1548,7 @@ export const Contracts: React.FC = () => {
           setSelectedHistoryCustomerName(name);
           setIsHistoryOpen(true);
         }}
-        defaultCodeNumber={pawnList.reduce((max, item) => {
-          const match = item.contract_code?.match(/\d+/);
-          const num = match ? Number(match[0]) : 0;
-          return num > max ? num : max;
-        }, 0) + 1}
+        defaultCodeNumber={nextPawnCodeNum}
       />
 
       <ContractForm
@@ -1546,11 +1570,7 @@ export const Contracts: React.FC = () => {
           setSelectedHistoryCustomerName(name);
           setIsHistoryOpen(true);
         }}
-        defaultCodeNumber={unsecuredList.reduce((max, item) => {
-          const match = item.contract_code?.match(/\d+/);
-          const num = match ? Number(match[0]) : 0;
-          return num > max ? num : max;
-        }, 0) + 1}
+        defaultCodeNumber={nextUnsecuredCodeNum}
       />
 
       <ContractForm
@@ -1572,11 +1592,7 @@ export const Contracts: React.FC = () => {
           setSelectedHistoryCustomerName(name);
           setIsHistoryOpen(true);
         }}
-        defaultCodeNumber={installmentList.reduce((max, item) => {
-          const match = item.contract_code?.match(/\d+/);
-          const num = match ? Number(match[0]) : 0;
-          return num > max ? num : max;
-        }, 0) + 1}
+        defaultCodeNumber={nextInstallmentCodeNum}
       />
 
       {/* PRINT CONFIG MODAL */}
