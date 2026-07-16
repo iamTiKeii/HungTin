@@ -91,10 +91,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
 
   if (config.type === "capital") {
     return (
-      <div className="pt-4 border-t border-slate-100 space-y-4">
-        <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-          III. THÔNG TIN LÃI SUẤT
-        </h4>
+      <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {/* Interest Type */}
           <div className="flex items-center">
@@ -120,11 +117,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
   }
 
   return (
-    <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-        III. THÔNG TIN LÃI SUẤT & PHÍ
-      </h4>
-
+    <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
         {/* Interest Calculator Option */}
         <div className="flex items-center">
@@ -151,7 +144,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
         {/* Upfront interest checkbox */}
         {config.allowUpfrontInterest && (
           <div className="flex items-center">
-            <div className="grow pl-[150px]">
+            <div className="grow pl-0">
               <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none text-sm">
                 <input
                   type="checkbox"
@@ -192,7 +185,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
         </div>
 
         {/* Periodic Help Note */}
-        <div className="flex items-center pl-[150px]">
+        <div className="flex items-center pl-0">
           <span className="text-slate-400 text-xs italic font-semibold select-none">
             {interestPeriodHelper}
           </span>
@@ -223,7 +216,7 @@ export const ContractInterestSection: React.FC<InterestSectionProps> = ({
         </div>
 
         {/* legal disclaimer warning block */}
-        <div className="flex items-start pl-[150px]">
+        <div className="flex items-start pl-0">
           <span className="text-red-500 text-xs leading-relaxed font-semibold block grow mt-0.5 max-w-md select-none">
             * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ
             quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp

@@ -20,10 +20,7 @@ export const ContractGoodsSection: React.FC<GoodsSectionProps> = ({
   const commAttrs = parts[1] ? parts[1].split(",") : [];
 
   return (
-    <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-        II. THÔNG TIN HÀNG HÓA & TÀI SẢN
-      </h4>
+    <div className="space-y-4">
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
         {/* Commodity Dropdown */}

@@ -13,10 +13,7 @@ export const ContractNoteSection: React.FC<NoteSectionProps> = ({
     "w-[150px] text-right pr-4 font-bold text-slate-700 shrink-0 text-sm select-none";
 
   return (
-    <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-        V. GHI CHÚ
-      </h4>
+    <div className="space-y-4">
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
         <div className="col-span-1 md:col-span-2 flex items-start">

@@ -24,9 +24,6 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-        I. THÔNG TIN KHÁCH HÀNG
-      </h4>
 
       {/* Centered Radio Selection */}
       {!isEditMode && (
@@ -263,7 +260,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
         </div>
 
         {/* Address */}
-        <div className="flex items-center">
+        <div className="flex items-center md:col-span-2">
           <label className={labelClass}>Địa chỉ</label>
           <div className="grow">
             <input

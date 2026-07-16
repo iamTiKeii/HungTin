@@ -63,10 +63,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
 
   if (config.type === "capital") {
     return (
-      <div className="pt-4 border-t border-slate-100 space-y-4">
-        <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-          II. THÔNG TIN ĐẦU TƯ
-        </h4>
+      <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {/* Amount */}
           <div className="flex items-center">
@@ -106,10 +103,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
 
   if (config.type === "installment") {
     return (
-      <div className="pt-4 border-t border-slate-100 space-y-4">
-        <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-          II. THÔNG TIN TRẢ GÓP
-        </h4>
+      <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {/* Disbursed Amount */}
           <div className="flex items-center">
@@ -265,11 +259,7 @@ export const ContractLoanSection: React.FC<LoanSectionProps> = ({
 
   // Pawn & Unsecured Layout
   return (
-    <div className="pt-4 border-t border-slate-100 space-y-4">
-      <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
-        II. THÔNG TIN KHOẢN VAY
-      </h4>
-
+    <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
         {/* Total Loan Amount */}
         <div className="flex items-center">

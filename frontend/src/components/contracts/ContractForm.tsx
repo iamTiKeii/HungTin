@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, BookOpen } from "lucide-react";
+import { X, BookOpen, Info } from "lucide-react";
 import type { ContractFormConfig } from "./contract.config";
 import { ContractCustomerSection } from "./ContractCustomerSection";
 import { ContractGoodsSection } from "./ContractGoodsSection";
@@ -201,46 +201,64 @@ export const ContractForm: React.FC<ContractFormProps> = ({
             />
           )}
 
-          {config.showGoods && (
-            <ContractGoodsSection
-              state={state}
-              onChange={updateState}
-              commodities={commodities}
-            />
+          {(config.showGoods || config.showLoan || config.showInterest) && (
+            <div className="pt-4 border-t border-slate-100 space-y-4">
+              <h4 className="font-bold text-blue-600 text-sm border-b border-slate-100 pb-2 flex items-center gap-1.5 uppercase">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span>Thông tin khoản vay</span>
+              </h4>
+
+              {config.showGoods && (
+                <ContractGoodsSection
+                  state={state}
+                  onChange={updateState}
+                  commodities={commodities}
+                />
+              )}
+
+              {config.showLoan && (
+                <ContractLoanSection
+                  state={state}
+                  onChange={updateState}
+                  config={config}
+                  interestTypes={interestTypes}
+                />
+              )}
+
+              {config.showInterest && (
+                <ContractInterestSection
+                  state={state}
+                  onChange={updateState}
+                  interestTypes={interestTypes}
+                  config={config}
+                />
+              )}
+            </div>
           )}
 
-          {config.showLoan && (
-            <ContractLoanSection
-              state={state}
-              onChange={updateState}
-              config={config}
-              interestTypes={interestTypes}
-            />
-          )}
+          {(config.showFinance || config.showNotes) && (
+            <div className="pt-4 border-t border-slate-100 space-y-4">
+              <h4 className="font-bold text-blue-600 text-sm border-b border-slate-100 pb-2 flex items-center gap-1.5 uppercase">
+                <Info className="w-4 h-4 text-blue-600" />
+                <span>Thông tin khác</span>
+              </h4>
 
-          {config.showInterest && (
-            <ContractInterestSection
-              state={state}
-              onChange={updateState}
-              interestTypes={interestTypes}
-              config={config}
-            />
-          )}
+              {config.showFinance && (
+                <ContractFinanceSection
+                  state={state}
+                  onChange={updateState}
+                  staffs={staffs}
+                  collaborators={collaborators}
+                />
+              )}
 
-          {config.showFinance && (
-            <ContractFinanceSection
-              state={state}
-              onChange={updateState}
-              staffs={staffs}
-              collaborators={collaborators}
-            />
-          )}
-
-          {config.showNotes && (
-            <ContractNoteSection
-              state={state}
-              onChange={updateState}
-            />
+              {config.showNotes && (
+                <ContractNoteSection
+                  state={state}
+                  onChange={updateState}
+                />
+              )}
+            </div>
           )}
 
           {/* Modal Actions Footer */}
