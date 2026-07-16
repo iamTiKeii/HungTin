@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
-import { normalizeNumericInput } from "../utils/interestFormatter";
+import { normalizeNumericInput, formatInterestRateText } from "../utils/interestFormatter";
 import { LoadingOverlay } from "../components/shared/LoadingOverlay";
 import { useConfirm } from "../context/ConfirmContext";
 
@@ -306,11 +306,11 @@ export const Commodities: React.FC = () => {
     if (code === "daily_k_million") return "k / 1 triệu / ngày";
     if (code === "daily_k_day") return "k / ngày";
     if (code.includes("monthly") || code.includes("month") || code.includes("flat_rate") || code.includes("reducing_balance")) {
-      if (code.includes("amount") || code.includes("vnđ")) return "đ / tháng";
+      if (code.includes("amount") || code.includes("vnđ")) return "k / tháng";
       return "% / tháng";
     }
     if (code.includes("weekly") || code.includes("week")) {
-      if (code.includes("amount") || code.includes("vnđ")) return "đ / tuần";
+      if (code.includes("amount") || code.includes("vnđ")) return "k / tuần";
       return "% / tuần";
     }
     if (code.includes("daily") || code.includes("day") || code.includes("million")) {
@@ -323,13 +323,7 @@ export const Commodities: React.FC = () => {
   const getInterestTypeLabel = (comm: Commodity) => {
     if (!comm.interest_type) return "---";
     const rate = Number(comm.default_interest_rate);
-    if (comm.interest_type.code === "daily_k_million") {
-      return `${rate}k/1triệu`;
-    }
-    if (comm.interest_type.code.includes("percent")) {
-      return `${rate}%`;
-    }
-    return `${rate.toLocaleString("vi-VN")} đ`;
+    return formatInterestRateText(rate, comm.interest_type.code);
   };
 
   const formatNumber = (val: number) => {

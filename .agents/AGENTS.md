@@ -33,3 +33,28 @@ Dự án bao gồm 6 phân hệ cốt lõi:
 - **ĐỊNH DẠNG VIỆT NAM (VIETNAMESE LOCALIZATION)**:
   * Định dạng tiền tệ: Luôn dùng định dạng chuẩn VND `toLocaleString("vi-VN")` cho hiển thị. Tránh lặp lại ký hiệu tiền tệ (như VNĐ VNĐ hoặc ₫ ₫).
   * Định dạng ngày tháng: Hiển thị dạng `DD/MM/YYYY` thông qua phương thức `toLocaleDateString("vi-VN")`.
+
+## 4. QUY TẮC PHÂN TÁCH NHẬP - TÍNH - HIỂN THỊ LÃI SUẤT DẠNG "k/..." (k-INTEREST RATE FLOW)
+Để đảm bảo trải nghiệm nhập liệu nhanh gọn nhưng tính toán tiền lãi hoàn toàn chính xác, hệ thống phân tách gói lãi suất dạng "k" (ví dụ: `daily_k_million` - k/triệu, `daily_k_day` - k/ngày, `monthly_k` - k/tháng) theo 4 bước khép kín sau:
+
+1. **Nhập liệu (Input):** 
+   - Trên các form Tạo mới hoặc Chỉnh sửa hợp đồng, người dùng chỉ nhập số tối giản (Ví dụ: Nhập `2` hoặc `3` thay vì nhập `2000` hoặc `3000`).
+
+2. **Lưu trữ (Database Storage):**
+   - Hệ thống lưu trữ đúng giá trị tối giản người dùng nhập (Ví dụ: lưu số `2` vào cột `interest_rate` trong database, không lưu `2000`).
+
+3. **Tính toán số tiền lãi thực tế (Calculation Formula):**
+   - Trong mọi công thức toán học để tính ra số tiền đóng lãi tuyệt đối (VND), hệ thống tự động nhân `interest_rate` với `1,000` để quy đổi ra giá trị tiền mặt thực tế.
+   - Ví dụ công thức:
+     + Gói k/triệu: `dailyRate = (principal / 1,000,000) * (interest_rate * 1,000)` 
+       *(Ví dụ: Vay 10 triệu với lãi suất lưu trong DB là 2 -> Lãi 1 ngày = (10,000,000 / 1,000,000) * (2 * 1,000) = 10 * 2,000 = 20,000đ).*
+     + Gói k/ngày: `dailyRate = interest_rate * 1,000` *(Lãi suất trong DB là 2 -> Lãi 1 ngày = 2 * 1,000 = 2,000đ).*
+
+4. **Hiển thị giao diện (UI Render Display):**
+   - Trên bảng danh sách hợp đồng, chi tiết hợp đồng và các báo cáo, giá trị lãi suất tuyệt đối KHÔNG được hiển thị dạng số trơn (`2`) hay số quy đổi (`2000`).
+   - Phải tự động format thêm hậu tố "k" trước chu kỳ đóng để hiển thị thân thiện. Ví dụ:
+     + Gói k/triệu: Hiển thị là `2k /1triệu` (hoặc `1k /1triệu`).
+     + Gói k/ngày: Hiển thị là `2k /ngày`.
+     + Gói k/tháng: Hiển thị là `2k /tháng`.
+     + Gói k/tuần: Hiển thị là `2k /tuần`.
+

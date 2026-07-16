@@ -90,11 +90,11 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
       case "monthly_percent_periodic":
         return { label: "Lãi suất (%/tháng)", suffix: "% / tháng", placeholder: "1" };
       case "monthly_amount_periodic":
-        return { label: "Lãi phí (đ/tháng)", suffix: "đ / tháng", placeholder: "VD: 500.000" };
+        return { label: "Lãi phí (k/tháng)", suffix: "k / tháng", placeholder: "VD: 500" };
       case "weekly_percent":
         return { label: "Lãi suất (%/tuần)", suffix: "% / tuần", placeholder: "1" };
       case "weekly_amount":
-        return { label: "Lãi phí (đ/tuần)", suffix: "đ / tuần", placeholder: "VD: 50.000" };
+        return { label: "Lãi phí (k/tuần)", suffix: "k / tuần", placeholder: "VD: 50" };
       case "flat_rate_monthly":
         return { label: "Lãi suất (%/tháng)", suffix: "% / tháng", placeholder: "1" };
       case "flat_rate_daily":

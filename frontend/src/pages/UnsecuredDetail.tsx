@@ -422,10 +422,21 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
   const diffTime = Math.max(0, today.getTime() - start.getTime());
   const elapsedDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   let dailyInterest = 0;
-  if (contract.interest_type?.code === "daily_k_million") {
-    dailyInterest = Number(contract.interest_rate) * (Number(contract.loan_amount) / 1000000);
+  const rate = Number(contract.interest_rate || 0);
+  const principal = Number(contract.loan_amount || 0);
+  const periodValue = Number(contract.period_value) || 10;
+  const typeCode = contract.interest_type?.code;
+
+  if (typeCode === "daily_k_million") {
+    dailyInterest = (principal / 1000000) * (rate * 1000);
+  } else if (typeCode === "daily_k_day") {
+    dailyInterest = rate * 1000;
+  } else if (typeCode === "monthly_amount_periodic") {
+    dailyInterest = (rate * 1000) / periodValue;
+  } else if (typeCode === "weekly_amount") {
+    dailyInterest = (rate * 1000) / 7;
   } else {
-    dailyInterest = (Number(contract.interest_rate) / 100) * Number(contract.loan_amount) / (contract.period_value || 10);
+    dailyInterest = ((rate / 100) * principal) / periodValue;
   }
   const accruedInt = Math.round(dailyInterest * elapsedDays);
 

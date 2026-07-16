@@ -709,9 +709,13 @@ export const Contracts: React.FC = () => {
     const pValue = Number(item.period_value) || 1;
     
     if (item.interest_type?.code === "daily_k_million") {
-      dailyRate = (principal / 1000000) * rate;
+      dailyRate = (principal / 1000000) * (rate * 1000);
     } else if (item.interest_type?.code === "daily_k_day") {
-      dailyRate = rate;
+      dailyRate = rate * 1000;
+    } else if (item.interest_type?.code === "monthly_amount_periodic") {
+      dailyRate = (rate * 1000) / pValue;
+    } else if (item.interest_type?.code === "weekly_amount") {
+      dailyRate = (rate * 1000) / 7;
     } else {
       dailyRate = (principal * (rate / 100)) / pValue;
     }
