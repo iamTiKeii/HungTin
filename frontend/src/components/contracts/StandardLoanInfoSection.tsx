@@ -112,7 +112,7 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-        {/* 1. Loại tài sản * (only shown if showGoods is true) */}
+        {/* Row 1: 1. Loại tài sản * & 2. Tên Tài sản * */}
         {config.showGoods && (
           <div className="flex items-center">
             <label className={labelClass}>
@@ -148,32 +148,28 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
           </div>
         )}
 
-        {/* 2. Tên Tài sản * (only shown if showGoods is true) */}
         {config.showGoods && (
           <div className="flex items-center">
-            <label className={labelClass}>
-              Tên tài sản <span className="text-red-500">*</span>
-            </label>
             <div className="grow">
               <input
                 type="text"
                 placeholder="Tên tài sản. VD: Honda SH 150i"
                 value={state.assetName}
                 onChange={(e) => onChange({ assetName: e.target.value })}
-                className="input input-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none h-10 text-sm"
+                className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 focus:outline-none h-10 text-sm"
                 required
               />
             </div>
           </div>
         )}
 
-        {/* 3. Tổng tiền vay * */}
+        {/* Row 2: 3. Tổng tiền vay * & Quick buttons */}
         <div className="flex items-center">
           <label className={labelClass}>
             Tổng tiền vay <span className="text-red-500">*</span>
           </label>
-          <div className="grow flex flex-col gap-1.5 w-full max-w-md">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full h-10">
+          <div className="grow">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <MoneyInput
                 value={state.loanAmount}
                 onChange={(val) => onChange({ loanAmount: String(val) })}
@@ -186,47 +182,49 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
                 VNĐ
               </span>
             </div>
-            {/* Quick buttons */}
-            <div className="flex flex-wrap gap-1">
-              {[
-                { label: "-5", val: -5000000 },
-                { label: "+5", val: 5000000 },
-                { label: "10", val: 10000000 },
-                { label: "20", val: 20000000 },
-                { label: "30", val: 30000000 },
-                { label: "40", val: 40000000 },
-                { label: "50", val: 50000000 },
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    let curr = Number(state.loanAmount) || 0;
-                    if (item.label.startsWith("-") || item.label.startsWith("+")) {
-                      onChange({ loanAmount: String(Math.max(0, curr + item.val)) });
-                    } else {
-                      onChange({ loanAmount: String(item.val) });
-                    }
-                  }}
-                  className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
-        {/* 4. Hình thức lãi * */}
+        <div className="flex items-center">
+          <div className="grow flex flex-wrap gap-1">
+            {[
+              { label: "-5", val: -5000000 },
+              { label: "+5", val: 5000000 },
+              { label: "10", val: 10000000 },
+              { label: "20", val: 20000000 },
+              { label: "30", val: 30000000 },
+              { label: "40", val: 40000000 },
+              { label: "50", val: 50000000 },
+            ].map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  let curr = Number(state.loanAmount) || 0;
+                  if (item.label.startsWith("-") || item.label.startsWith("+")) {
+                    onChange({ loanAmount: String(Math.max(0, curr + item.val)) });
+                  } else {
+                    onChange({ loanAmount: String(item.val) });
+                  }
+                }}
+                className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold border border-slate-200 transition-colors select-none"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 3: 4. Hình thức lãi * & Thu lãi trước */}
         <div className="flex items-center">
           <label className={labelClass}>
             Hình thức lãi <span className="text-red-500">*</span>
           </label>
-          <div className="grow flex flex-col gap-1.5 w-full max-w-md">
+          <div className="grow">
             <select
               value={state.interestType}
               onChange={(e) => onChange({ interestType: e.target.value })}
-              className="select select-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
+              className="select select-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
               required
             >
               <option value="">-- Chọn hình thức --</option>
@@ -236,9 +234,13 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
                 </option>
               ))}
             </select>
-            {/* Upfront interest checkbox */}
-            {config.allowUpfrontInterest && (
-              <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none text-sm mt-1">
+          </div>
+        </div>
+
+        <div className="flex items-center">
+          {config.allowUpfrontInterest ? (
+            <div className="grow pl-0">
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none text-sm">
                 <input
                   type="checkbox"
                   checked={state.isUpfrontInterest}
@@ -249,11 +251,13 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
                 />
                 <span>Thu lãi trước</span>
               </label>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="grow"></div>
+          )}
         </div>
 
-        {/* 5. Số ngày vay * */}
+        {/* Row 4: 5. Số ngày vay * & empty cell */}
         <div className="flex items-center">
           <label className={labelClass}>
             {loanDurationLabel} <span className="text-red-500">*</span>
@@ -275,13 +279,15 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
           </div>
         </div>
 
-        {/* 6. Kỳ lãi * */}
+        <div className="flex items-center"></div>
+
+        {/* Row 5: 6. Kỳ lãi * & helper note */}
         <div className="flex items-center">
           <label className={labelClass}>
             {interestPeriodLabel} <span className="text-red-500">*</span>
           </label>
-          <div className="grow flex flex-col gap-1 w-full max-w-md">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full h-10">
+          <div className="grow">
+            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white w-full max-w-md h-10">
               <input
                 type="number"
                 placeholder={interestPeriodPlaceholder}
@@ -296,13 +302,16 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
                 {interestPeriodSuffix}
               </span>
             </div>
-            <span className="text-slate-400 text-xs italic font-semibold select-none">
-              {interestPeriodHelper}
-            </span>
           </div>
         </div>
 
-        {/* 7. Lãi phí * */}
+        <div className="flex items-center pl-0">
+          <span className="text-slate-400 text-xs italic font-semibold select-none">
+            {interestPeriodHelper}
+          </span>
+        </div>
+
+        {/* Row 6: 7. Lãi phí * & disclaimer warning */}
         <div className="flex items-center">
           <label className={labelClass}>
             {interestLabel} <span className="text-red-500">*</span>
@@ -326,7 +335,16 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
           </div>
         </div>
 
-        {/* 8. Ngày vay * */}
+        <div className="flex items-start pl-0">
+          <span className="text-red-500 text-xs leading-relaxed font-semibold block grow mt-0.5 max-w-md select-none">
+            * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ
+            quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp
+            luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật
+            Hình sự.
+          </span>
+        </div>
+
+        {/* Row 7: 8. Ngày vay * & empty cell */}
         <div className="flex items-center">
           <label className={labelClass}>
             Ngày vay <span className="text-red-500">*</span>
@@ -342,15 +360,7 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
           </div>
         </div>
 
-        {/* Legal disclaimer warning block */}
-        <div className="col-span-1 md:col-span-2 flex items-start pl-0 md:pl-[150px]">
-          <span className="text-red-500 text-xs leading-relaxed font-semibold block grow mt-0.5 select-none">
-            * Lưu ý: Khách hàng phải đảm bảo lãi suất + phí khi cho vay tuân thủ
-            quy định pháp luật. Lãi suất cho vay &gt;=100%/năm là vi phạm pháp
-            luật, có thể bị truy cứu trách nhiệm hình sự theo Điều 201 Bộ luật
-            Hình sự.
-          </span>
-        </div>
+        <div className="flex items-center"></div>
       </div>
     </div>
   );
