@@ -231,9 +231,9 @@ export const PublicContractLookup: React.FC = () => {
                       <span className="text-slate-800 font-black">{formatVND(data.loan_amount)}</span>
                     </div>
                     {data.type === "pawn" && (
-                      <div className="py-3 flex justify-between items-center gap-2">
-                        <span className="text-slate-400 font-bold">Tài sản cầm cố</span>
-                        <span className="text-slate-800 font-black truncate max-w-[150px]" title={data.asset_name}>
+                      <div className="py-3 flex justify-between items-start gap-4">
+                        <span className="text-slate-400 font-bold flex-shrink-0">Tài sản cầm cố</span>
+                        <span className="text-slate-800 font-black text-right break-words max-w-[65%]" title={data.asset_name}>
                           {data.asset_name} {data.commodity_name ? `(${data.commodity_name})` : ""}
                         </span>
                       </div>
