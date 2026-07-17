@@ -28,20 +28,51 @@ export const ContractHeader: React.FC<ContractHeaderProps> = ({
   // Determine badge colors based on status
   const getBadgeClass = () => {
     switch (status) {
+      // Đang cầm / Đang vay / Đang trả góp
       case "active":
         return "bg-emerald-500 text-white border-none";
+        
+      // Đã tất toán / Đã chuộc / Kết thúc
       case "closed":
       case "completed":
         return "bg-slate-100 text-slate-500 border-slate-200";
+
+      // Hôm nay đóng tiền / Hôm nay đóng họ
+      case "today_pawn_interest":
+      case "today_unsecured_interest":
+      case "today_installment_due":
+        return "bg-[#3b82f6] text-white border-none";
+
+      // Đến ngày chuộc đồ / Đến hạn trả gốc
+      case "due_pawn_contract":
+      case "due_unsecured_contract":
+        return "bg-[#2563eb] text-white border-none";
+
+      // Chậm lãi / Chậm đóng / Chậm họ
       case "overdue":
-        return "bg-amber-500 text-white border-none";
       case "overdue_pawn_interest":
+      case "overdue_unsecured_interest":
+      case "overdue_installment_cycle":
         return "bg-[#ff9800] text-white border-none";
+
+      // Trễ hạn / Nợ xấu / Quá hạn
       case "overdue_pawn_contract":
       case "overdue_unsecured_contract":
+      case "overdue_unsecured_bad_debt":
+      case "overdue_installment_bad_debt":
         return "bg-[#ef4444] text-white border-none";
+
+      // Chờ thanh lý
+      case "waiting_liquidation":
+        return "bg-[#7c3aed] text-white border-none";
+
+      // Đã thanh lý / Thanh lý
+      case "liquidated":
+        return "bg-slate-500 text-white border-none";
+
       case "cancelled":
         return "bg-red-500 text-white border-none";
+
       default:
         return "bg-slate-100 text-slate-500 border-slate-200";
     }

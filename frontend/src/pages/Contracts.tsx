@@ -1089,12 +1089,20 @@ export const Contracts: React.FC = () => {
                         <td>
                           {(() => {
                             const detailed = getPawnDetailedStatus(item);
-                            const badgeColor = detailed.status === "overdue_pawn_contract" 
-                              ? "bg-[#ef4444] text-white" 
-                              : detailed.status === "overdue_pawn_interest" 
-                              ? "bg-[#ff9800] text-white" 
-                              : item.status === "active"
-                              ? "bg-blue-100 text-blue-700"
+                            const badgeColor = detailed.status === "active"
+                              ? "bg-emerald-500 text-white"
+                              : detailed.status === "today_pawn_interest"
+                              ? "bg-[#3b82f6] text-white"
+                              : detailed.status === "due_pawn_contract"
+                              ? "bg-[#2563eb] text-white"
+                              : detailed.status === "overdue_pawn_interest"
+                              ? "bg-[#ff9800] text-white"
+                              : detailed.status === "overdue_pawn_contract"
+                              ? "bg-[#ef4444] text-white"
+                              : detailed.status === "waiting_liquidation"
+                              ? "bg-[#7c3aed] text-white"
+                              : detailed.status === "liquidated"
+                              ? "bg-slate-500 text-white"
                               : "bg-slate-100 text-slate-500";
                             return (
                               <span className={`badge badge-sm font-bold text-xs uppercase border-none px-2 rounded ${badgeColor}`}>
@@ -1256,13 +1264,17 @@ export const Contracts: React.FC = () => {
                         <td>
                           {(() => {
                             const detailed = getUnsecuredDetailedStatus(item);
-                            const badgeColor = detailed.status === "closed"
-                              ? "bg-slate-200 text-slate-500"
-                              : detailed.status === "overdue"
-                              ? "bg-amber-500 text-white"
-                              : detailed.status === "overdue_unsecured_contract"
+                            const badgeColor = detailed.status === "active"
+                              ? "bg-emerald-500 text-white"
+                              : detailed.status === "today_unsecured_interest"
+                              ? "bg-[#3b82f6] text-white"
+                              : detailed.status === "due_unsecured_contract"
+                              ? "bg-[#2563eb] text-white"
+                              : detailed.status === "overdue_unsecured_interest"
+                              ? "bg-[#ff9800] text-white"
+                              : detailed.status === "overdue_unsecured_bad_debt"
                               ? "bg-[#ef4444] text-white"
-                              : "bg-emerald-500 text-white";
+                              : "bg-slate-100 text-slate-500";
                             return (
                               <span className={`badge badge-sm font-bold uppercase text-[10px] border-none px-2 rounded ${badgeColor}`}>
                                 {detailed.label}
@@ -1421,11 +1433,15 @@ export const Contracts: React.FC = () => {
                         <td>
                           {(() => {
                             const detailed = getInstallmentDetailedStatus(item);
-                            const badgeColor = detailed.status === "closed"
-                              ? "bg-slate-100 text-slate-500"
-                              : detailed.status === "overdue"
-                              ? "bg-amber-500 text-white"
-                              : "bg-emerald-500 text-white";
+                            const badgeColor = detailed.status === "active"
+                              ? "bg-emerald-500 text-white"
+                              : detailed.status === "today_installment_due"
+                              ? "bg-[#3b82f6] text-white"
+                              : detailed.status === "overdue_installment_cycle"
+                              ? "bg-[#ff9800] text-white"
+                              : detailed.status === "overdue_installment_bad_debt"
+                              ? "bg-[#ef4444] text-white"
+                              : "bg-slate-100 text-slate-500";
                             return (
                               <span className={`badge badge-xs font-bold uppercase text-[9px] px-1.5 py-2 border-none rounded ${badgeColor}`}>
                                 {detailed.label}
