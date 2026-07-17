@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { AlertTriangle, Search, RefreshCw } from "lucide-react";
+import { AlertTriangle, Search, RefreshCw, MessageSquare, Coins } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { PawnDetail } from "../PawnDetail";
 
 export const PawnWarning: React.FC = () => {
   const { activeStore } = useAuth();
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+
+  // Modal detail states
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string>("interest");
 
   const fetchData = async () => {
     if (!activeStore) return;
@@ -113,7 +118,30 @@ export const PawnWarning: React.FC = () => {
                       <span className="badge badge-error badge-sm text-white font-bold">{item.status}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <a href={`/contracts/pawn/${item.id}`} className="btn btn-primary btn-xs text-white rounded-lg">Chi tiết</a>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => {
+                            setSelectedContractId(item.id);
+                            setSelectedTab("history");
+                          }}
+                          className="btn btn-sm btn-ghost bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-center"
+                          title="Lịch sử nhắc nợ"
+                          type="button"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedContractId(item.id);
+                            setSelectedTab("interest");
+                          }}
+                          className="btn btn-sm btn-ghost bg-slate-100 hover:bg-slate-200 text-amber-500 p-1.5 h-8 w-8 rounded-lg flex items-center justify-center"
+                          title="Đóng tiền lãi"
+                          type="button"
+                        >
+                          <Coins className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -122,6 +150,19 @@ export const PawnWarning: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Pawn Contract Detail Modal */}
+      {selectedContractId && (
+        <PawnDetail
+          idProp={selectedContractId}
+          isModal={true}
+          defaultTab={selectedTab}
+          onClose={() => {
+            setSelectedContractId(null);
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 };
