@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { AlertTriangle, Search, RefreshCw, CheckCircle } from "lucide-react";
+import { AlertTriangle, Search, RefreshCw, CheckCircle, MessageSquare, Coins } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { MoneyInput } from "../../components/shared/MoneyInput";
 import { toast } from "../../lib/toast";
+import { InstallmentDetail } from "../InstallmentDetail";
 
 export const InstallmentWarning: React.FC = () => {
   const { activeStore } = useAuth();
@@ -22,6 +23,10 @@ export const InstallmentWarning: React.FC = () => {
   const [quickPayAmount, setQuickPayAmount] = useState("");
   const [quickPayLoading, setQuickPayLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Modal detail states
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string>("schedule");
 
   const fetchData = async () => {
     if (!activeStore) return;
@@ -55,8 +60,8 @@ export const InstallmentWarning: React.FC = () => {
     fetchEmployees();
   }, []);
 
-  const formatCurrency = (val: any) => {
-    return Number(val || 0).toLocaleString("vi-VN") + " đ";
+  const formatNumber = (val: any) => {
+    return Number(val || 0).toLocaleString("en-US");
   };
 
   const handleQuickPayOpen = (item: any) => {
@@ -164,9 +169,9 @@ export const InstallmentWarning: React.FC = () => {
           <table className="table table-zebra w-full text-slate-700">
             <thead className="bg-slate-50 border-b border-slate-100 text-slate-600 font-bold text-xs uppercase">
               <tr>
+                <th className="px-4 py-3 text-center w-12">#</th>
                 <th className="px-4 py-3 text-left">Mã HĐ</th>
                 <th className="px-4 py-3 text-left">Khách hàng</th>
-                <th className="px-4 py-3 text-left">SĐT</th>
                 <th className="px-4 py-3 text-left">Địa chỉ</th>
                 <th className="px-4 py-3 text-right">Nợ cũ</th>
                 <th className="px-4 py-3 text-right">Tiền cần đóng</th>
@@ -184,38 +189,120 @@ export const InstallmentWarning: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                list.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 border-b border-slate-100">
-                    <td className="px-4 py-3 font-bold text-amber-600">{item.contract_code}</td>
-                    <td className="px-4 py-3 font-semibold">{item.customer?.full_name}</td>
-                    <td className="px-4 py-3">{item.customer?.phone}</td>
-                    <td className="px-4 py-3 truncate max-w-[120px]">{item.customer?.address}</td>
-                    <td className="px-4 py-3 text-right text-red-500 font-bold">{formatCurrency(item.debt_amount)}</td>
-                    <td className="px-4 py-3 text-right text-slate-800 font-black">{formatCurrency(item.period_payment_amount)}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs truncate max-w-[150px]">{item.warning_reason}</td>
-                    <td className="px-4 py-3 text-center">
-                      <button 
-                        onClick={() => handleQuickPayOpen(item)}
-                        className="btn btn-emerald hover:bg-emerald-600 btn-xs text-white rounded-lg flex items-center gap-1 mx-auto"
-                        type="button"
-                      >
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Đóng nhanh</span>
-                      </button>
+                <>
+                  {list.map((item, index) => {
+                    const isDebtNegative = Number(item.debt_amount || 0) !== 0;
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50 border-b border-slate-100 text-[13px]">
+                        <td className="px-4 py-3 text-center">{index + 1}</td>
+                        <td className="px-4 py-3 font-bold text-slate-700">{item.contract_code}</td>
+                        <td className="px-4 py-3 font-semibold">
+                          <button
+                            onClick={() => {
+                              setSelectedContractId(item.id);
+                              setSelectedTab("schedule");
+                            }}
+                            className="text-[#3b82f6] font-bold hover:underline text-left focus:outline-none"
+                            type="button"
+                          >
+                            {item.customer?.full_name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 truncate max-w-[120px]">{item.customer?.address || ""}</td>
+                        <td className={`px-4 py-3 text-right font-bold ${isDebtNegative ? "text-red-500" : "text-slate-800"}`}>
+                          {formatNumber(item.debt_amount)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-800 font-bold">{formatNumber(item.period_payment_amount)}</td>
+                        <td className="px-4 py-3 text-slate-500 text-xs whitespace-normal break-words max-w-[280px]">
+                          {item.warning_reason}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button 
+                            onClick={() => handleQuickPayOpen(item)}
+                            className="btn btn-emerald hover:bg-emerald-600 btn-xs text-white rounded-lg flex items-center gap-1 mx-auto"
+                            type="button"
+                          >
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Đóng nhanh</span>
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          {item.status === "Đến hạn" ? (
+                            <span className="badge border-none bg-[#ef4444] text-white text-[10px] font-bold uppercase rounded p-1.5 h-auto leading-none">
+                              Đến hạn
+                            </span>
+                          ) : (
+                            <span className="badge border-none bg-[#94a3b8] text-white text-[10px] font-bold uppercase rounded p-1.5 h-auto leading-none">
+                              {item.status}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => {
+                                setSelectedContractId(item.id);
+                                setSelectedTab("reminders");
+                              }}
+                              className="btn btn-sm btn-ghost bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 h-8 w-8 rounded-lg flex items-center justify-center"
+                              title="Lịch sử nhắc nợ"
+                              type="button"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedContractId(item.id);
+                                setSelectedTab("schedule");
+                              }}
+                              className="btn btn-sm btn-ghost bg-slate-100 hover:bg-slate-200 text-amber-500 p-1.5 h-8 w-8 rounded-lg flex items-center justify-center"
+                              title="Đóng tiền"
+                              type="button"
+                            >
+                              <Coins className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* Summary Row */}
+                  <tr className="bg-[#fffbeb] font-bold text-slate-800 border-t border-slate-200 text-[13px]">
+                    <td className="px-4 py-3 text-center"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3 font-black text-slate-800">Tổng tiền</td>
+                    <td className="px-4 py-3 text-right text-red-500 font-black">
+                      {formatNumber(list.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0))}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="badge badge-error badge-sm text-white font-bold">{item.status}</span>
+                    <td className="px-4 py-3 text-right text-blue-600 font-black">
+                      {formatNumber(list.reduce((sum, item) => sum + Number(item.period_payment_amount || 0), 0))}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <a href={`/contracts/installment/${item.id}`} className="btn btn-primary btn-xs text-white rounded-lg">Chi tiết</a>
-                    </td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
                   </tr>
-                ))
+                </>
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Installment Contract Detail Modal */}
+      {selectedContractId && (
+        <InstallmentDetail
+          idProp={selectedContractId}
+          isModal={true}
+          defaultTab={selectedTab}
+          onClose={() => {
+            setSelectedContractId(null);
+            fetchData();
+          }}
+        />
+      )}
 
       {/* Quick Pay Modal */}
       {quickPayItem && (
@@ -244,7 +331,7 @@ export const InstallmentWarning: React.FC = () => {
               <div className="text-xs text-slate-600 space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <p>Khách hàng: <span className="font-bold text-slate-800">{quickPayItem.customer?.full_name}</span></p>
                 <p>Mã HĐ: <span className="font-bold text-slate-800 font-mono">{quickPayItem.contract_code}</span></p>
-                <p>Số tiền định kỳ: <span className="font-bold text-slate-800">{formatCurrency(quickPayItem.period_payment_amount)}</span></p>
+                <p>Số tiền định kỳ: <span className="font-bold text-slate-800">{formatNumber(quickPayItem.period_payment_amount)} đ</span></p>
               </div>
 
               <div className="form-control w-full">

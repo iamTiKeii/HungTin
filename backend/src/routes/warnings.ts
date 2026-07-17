@@ -124,45 +124,75 @@ router.get("/loan", async (req: AuthenticatedRequest, res: Response) => {
         store_id: req.user!.store_id,
         status: "active",
         ...getSearchFilter(search),
-        interest_payments: {
-          some: {
-            is_paid: false,
-            to_date: { lt: today },
-          }
-        }
       },
       include: {
         customer: true,
         interest_payments: {
-          where: {
-            is_paid: false,
-            to_date: { lt: today },
-          },
+          where: { is_paid: false },
         }
       }
     });
 
-    const result = contracts.map((c) => {
+    const result: any[] = [];
+    for (const c of contracts) {
       const debtVal = Number(c.debt_amount || 0);
       const loanVal = Number(c.loan_amount || 0);
-      const interestDue = c.interest_payments.reduce(
-        (sum: number, p: any) => sum + Number(p.expected_interest || 0), 0
-      );
-      const totalDue = loanVal + interestDue + debtVal;
-      const overdueCycles = c.interest_payments.length;
 
-      return {
-        id: c.id,
-        contract_code: c.contract_code,
-        customer: c.customer,
-        debt_amount: debtVal,
-        interest_due: interestDue,
-        loan_amount: loanVal,
-        total_due: totalDue,
-        warning_reason: `Trễ nợ đóng lãi (${overdueCycles} kỳ)`,
-        status: "Quá hạn",
-      };
-    });
+      const loanDate = new Date(c.loan_date);
+      const dueDate = new Date(loanDate.getTime() + c.loan_days * 24 * 60 * 60 * 1000);
+      dueDate.setHours(0, 0, 0, 0);
+
+      const isOverdueContract = dueDate <= today;
+
+      const overduePayments = c.interest_payments.filter(p => new Date(p.to_date) < today);
+      const hasOverdueInterest = overduePayments.length > 0;
+
+      if (hasOverdueInterest || isOverdueContract) {
+        const interestDue = overduePayments.reduce(
+          (sum: number, p: any) => sum + Number(p.expected_interest || 0), 0
+        );
+
+        // Tiền gốc đến hạn hiển thị
+        const principalDue = isOverdueContract ? loanVal : 0;
+        const totalDue = debtVal + interestDue + principalDue;
+
+        // Tính số ngày trễ
+        let daysOverdue = 0;
+        if (isOverdueContract) {
+          daysOverdue = Math.max(1, Math.round((today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000)));
+        } else if (overduePayments.length > 0) {
+          const minToDate = new Date(Math.min(...overduePayments.map(p => new Date(p.to_date).getTime())));
+          daysOverdue = Math.max(1, Math.round((today.getTime() - minToDate.getTime()) / (24 * 60 * 60 * 1000)));
+        }
+
+        let statusText = "Nợ lãi";
+        let warningReason = "";
+
+        if (isOverdueContract) {
+          statusText = "Đến ngày tất toán";
+          warningReason = `Chậm ${daysOverdue} ngày đóng tiền. `;
+          if (interestDue > 0) {
+            warningReason += `Đóng ${interestDue.toLocaleString("vi-VN")} tiền lãi.`;
+          }
+          warningReason += `Hôm nay trả gốc số tiền : ${loanVal.toLocaleString("vi-VN")}.`;
+        } else {
+          statusText = "Nợ lãi";
+          warningReason = `Chậm ${daysOverdue} ngày đóng tiền. Đóng ${interestDue.toLocaleString("vi-VN")} tiền lãi.`;
+        }
+
+        result.push({
+          id: c.id,
+          contract_code: c.contract_code,
+          customer: c.customer,
+          debt_amount: debtVal,
+          interest_due: interestDue,
+          loan_amount: principalDue,
+          total_due: totalDue,
+          warning_reason: warningReason,
+          status: statusText,
+        });
+      }
+    }
 
     return res.json(result);
   } catch (error: any) {
@@ -337,19 +367,32 @@ router.get("/summary", async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // 2. Loan warnings count
-    const loanCount = await prisma.unsecuredContract.count({
+    // 2. Loan warnings count (including overdue contracts and overdue interest payments)
+    const loanContracts = await prisma.unsecuredContract.findMany({
       where: {
         store_id: storeId,
         status: "active",
+      },
+      include: {
         interest_payments: {
-          some: {
-            is_paid: false,
-            to_date: { lt: today }
-          }
+          where: { is_paid: false }
         }
       }
     });
+
+    let loanCount = 0;
+    for (const c of loanContracts) {
+      const loanDate = new Date(c.loan_date);
+      const dueDate = new Date(loanDate.getTime() + c.loan_days * 24 * 60 * 60 * 1000);
+      dueDate.setHours(0, 0, 0, 0);
+
+      const isOverdueContract = dueDate <= today;
+      const hasOverdueInterest = c.interest_payments.some(p => new Date(p.to_date) < today);
+
+      if (isOverdueContract || hasOverdueInterest) {
+        loanCount++;
+      }
+    }
 
     // 3. Installment warnings count (due today)
     const endOfDay = new Date();

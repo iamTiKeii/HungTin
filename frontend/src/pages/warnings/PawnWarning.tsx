@@ -127,7 +127,7 @@ export const PawnWarning: React.FC = () => {
                         <td className="px-4 py-3 text-right text-red-500 font-bold">{formatNumber(item.interest_due)}</td>
                         <td className="px-4 py-3 text-right text-red-500 font-bold">{formatNumber(item.loan_amount)}</td>
                         <td className="px-4 py-3 text-right text-blue-500 font-bold">{formatNumber(item.total_due)}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs truncate max-w-[200px]" title={item.warning_reason}>
+                        <td className="px-4 py-3 text-slate-500 text-xs whitespace-normal break-words max-w-[280px]">
                           {item.warning_reason}
                         </td>
                         <td className="px-4 py-3">
