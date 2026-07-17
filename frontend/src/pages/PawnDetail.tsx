@@ -1678,28 +1678,21 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
           <ContractSection title="Danh sách tài sản cầm cố" icon={Anchor}>
             {getAssetDetailsList()}
           </ContractSection>
-          <ContractSection title="Link tra cứu khách hàng" icon={Link2}>
-            <div className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <input
-                type="text"
-                readOnly
-                value={contract.lookup_link || ""}
-                className="input input-bordered input-sm flex-1 bg-white font-mono text-xs text-slate-600 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (contract.lookup_link) {
-                    navigator.clipboard.writeText(contract.lookup_link);
-                    toast.success("Đã sao chép link tra cứu thành công!");
-                  }
-                }}
-                className="btn btn-sm btn-emerald text-white font-bold rounded-lg"
-              >
-                Copy Link tra cứu
-              </button>
-            </div>
-          </ContractSection>
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (contract.lookup_link) {
+                  navigator.clipboard.writeText(contract.lookup_link);
+                  toast.success("Đã sao chép link tra cứu thành công!");
+                }
+              }}
+              className="btn btn-sm btn-emerald text-white font-bold rounded-lg flex items-center gap-1.5 shadow-sm"
+            >
+              <Link2 className="w-4 h-4" />
+              Copy Link tra cứu khách hàng
+            </button>
+          </div>
         </>
       }
       tabs={
