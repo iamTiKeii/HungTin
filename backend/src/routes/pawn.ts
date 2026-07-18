@@ -393,6 +393,22 @@ router.post("/", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: Aut
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Update customer info if passed
+      const { customer_phone, customer_address, customer_id_card } = req.body;
+      if (customer_id) {
+        const updateData: any = {};
+        if (customer_phone !== undefined) updateData.phone = customer_phone;
+        if (customer_address !== undefined) updateData.address = customer_address;
+        if (customer_id_card !== undefined) updateData.identity_card_number = customer_id_card;
+
+        if (Object.keys(updateData).length > 0) {
+          await tx.customer.update({
+            where: { id: customer_id },
+            data: updateData,
+          });
+        }
+      }
+
       const contractCode = contract_code || await generateContractCode(tx, "pawn");
       const normalizedLoanDate = normalizeToMidnight(loan_date || new Date());
 

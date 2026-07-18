@@ -194,13 +194,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               value={state.customerIdCard}
               onChange={(e) => onChange({ customerIdCard: e.target.value })}
               onFocus={() => setShowCardDetails(true)}
-              readOnly={state.customerType === "existing"}
-              disabled={state.customerType === "existing"}
-              className={`input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10 ${
-                state.customerType === "existing"
-                  ? "bg-slate-50 cursor-not-allowed text-slate-500"
-                  : ""
-              }`}
+              className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10"
             />
           </div>
         </div>
@@ -248,13 +242,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               placeholder="09xx..."
               value={state.customerPhone}
               onChange={(e) => onChange({ customerPhone: e.target.value })}
-              readOnly={state.customerType === "existing"}
-              disabled={state.customerType === "existing"}
-              className={`input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10 ${
-                state.customerType === "existing"
-                  ? "bg-slate-50 cursor-not-allowed text-slate-500"
-                  : ""
-              }`}
+              className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10"
             />
           </div>
         </div>
@@ -268,13 +256,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
               placeholder="Địa chỉ khách hàng..."
               value={state.customerAddress}
               onChange={(e) => onChange({ customerAddress: e.target.value })}
-              readOnly={state.customerType === "existing"}
-              disabled={state.customerType === "existing"}
-              className={`input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10 ${
-                state.customerType === "existing"
-                  ? "bg-slate-50 cursor-not-allowed text-slate-500"
-                  : ""
-              }`}
+              className="input input-bordered w-full bg-white border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none h-10"
             />
           </div>
         </div>

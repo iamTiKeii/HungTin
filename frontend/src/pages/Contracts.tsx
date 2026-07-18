@@ -200,48 +200,99 @@ export const Contracts: React.FC = () => {
     let headers: string[] = [];
     let rows: any[][] = [];
     let filename = "Danh_Sach_Hop_Dong";
+    let alignments: string[] = [];
+    let summaryRow = "";
 
     if (activeTab === "pawn") {
       filename = "Hop_Dong_Cam_Do";
       headers = [
-        "Mã HĐ", "Khách hàng", "SĐT Khách hàng", "Mã TS", "Tài sản", 
-        "Tiền cầm (VNĐ)", "Ngày cầm", "Lãi đã đóng (VNĐ)", "Tiền nợ (VNĐ)", 
-        "Lãi đến hôm nay (VNĐ)", "Ngày phải đóng", "Trạng thái"
+        "#", "Mã HĐ", "Khách hàng", "SĐT", "CMND/CCCD", "Mã TS", "Tài sản", 
+        "Tiền cầm", "Lãi suất", "Ngày cầm", "Lãi đã đóng", "Tiền nợ", 
+        "Lãi đến hôm nay", "Ngày phải đóng", "Tình trạng"
       ];
-      rows = filteredPawnList.map((item) => {
+      alignments = [
+        "center", "center", "left", "center", "center", "center", "left", 
+        "number", "center", "center", "number", "number", "number", "center", "center"
+      ];
+
+      const totalLoan = filteredPawnList.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
+      const totalPaid = filteredPawnList.reduce((sum, item) => sum + getPaidInterest(item), 0);
+      const totalDebt = filteredPawnList.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
+      const totalAccrued = filteredPawnList.reduce((sum, item) => sum + getAccruedInterest(item), 0);
+
+      rows = filteredPawnList.map((item, index) => {
         const nextPayDate = getNextPaymentDate(item);
         const accruedInt = getAccruedInterest(item);
         const paidInt = getPaidInterest(item);
+        const detailed = getPawnDetailedStatus(item);
+        const rateText = formatInterestRateText(Number(item.interest_rate), item.interest_type?.code, item.period_value);
         return [
+          index + 1,
           item.contract_code,
           item.customer?.full_name || "",
           item.customer?.phone || "",
+          item.customer?.identity_card_number || "",
           item.commodity?.code || "",
           item.asset_name || "",
           Number(item.loan_amount || 0),
+          rateText,
           item.loan_date ? new Date(item.loan_date).toLocaleDateString("vi-VN") : "",
           paidInt,
           Number(item.debt_amount || 0),
           accruedInt,
           nextPayDate ? nextPayDate.toLocaleDateString("vi-VN") : "",
-          item.status === "active" ? "Đang cầm" : "Đã tất toán"
+          detailed.label || ""
         ];
       });
+
+      summaryRow = `
+        <tr class="bold">
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="left"></td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="left">Tổng tiền</td>
+          <td class="number" x:f="=SUM(H2:H${rows.length + 1})">${totalLoan}</td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="number" x:f="=SUM(K2:K${rows.length + 1})">${totalPaid}</td>
+          <td class="number" x:f="=SUM(L2:L${rows.length + 1})">${totalDebt}</td>
+          <td class="number" x:f="=SUM(M2:M${rows.length + 1})">${totalAccrued}</td>
+          <td class="center"></td>
+          <td class="center"></td>
+        </tr>
+      `;
     } else if (activeTab === "unsecured") {
       filename = "Hop_Dong_Tin_Chap";
       headers = [
-        "Mã HĐ", "Khách hàng", "SĐT Khách hàng", "Tài sản", "Tiền vay (VNĐ)", 
-        "Tổng phải thu (VNĐ)", "Ngày vay", "Lãi đã đóng (VNĐ)", "Nợ cũ (VNĐ)", 
-        "Lãi đến hôm nay (VNĐ)", "Ngày phải đóng", "Trạng thái"
+        "#", "Mã HĐ", "Khách hàng", "SĐT", "CMND/CCCD", "Tài sản", 
+        "Tiền vay", "Tổng phải thu", "Ngày vay", "Lãi đã đóng", "Tiền nợ", 
+        "Lãi đến hôm nay", "Ngày phải đóng", "Trạng thái"
       ];
-      rows = unsecuredList.map((item) => {
+      alignments = [
+        "center", "center", "left", "center", "center", "left", 
+        "number", "number", "center", "number", "number", "number", "center", "center"
+      ];
+
+      const totalLoan = unsecuredList.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
+      const totalRepay = unsecuredList.reduce((sum, item) => sum + Number(item.totalRepayment || 0), 0);
+      const totalPaid = unsecuredList.reduce((sum, item) => sum + getPaidInterest(item), 0);
+      const totalDebt = unsecuredList.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
+      const totalAccrued = unsecuredList.reduce((sum, item) => sum + getAccruedInterest(item), 0);
+
+      rows = unsecuredList.map((item, index) => {
         const nextPayDate = getNextPaymentDate(item);
         const accruedInt = getAccruedInterest(item);
         const paidInt = getPaidInterest(item);
+        const detailed = getUnsecuredDetailedStatus(item);
         return [
+          index + 1,
           item.contract_code,
           item.customer?.full_name || "",
           item.customer?.phone || "",
+          item.customer?.identity_card_number || "",
           item.commodity?.name?.split("|")[0] || "Tín chấp",
           Number(item.loan_amount || 0),
           Number(item.totalRepayment || 0),
@@ -250,25 +301,72 @@ export const Contracts: React.FC = () => {
           Number(item.debt_amount || 0),
           accruedInt,
           nextPayDate ? nextPayDate.toLocaleDateString("vi-VN") : "",
-          item.status === "active" ? "Đang chạy" : "Đã đóng"
+          detailed.label || ""
         ];
       });
+
+      summaryRow = `
+        <tr class="bold">
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="left"></td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="left">Tổng tiền</td>
+          <td class="number" x:f="=SUM(G2:G${rows.length + 1})">${totalLoan}</td>
+          <td class="number" x:f="=SUM(H2:H${rows.length + 1})">${totalRepay}</td>
+          <td class="center"></td>
+          <td class="number" x:f="=SUM(J2:J${rows.length + 1})">${totalPaid}</td>
+          <td class="number" x:f="=SUM(K2:K${rows.length + 1})">${totalDebt}</td>
+          <td class="number" x:f="=SUM(L2:L${rows.length + 1})">${totalAccrued}</td>
+          <td class="center"></td>
+          <td class="center"></td>
+        </tr>
+      `;
     } else {
       filename = "Hop_Dong_Tra_Gop";
       headers = [
-        "Mã HĐ", "Khách hàng", "SĐT Khách hàng", "Tổng tiền vay (VNĐ)", 
-        "Ngày vay", "Kỳ trả", "Số tiền trả mỗi kỳ (VNĐ)", "Trạng thái"
+        "#", "Mã HĐ", "Khách hàng", "SĐT", "CMND/CCCD", 
+        "Tổng tiền vay", "Ngày vay", "Kỳ trả", "Số tiền trả mỗi kỳ", "Trạng thái"
       ];
-      rows = installmentList.map((item) => [
-        item.contract_code,
-        item.customer?.full_name || "",
-        item.customer?.phone || "",
-        Number(item.loan_amount || 0),
-        item.loan_date ? new Date(item.loan_date).toLocaleDateString("vi-VN") : "",
-        `${item.period_value} ngày`,
-        Number(item.period_amount || 0),
-        item.status === "active" ? "Đang chạy" : "Đã đóng"
-      ]);
+      alignments = [
+        "center", "center", "left", "center", "center", 
+        "number", "center", "center", "number", "center"
+      ];
+
+      const totalLoan = installmentList.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
+      const totalPeriod = installmentList.reduce((sum, item) => sum + Number(item.period_amount || 0), 0);
+
+      rows = installmentList.map((item, index) => {
+        const detailed = getInstallmentDetailedStatus(item);
+        return [
+          index + 1,
+          item.contract_code,
+          item.customer?.full_name || "",
+          item.customer?.phone || "",
+          item.customer?.identity_card_number || "",
+          Number(item.loan_amount || 0),
+          item.loan_date ? new Date(item.loan_date).toLocaleDateString("vi-VN") : "",
+          `${item.period_value} ngày`,
+          Number(item.period_amount || 0),
+          detailed.label || ""
+        ];
+      });
+
+      summaryRow = `
+        <tr class="bold">
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="left"></td>
+          <td class="center"></td>
+          <td class="left">Tổng tiền</td>
+          <td class="number" x:f="=SUM(F2:F${rows.length + 1})">${totalLoan}</td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="number" x:f="=SUM(I2:I${rows.length + 1})">${totalPeriod}</td>
+          <td class="center"></td>
+        </tr>
+      `;
     }
 
     let html = `
@@ -291,10 +389,13 @@ export const Contracts: React.FC = () => {
         <meta charset="utf-8">
         <style>
           table { border-collapse: collapse; }
-          th { background-color: #1abc9c; color: white; font-weight: bold; border: 1px solid #ddd; padding: 8px; text-align: left; }
-          td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #1F4E79; color: white; font-weight: bold; border: 1px solid #ddd; padding: 8px; text-align: center; }
+          td { border: 1px solid #ddd; padding: 8px; white-space: nowrap; }
+          .center { text-align: center; mso-number-format: "\\@"; }
+          .left { text-align: left; mso-number-format: "\\@"; }
+          .right { text-align: right; }
           .number { text-align: right; mso-number-format: "#,##0"; }
-          .text { mso-number-format: "\\@"; }
+          .bold { font-weight: bold; background-color: #f9f9f9; }
         </style>
       </head>
       <body>
@@ -307,13 +408,15 @@ export const Contracts: React.FC = () => {
           <tbody>
             ${rows.map(row => `
               <tr>
-                ${row.map(val => {
-                  const isNum = typeof val === "number";
+                ${row.map((val, colIdx) => {
+                  const alignClass = alignments[colIdx] || "left";
+                  const isNum = alignClass === "number";
                   const formatted = isNum ? val : String(val).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                  return `<td class="${isNum ? "number" : "text"}">${formatted}</td>`;
+                  return `<td class="${alignClass}">${formatted}</td>`;
                 }).join("")}
               </tr>
             `).join("")}
+            ${summaryRow}
           </tbody>
         </table>
       </body>
