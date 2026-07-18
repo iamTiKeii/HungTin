@@ -93,9 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (error) => {
         if (error.response) {
           const status = error.response.status;
-          if (status === 401 || status === 403) {
+          if (status === 401) {
             toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
             logout();
+          } else if (status === 403) {
+            toast.warning("Bạn không có quyền thực hiện chức năng này!");
           }
           // Don't auto-toast here — let individual handlers decide
           // because they have context-specific messages

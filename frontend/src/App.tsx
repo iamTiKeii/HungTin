@@ -5,6 +5,7 @@ import { ConfirmProvider } from "./context/ConfirmContext";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { ToastContainer } from "./components/shared/ToastContainer";
+import { toast } from "./lib/toast";
 
 // Pages
 import { Login } from "./pages/Login";
@@ -81,6 +82,21 @@ const PrivateLayout: React.FC<{ children: React.ReactNode; requiredPermission?: 
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [twoFactorOpen, setTwoFactorOpen] = useState(false);
 
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  useEffect(() => {
+    if (token && requiredPermission) {
+      const hasAny = Array.isArray(requiredPermission)
+        ? requiredPermission.some((p) => hasPermission(p))
+        : hasPermission(requiredPermission);
+
+      if (!hasAny) {
+        toast.error("Bạn không có quyền truy cập vào chức năng này!");
+        setShouldRedirect(true);
+      }
+    }
+  }, [token, requiredPermission, hasPermission]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-700">
@@ -93,14 +109,8 @@ const PrivateLayout: React.FC<{ children: React.ReactNode; requiredPermission?: 
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredPermission) {
-    const hasAny = Array.isArray(requiredPermission)
-      ? requiredPermission.some((p) => hasPermission(p))
-      : hasPermission(requiredPermission);
-
-    if (!hasAny) {
-      return <Navigate to="/403" replace />;
-    }
+  if (shouldRedirect) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
