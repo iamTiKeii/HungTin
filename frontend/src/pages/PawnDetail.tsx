@@ -544,14 +544,20 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
 
       // Estimate days accrued for display
       const lastPaid = contract.interest_payments?.filter((p: any) => p.is_paid && p.paid_date !== red.redeem_date).pop();
-      const accrualStart = lastPaid ? lastPaid.to_date : contract.loan_date;
+      let accrualStart = new Date(contract.loan_date);
+      if (lastPaid) {
+        const lastToDate = new Date(lastPaid.to_date);
+        accrualStart = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
+      }
       const start = new Date(accrualStart);
       const end = new Date(red.redeem_date);
       const startMid = new Date(start.getFullYear(), start.getMonth(), start.getDate());
       const endMid = new Date(end.getFullYear(), end.getMonth(), end.getDate());
       const diffMs = endMid.getTime() - startMid.getTime();
-      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      const daysAccrued = diffDays > 0 ? (lastPaid ? diffDays : diffDays + 1) : (lastPaid ? 0 : 1);
+      let daysAccrued = 0;
+      if (diffMs >= 0) {
+        daysAccrued = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+      }
 
       return { principal, outstandingDebt, interestAmount, daysAccrued, totalRedeemAmount };
     }
@@ -565,19 +571,19 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     };
 
     const lastPaid = contract.interest_payments?.filter((p: any) => p.is_paid).pop();
-    const accrualStart = lastPaid ? lastPaid.to_date : contract.loan_date;
+    let accrualStart = new Date(contract.loan_date);
+    if (lastPaid) {
+      const lastToDate = new Date(lastPaid.to_date);
+      accrualStart = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
+    }
 
     const start = parseDateOnly(accrualStart);
     const end = parseDateOnly(redeemDate || new Date());
 
     const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
     let daysAccrued = 0;
-    if (diffDays > 0) {
-      daysAccrued = lastPaid ? diffDays : diffDays + 1;
-    } else if (diffDays === 0) {
-      daysAccrued = lastPaid ? 0 : 1;
+    if (diffTime >= 0) {
+      daysAccrued = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
     }
 
     const rate = Number(contract.interest_rate || 0);

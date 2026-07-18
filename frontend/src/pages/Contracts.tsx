@@ -799,14 +799,15 @@ export const Contracts: React.FC = () => {
     let startDate = new Date(item.loan_date);
     if (paidPayments.length > 0) {
       const sorted = [...paidPayments].sort((a: any, b: any) => b.cycle_number - a.cycle_number);
-      startDate = new Date(sorted[0].to_date);
+      const lastToDate = new Date(sorted[0].to_date);
+      startDate = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
     }
     const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     const today = new Date();
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const diffMs = todayMidnight.getTime() - startMidnight.getTime();
     if (diffMs < 0) return 0;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
 
     let dailyRate = 0;
     const principal = Number(item.loan_amount) || 0;
@@ -845,14 +846,15 @@ export const Contracts: React.FC = () => {
     let startDate = new Date(item.loan_date);
     if (paidPayments.length > 0) {
       const sorted = [...paidPayments].sort((a: any, b: any) => b.cycle_number - a.cycle_number);
-      startDate = new Date(sorted[0].to_date);
+      const lastToDate = new Date(sorted[0].to_date);
+      startDate = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
     }
     const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     const today = new Date();
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const diffMs = todayMidnight.getTime() - startMidnight.getTime();
     if (diffMs < 0) return 0;
-    return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    return Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
   };
 
   const getPaidInterest = (item: any) => {

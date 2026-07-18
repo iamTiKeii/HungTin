@@ -112,14 +112,15 @@ function calculateAccruedInterest(contract: any): number {
   let startDate = new Date(contract.loan_date);
   if (paidPayments.length > 0) {
     const sorted = [...paidPayments].sort((a: any, b: any) => b.cycle_number - a.cycle_number);
-    startDate = new Date(sorted[0].to_date);
+    const lastToDate = new Date(sorted[0].to_date);
+    startDate = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
   }
   const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const today = new Date();
   const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const diffMs = todayMidnight.getTime() - startMidnight.getTime();
   if (diffMs < 0) return 0;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
 
   const principal = Number(contract.loan_amount) || 0;
   const rate = Number(contract.interest_rate) || 0;
@@ -1141,13 +1142,21 @@ router.post("/:id/redeem", requirePermission(["CONTRACTS_OPERATE"]) as any, asyn
       const lastPaid = contract.interest_payments
         .filter((p) => p.is_paid)
         .pop();
-      const accrualStart = lastPaid ? new Date(lastPaid.to_date) : new Date(contract.loan_date);
+      let accrualStart = new Date(contract.loan_date);
+      if (lastPaid) {
+        const lastToDate = new Date(lastPaid.to_date);
+        accrualStart = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
+      }
 
-      // Calculate accrued interest up to redeem date based on initial_loan_amount
-      const daysAccrued = Math.max(
-        0,
-        Math.round((rDate.getTime() - accrualStart.getTime()) / (1000 * 60 * 60 * 24))
-      );
+      // Normalize dates to midnight to compute absolute difference in days
+      const startMidnight = new Date(accrualStart.getFullYear(), accrualStart.getMonth(), accrualStart.getDate());
+      const endMidnight = new Date(rDate.getFullYear(), rDate.getMonth(), rDate.getDate());
+      const diffMs = endMidnight.getTime() - startMidnight.getTime();
+
+      let daysAccrued = 0;
+      if (diffMs >= 0) {
+        daysAccrued = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+      }
 
       const dailyRate = calculateDailyInterestRate(
         Number(contract.initial_loan_amount),

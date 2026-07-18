@@ -420,18 +420,20 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     );
   }
 
-  // const activeTimer = contract.reminders?.find((r: any) => r.status === "active");
-  // const lastPaid = contract.interest_payments?.filter((p: any) => p.is_paid).slice(-1)[0];
-
   const rateLabel = formatInterestRateText(Number(contract.interest_rate), contract.interest_type?.code, contract.period_value);
 
   // Calculate dynamic accrued interest labels
   const start = new Date(contract.loan_date);
-  const today = new Date();
+  const today = contract.status === "closed" && contract.redemptions?.[0]
+    ? new Date(contract.redemptions[0].redeem_date)
+    : new Date();
   start.setHours(0,0,0,0);
   today.setHours(0,0,0,0);
-  const diffTime = Math.max(0, today.getTime() - start.getTime());
-  const elapsedDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffTime = today.getTime() - start.getTime();
+  let elapsedDays = 0;
+  if (diffTime >= 0) {
+    elapsedDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  }
   let dailyInterest = 0;
   const rate = Number(contract.interest_rate || 0);
   const principal = Number(contract.loan_amount || 0);
