@@ -12,9 +12,11 @@ import {
   ChevronsUpDown, 
   Mail, 
   X,
-  ShieldCheck
+  ShieldCheck,
+  RotateCcw
 } from "lucide-react";
 import { toast } from "../lib/toast";
+import { useConfirm } from "../context/ConfirmContext";
 
 interface Employee {
   id: string;
@@ -48,6 +50,7 @@ const AVAILABLE_PERMISSIONS = [
 
 export const Employees: React.FC = () => {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
@@ -136,6 +139,23 @@ export const Employees: React.FC = () => {
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Không thể cập nhật trạng thái nhân viên.");
     }
+  };
+
+  const handleResetPassword = (emp: Employee, e: React.MouseEvent) => {
+    confirm({
+      title: "Khởi tạo lại tài khoản",
+      message: `Bạn có chắc chắn muốn đặt lại mật khẩu cho nhân viên ${emp.username}? Mật khẩu mới sẽ được đặt trùng khớp với tên đăng nhập (username: ${emp.username}).`,
+      type: "warning",
+      event: e,
+      onConfirm: async () => {
+        try {
+          await axios.post(`/api/employees/${emp.id}/reset-password`);
+          toast.success(`Đặt lại mật khẩu cho nhân viên ${emp.username} thành công!`);
+        } catch (err: any) {
+          toast.error(err.response?.data?.error || "Không thể đặt lại mật khẩu.");
+        }
+      },
+    });
   };
 
   const openPermissionsModal = (emp: Employee) => {
@@ -374,6 +394,14 @@ export const Employees: React.FC = () => {
                             >
                               <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                               <span>Phân quyền</span>
+                            </button>
+                            <button
+                              onClick={(e) => handleResetPassword(emp, e)}
+                              className="btn btn-outline border-blue-500/30 hover:border-blue-500 hover:bg-blue-500/10 text-blue-600 btn-xs rounded-lg font-medium px-2.5"
+                              type="button"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                              <span>Reset mật khẩu</span>
                             </button>
                             <button
                               onClick={() => handleToggleStatus(emp)}

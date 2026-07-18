@@ -198,4 +198,25 @@ router.delete("/:id", (0, permission_1.requirePermission)(["EMPLOYEES_MANAGE"]),
         return res.status(500).json({ error: error.message });
     }
 });
+// 8. Reset Employee Password to Username
+router.post("/:id/reset-password", (0, permission_1.requirePermission)(["EMPLOYEES_MANAGE"]), async (req, res) => {
+    try {
+        const employeeId = req.params.id;
+        const employee = await db_1.prisma.employee.findUnique({
+            where: { id: employeeId },
+        });
+        if (!employee) {
+            return res.status(404).json({ error: "Employee not found" });
+        }
+        const hash = await bcryptjs_1.default.hash(employee.username, 10);
+        await db_1.prisma.employee.update({
+            where: { id: employeeId },
+            data: { password_hash: hash },
+        });
+        return res.json({ message: `Đặt lại mật khẩu cho nhân viên ${employee.username} thành công!` });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
 exports.default = router;
