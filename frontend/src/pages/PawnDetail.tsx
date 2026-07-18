@@ -593,10 +593,11 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
         dailyRate = rate * 1000;
         break;
       case "monthly_percent_30":
-        dailyRate = principal * ((rate / 100) / 30);
-        break;
       case "monthly_percent_periodic":
-        dailyRate = (principal * (rate / 100)) / periodValue;
+      case "flat_rate_monthly":
+      case "reducing_balance_fixed_installment":
+      case "reducing_balance_fixed_principal":
+        dailyRate = (principal * (rate / 100)) / 30;
         break;
       case "monthly_amount_periodic":
         dailyRate = (rate * 1000) / periodValue;
@@ -607,8 +608,9 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
       case "weekly_amount":
         dailyRate = (rate * 1000) / 7;
         break;
-      case "flat_rate_monthly":
-        dailyRate = (principal * (rate / 100)) / 30;
+      case "flat_rate_daily":
+      case "daily_percent":
+        dailyRate = principal * (rate / 100);
         break;
       default:
         dailyRate = 0;

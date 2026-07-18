@@ -446,6 +446,17 @@ export const UnsecuredDetail: React.FC<UnsecuredDetailProps> = ({ idProp, onClos
     dailyInterest = (rate * 1000) / periodValue;
   } else if (typeCode === "weekly_amount") {
     dailyInterest = (rate * 1000) / 7;
+  } else if (typeCode === "weekly_percent") {
+    dailyInterest = (principal * (rate / 100)) / 7;
+  } else if (typeCode === "flat_rate_daily" || typeCode === "daily_percent") {
+    dailyInterest = principal * (rate / 100);
+  } else if (
+    typeCode === "monthly_percent_30" || 
+    typeCode === "monthly_percent_periodic" ||
+    typeCode?.startsWith("flat_rate_monthly") ||
+    typeCode?.startsWith("reducing_balance_")
+  ) {
+    dailyInterest = (principal * (rate / 100)) / 30;
   } else {
     dailyInterest = ((rate / 100) * principal) / periodValue;
   }

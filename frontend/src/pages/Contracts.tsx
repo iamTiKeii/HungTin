@@ -824,6 +824,8 @@ export const Contracts: React.FC = () => {
       dailyRate = (rate * 1000) / 7;
     } else if (code === "weekly_percent") {
       dailyRate = (principal * (rate / 100)) / 7;
+    } else if (code === "flat_rate_daily" || code === "daily_percent") {
+      dailyRate = principal * (rate / 100);
     } else if (
       code === "monthly_percent_30" || 
       code === "monthly_percent_periodic" ||
