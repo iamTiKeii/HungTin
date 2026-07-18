@@ -1,5 +1,6 @@
 import { ModalPortal } from "../components/shared/ModalPortal";
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Plus, Search, Edit3, X, Upload, List, AlertOctagon, CheckCircle } from "lucide-react";
 import { toast } from "../lib/toast";
@@ -61,10 +62,13 @@ export const Customers: React.FC = () => {
   const limit = 15;
   const confirm = useConfirm();
 
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get("status") || "";
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [storeFilter, setStoreFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
 
   // Stores list
   const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
