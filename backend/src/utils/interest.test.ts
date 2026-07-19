@@ -450,7 +450,7 @@ function runTests() {
   // ── REGRESSION: Bug "Ngày phải đóng sai" ────────────────────────────────────
   // Kịch bản: 2 HĐ cầm đồ, cùng ngày cầm + cùng kỳ hạn (loanDays), CHỈ KHÁC interestType
   // → to_date của kỳ cuối PHẢI GIỐNG HỆT NHAU.
-  // Đây là bảo vệ cho nguyên tắc: interest type KHÔNG ảnh hưởng đến ngày đến hạn.
+  // Quy ước inclusive: to_date là ngày CUỐI CÙNG thuộc kỳ (không phải ngày đầu kỳ tiếp).
   section("REGRESSION — Ngày phải đóng phải giống nhau dù khác interestType...", () => {
     const LOAN_DATE   = "2026-07-19";  // ngày cầm đồ của user
     const LOAN_DAYS   = 28;            // kỳ hạn nhập vào form (ngày)
@@ -488,11 +488,12 @@ function runTests() {
       );
     }
 
-    // Xác nhận ngày tuyệt đối: Jul 19 + 28 ngày = Aug 16
-    const expectedToDate = "2026-08-16";
+    // Xác nhận ngày tuyệt đối (inclusive): Jul 19 + 28 ngày, to_date ngày cuối = Aug 15
+    // (Ngày 1: Jul 19, ngày 28: Aug 15 = Jul 19 + 27 = Aug 15)
+    const expectedToDate = "2026-08-15";
     assert(
       referenceToDate === expectedToDate,
-      `to_date phải là ${expectedToDate}, thực tế: ${referenceToDate}`
+      `to_date phải là ${expectedToDate} (inclusive, ngày 28), thực tế: ${referenceToDate}`
     );
 
     // Cũng kiểm tra: from_date của kỳ đầu luôn là loanDate
@@ -504,7 +505,7 @@ function runTests() {
       );
     }
 
-    // Kiểm tra thêm với loanDays = 27 → to_date phải là Aug 15
+    // Kiểm tra: loanDays=27 → to_date = Jul 19 + 27 - 1 = Aug 14
     const calc27 = InterestCalculatorFactory.getCalculator("daily_k_million");
     const res27 = calc27.calculate({
       loanAmount: LOAN_AMOUNT, interestRate: RATE,
@@ -512,8 +513,9 @@ function runTests() {
       loanDateInput: LOAN_DATE, isUpfront: false,
     });
     const toDate27 = res27.schedule[res27.schedule.length - 1].to_date.toISOString().split("T")[0];
-    assert(toDate27 === "2026-08-15", `loanDays=27 → to_date phải là 2026-08-15, thực tế: ${toDate27}`);
+    assert(toDate27 === "2026-08-14", `loanDays=27 → to_date phải là 2026-08-14 (inclusive), thực tế: ${toDate27}`);
 
+    // Kiểm tra: loanDays=28 → to_date = Jul 19 + 28 - 1 = Aug 15
     const calc28 = InterestCalculatorFactory.getCalculator("daily_k_day");
     const res28 = calc28.calculate({
       loanAmount: LOAN_AMOUNT, interestRate: RATE,
@@ -521,11 +523,29 @@ function runTests() {
       loanDateInput: LOAN_DATE, isUpfront: false,
     });
     const toDate28 = res28.schedule[res28.schedule.length - 1].to_date.toISOString().split("T")[0];
-    assert(toDate28 === "2026-08-16", `loanDays=28 → to_date phải là 2026-08-16, thực tế: ${toDate28}`);
+    assert(toDate28 === "2026-08-15", `loanDays=28 → to_date phải là 2026-08-15 (inclusive), thực tế: ${toDate28}`);
+
+    // Kiểm tra: loanDays=90, pVal=30 → kỳ 1 to_date = Jul 19 + 30 - 1 = Aug 17
+    // Đây là case nghiệp vụ thực tế mà user báo cáo (HĐ CĐ-28 đã lưu đúng Aug 17)
+    const calc90_30 = InterestCalculatorFactory.getCalculator("daily_k_day");
+    const res90_30 = calc90_30.calculate({
+      loanAmount: LOAN_AMOUNT, interestRate: RATE,
+      loanDays: 90, periodValue: 30,
+      loanDateInput: LOAN_DATE, isUpfront: false,
+    });
+    const toDate90_30_k1 = res90_30.schedule[0].to_date.toISOString().split("T")[0];
+    assert(toDate90_30_k1 === "2026-08-17",
+      `loanDays=90/pVal=30 → kỳ 1 to_date phải là 2026-08-17 (19/07 + 30 ngày - 1 = 17/08), thực tế: ${toDate90_30_k1}`);
+
+    // Kiểm tra: kỳ 2 bắt đầu = to_date kỳ 1 + 1 ngày (= Aug 18)
+    const fromDate90_30_k2 = res90_30.schedule[1].from_date.toISOString().split("T")[0];
+    assert(fromDate90_30_k2 === "2026-08-18",
+      `loanDays=90/pVal=30 → kỳ 2 from_date phải là 2026-08-18 (= kỳ 1 to_date + 1), thực tế: ${fromDate90_30_k2}`);
 
     // Chứng minh: loanDays=27 ≠ loanDays=28 → to_date khác nhau (đây là hành vi ĐÚNG)
     assert(toDate27 !== toDate28, "loanDays=27 và loanDays=28 phải cho to_date khác nhau (đây là đúng)");
   });
+
 
   // ── Summary ─────────────────────────────────────────────────────────────────
   console.log("==================================================");

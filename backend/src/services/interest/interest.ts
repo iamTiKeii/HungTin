@@ -164,19 +164,26 @@ export function getCycleDates(
   const cycles = [];
 
   for (let k = 1; k <= totalCycles; k++) {
+    // from_date: ngày bắt đầu của kỳ (inclusive)
     const cycleStart = new Date(loanDate);
     cycleStart.setDate(loanDate.getDate() + (k - 1) * periodValue);
 
+    // to_date: ngày KẾT THÚC của kỳ (inclusive) = ngày cuối cùng trong kỳ.
+    // Nghiệp vụ: kỳ 1 bắt đầu Jul 19, kỳ 30 ngày → to_date = Jul 19 + 30 - 1 = Aug 17.
+    // Kỳ 2 bắt đầu Aug 18 (from_date kỳ tiếp = to_date kỳ này + 1 ngày).
     const cycleEnd = new Date(loanDate);
     if (k === totalCycles) {
-      cycleEnd.setDate(loanDate.getDate() + loanDays);
+      // Kỳ cuối: to_date = loanDate + loanDays - 1
+      cycleEnd.setDate(loanDate.getDate() + loanDays - 1);
     } else {
-      cycleEnd.setDate(loanDate.getDate() + k * periodValue);
+      // Kỳ thường: to_date = loanDate + k * periodValue - 1
+      cycleEnd.setDate(loanDate.getDate() + k * periodValue - 1);
     }
 
+    // expected_days: số ngày thực của kỳ (inclusive range: to_date - from_date + 1)
     const expectedDays = Math.max(
       1,
-      Math.round((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24))
+      Math.round((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
     );
 
     cycles.push({
