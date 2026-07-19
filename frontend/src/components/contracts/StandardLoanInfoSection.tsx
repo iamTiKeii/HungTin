@@ -231,7 +231,50 @@ export const StandardLoanInfoSection: React.FC<StandardLoanInfoSectionProps> = (
           <div className="grow">
             <select
               value={state.interestType}
-              onChange={(e) => onChange({ interestType: e.target.value })}
+              onChange={(e) => {
+                const newTypeId = e.target.value;
+                const newType = interestTypes.find((i) => i.id === newTypeId);
+                const newCode = newType?.code;
+                const newPeriodType = getInterestPeriodType(newCode);
+                const oldPeriodType = periodType; // captured from above
+
+                // Khi period type thay đổi (ví dụ: monthly→daily, weekly→daily, ...),
+                // convert loanDays và interestPeriod sang đơn vị ngày để tránh lưu sai.
+                // Ví dụ: user nhập "1" khi suffix là "tháng" → loanDays=1 (thực ra 30 ngày)
+                // → đổi sang daily → phải convert 1×30=30 ngày, không phải để nguyên 1.
+                let newLoanDays = state.loanDays;
+                let newInterestPeriod = state.interestPeriod;
+
+                if (oldPeriodType !== newPeriodType) {
+                  // Convert FROM old unit TO days (chuẩn hóa)
+                  let loanDaysInDays = state.loanDays;
+                  let periodInDays = state.interestPeriod;
+                  if (oldPeriodType === "monthly") {
+                    loanDaysInDays = Math.round(state.loanDays * 30);
+                    periodInDays = Math.round(state.interestPeriod * 30);
+                  } else if (oldPeriodType === "weekly") {
+                    loanDaysInDays = state.loanDays * 7;
+                    periodInDays = state.interestPeriod * 7;
+                  }
+                  // Convert FROM days TO new unit
+                  if (newPeriodType === "daily") {
+                    newLoanDays = loanDaysInDays;
+                    newInterestPeriod = periodInDays;
+                  } else if (newPeriodType === "monthly") {
+                    newLoanDays = Math.max(1, Math.round(loanDaysInDays / 30));
+                    newInterestPeriod = Math.max(1, Math.round(periodInDays / 30));
+                  } else if (newPeriodType === "weekly") {
+                    newLoanDays = Math.max(1, Math.round(loanDaysInDays / 7));
+                    newInterestPeriod = Math.max(1, Math.round(periodInDays / 7));
+                  }
+                }
+
+                onChange({
+                  interestType: newTypeId,
+                  loanDays: newLoanDays,
+                  interestPeriod: newInterestPeriod,
+                });
+              }}
               className="select select-bordered w-full max-w-md bg-white border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none h-10 text-sm"
               required
             >

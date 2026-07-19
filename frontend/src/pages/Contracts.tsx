@@ -146,7 +146,8 @@ export const Contracts: React.FC = () => {
 
       if (res.data && res.data.data) {
         data = res.data.data;
-        totals = res.data.totals;
+        // Bảo vệ: nếu backend không trả totals (lỗi hoặc thiếu field), giữ nguyên default 0
+        totals = res.data.totals ?? totals;
         setTotalPages(res.data.pagination.totalPages || 1);
         setTotalRecords(res.data.pagination.total || 0);
       } else {
@@ -1184,7 +1185,7 @@ export const Contracts: React.FC = () => {
                             {item.customer?.full_name}
                           </button>
                         </td>
-                        <td>{item.commodity?.code}</td>
+                        <td className="text-slate-500 font-mono text-[11px]">{item.license_plate || <span className="text-slate-300">—</span>}</td>
                         <td className="text-slate-500">{item.asset_name}</td>
                         <td>
                           <span className="font-bold text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</span>
@@ -1753,6 +1754,7 @@ export const Contracts: React.FC = () => {
       )}
 
       <ContractForm
+        key={`pawn-form-${editingId ?? "new"}`}
         config={contractConfigs.pawn}
         isOpen={isPawnOpen}
         onClose={() => {
@@ -1775,6 +1777,7 @@ export const Contracts: React.FC = () => {
       />
 
       <ContractForm
+        key={`unsecured-form-${editingId ?? "new"}`}
         config={contractConfigs.unsecured}
         isOpen={isUnsecuredOpen}
         onClose={() => {

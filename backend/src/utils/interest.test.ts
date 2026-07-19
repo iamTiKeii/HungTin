@@ -447,6 +447,86 @@ function runTests() {
     assert(resultWeekly.schedule.length === 2, "Tín chấp 14 ngày / kỳ 7 ngày = 2 kỳ");
   });
 
+  // ── REGRESSION: Bug "Ngày phải đóng sai" ────────────────────────────────────
+  // Kịch bản: 2 HĐ cầm đồ, cùng ngày cầm + cùng kỳ hạn (loanDays), CHỈ KHÁC interestType
+  // → to_date của kỳ cuối PHẢI GIỐNG HỆT NHAU.
+  // Đây là bảo vệ cho nguyên tắc: interest type KHÔNG ảnh hưởng đến ngày đến hạn.
+  section("REGRESSION — Ngày phải đóng phải giống nhau dù khác interestType...", () => {
+    const LOAN_DATE   = "2026-07-19";  // ngày cầm đồ của user
+    const LOAN_DAYS   = 28;            // kỳ hạn nhập vào form (ngày)
+    const PERIOD_VAL  = 28;            // kỳ đóng lãi (ngày)
+    const LOAN_AMOUNT = 10_000_000;
+    const RATE        = 2;             // lãi suất (k/...)
+
+    // Tính schedule cho tất cả daily interest types
+    const typesToTest: string[] = [
+      "daily_k_million",
+      "daily_k_day",
+    ];
+
+    const results = typesToTest.map((code) => {
+      const calc = InterestCalculatorFactory.getCalculator(code);
+      const res = calc.calculate({
+        loanAmount:    LOAN_AMOUNT,
+        interestRate:  RATE,
+        loanDays:      LOAN_DAYS,
+        periodValue:   PERIOD_VAL,
+        loanDateInput: LOAN_DATE,
+        isUpfront:     false,
+      });
+      const lastCycle = res.schedule[res.schedule.length - 1];
+      return { code, toDate: lastCycle.to_date, fromDate: lastCycle.from_date };
+    });
+
+    // Tất cả to_date phải giống nhau
+    const referenceToDate = results[0].toDate.toISOString().split("T")[0];
+    for (const r of results) {
+      const toDateStr = r.toDate.toISOString().split("T")[0];
+      assert(
+        toDateStr === referenceToDate,
+        `[interestType=${r.code}] to_date=${toDateStr} phải bằng ${referenceToDate} (loanDate+${LOAN_DAYS} ngày)`
+      );
+    }
+
+    // Xác nhận ngày tuyệt đối: Jul 19 + 28 ngày = Aug 16
+    const expectedToDate = "2026-08-16";
+    assert(
+      referenceToDate === expectedToDate,
+      `to_date phải là ${expectedToDate}, thực tế: ${referenceToDate}`
+    );
+
+    // Cũng kiểm tra: from_date của kỳ đầu luôn là loanDate
+    for (const r of results) {
+      const fromDateStr = r.fromDate.toISOString().split("T")[0];
+      assert(
+        fromDateStr === LOAN_DATE,
+        `[interestType=${r.code}] from_date kỳ 1 phải là ${LOAN_DATE}, thực tế: ${fromDateStr}`
+      );
+    }
+
+    // Kiểm tra thêm với loanDays = 27 → to_date phải là Aug 15
+    const calc27 = InterestCalculatorFactory.getCalculator("daily_k_million");
+    const res27 = calc27.calculate({
+      loanAmount: LOAN_AMOUNT, interestRate: RATE,
+      loanDays: 27, periodValue: 27,
+      loanDateInput: LOAN_DATE, isUpfront: false,
+    });
+    const toDate27 = res27.schedule[res27.schedule.length - 1].to_date.toISOString().split("T")[0];
+    assert(toDate27 === "2026-08-15", `loanDays=27 → to_date phải là 2026-08-15, thực tế: ${toDate27}`);
+
+    const calc28 = InterestCalculatorFactory.getCalculator("daily_k_day");
+    const res28 = calc28.calculate({
+      loanAmount: LOAN_AMOUNT, interestRate: RATE,
+      loanDays: 28, periodValue: 28,
+      loanDateInput: LOAN_DATE, isUpfront: false,
+    });
+    const toDate28 = res28.schedule[res28.schedule.length - 1].to_date.toISOString().split("T")[0];
+    assert(toDate28 === "2026-08-16", `loanDays=28 → to_date phải là 2026-08-16, thực tế: ${toDate28}`);
+
+    // Chứng minh: loanDays=27 ≠ loanDays=28 → to_date khác nhau (đây là hành vi ĐÚNG)
+    assert(toDate27 !== toDate28, "loanDays=27 và loanDays=28 phải cho to_date khác nhau (đây là đúng)");
+  });
+
   // ── Summary ─────────────────────────────────────────────────────────────────
   console.log("==================================================");
   if (failCount === 0) {

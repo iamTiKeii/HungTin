@@ -105,6 +105,8 @@ export function calculateDailyInterestRate(
 
 function calculateAccruedInterest(contract: any): number {
   if (contract.status !== "active") return 0;
+  const interestTypeCode = contract.interest_type?.code;
+  if (!interestTypeCode) return 0; // HĐ mồ côi (interest_type bị xóa) → không tính lãi
   const paidPayments = contract.interest_payments?.filter((p: any) => p.is_paid) || [];
   let startDate = new Date(contract.loan_date);
   if (paidPayments.length > 0) {
@@ -122,10 +124,10 @@ function calculateAccruedInterest(contract: any): number {
   const principal = Number(contract.loan_amount) || 0;
   const rate = Number(contract.interest_rate) || 0;
   const pValue = Number(contract.period_value) || 1;
-  const interestTypeCode = contract.interest_type?.code;
 
   const dailyRate = calculateDailyInterestRate(principal, rate, pValue, interestTypeCode);
-  return Math.round(dailyRate * diffDays);
+  const result = Math.round(dailyRate * diffDays);
+  return isNaN(result) ? 0 : result;
 }
 
 // 1. Get Pawn Contracts list (with search, filter)
@@ -192,7 +194,13 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
 
     const totalLent = allMatching.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
     const totalDebt = allMatching.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
-    const totalExpectedInterest = allMatching.reduce((sum, item) => sum + calculateAccruedInterest(item), 0);
+    const totalExpectedInterest = allMatching.reduce((sum, item) => {
+      try {
+        return sum + calculateAccruedInterest(item);
+      } catch {
+        return sum; // bỏ qua HĐ lỗi (ví dụ interest_type bị xóa), không làm sập toàn bộ reduce
+      }
+    }, 0);
     const totalPaidInterest = allMatching.reduce((sum, item) => {
       const paidSum = item.interest_payments
         .filter((p) => p.is_paid)
@@ -424,6 +432,9 @@ router.post("/", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: Aut
       }
 
       // Generate expected interest payments schedule
+      // [DIAGNOSTIC] Log để phát hiện nếu loanDays/pValue khác nhau giữa các HĐ cùng kỳ hạn
+      console.log(`[PAWN CREATE] contractCode=${contractCode} | interestType=${interestType.code} | days=${days} | pValue=${pValue} | loanDate=${normalizedLoanDate.toISOString().split("T")[0]}`);
+
       const cycles = generateInterestSchedule(
         principal,
         rate,
