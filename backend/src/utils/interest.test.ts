@@ -150,10 +150,9 @@ function runTests() {
       loanDateInput: "2026-07-01",
       isUpfront: false,
     });
-    // Pro-rata: dailyRate = 10M * 2% / 30 = 6,666.67
-    // 1 kỳ có expected_days = 31 (inclusive Jul 01→Jul 31)
-    // → round(6,666.67 × 31) = 206,667
-    assert(res.totalInterestPayable === 206667, `Expected 206,667 (pro-rata 31 days), got ${res.totalInterestPayable}`);
+    // monthly_percent_periodic: cố định cả kỳ, không phụ thuộc expected_days
+    // 10M × 2% = 200,000 mỗi kỳ, bất kể kỳ dài/ngắn bao nhiêu ngày
+    assert(res.totalInterestPayable === 200000, `Expected 200,000, got ${res.totalInterestPayable}`);
   });
 
   // ── 6. Lãi tháng (VNĐ) Định kỳ ─────────────────────────────────────────────
@@ -167,12 +166,11 @@ function runTests() {
       loanDateInput: "2026-07-01",
       isUpfront: false,
     });
-    // Pro-rata: dailyRate = 500k / 30 = 16,666.67
-    // 1 kỳ 30 ngày (pVal=30) → round(16,666.67 × 30) = 500,000
+    // monthly_amount_periodic: cố định cả kỳ, không chia theo ngày
+    // interestRate=500 → 500 × 1,000 = 500,000/kỳ — dù kỳ ngắn hay dài
     assert(res.totalInterestPayable === 500000, `Expected 500,000, got ${res.totalInterestPayable}`);
 
-    // Kỳ ngắn 15 ngày (loanDays=15, pVal=30 → 1 kỳ duy nhất, expected_days=15)
-    // Pro-rata: round(16,666.67 × 15) = 250,000
+    // Partial period (loanDays=15, pVal=30): Vẫn 1 kỳ, vẫn cố định 500,000 (không được chia theo 15/30)
     const resPartial = calc.calculate({
       loanAmount: 10000000,
       interestRate: 500,
@@ -181,7 +179,7 @@ function runTests() {
       loanDateInput: "2026-07-01",
       isUpfront: false,
     });
-    assert(resPartial.totalInterestPayable === 250000, `Partial period: expected 250,000 (pro-rata 15 days), got ${resPartial.totalInterestPayable}`);
+    assert(resPartial.totalInterestPayable === 500000, `Partial period: expected 500,000 (fixed, not pro-rata), got ${resPartial.totalInterestPayable}`);
   });
 
   // ── 7. Lãi tuần (%) ─────────────────────────────────────────────────────────
@@ -551,6 +549,88 @@ function runTests() {
     assert(toDate27 !== toDate28, "loanDays=27 và loanDays=28 phải cho to_date khác nhau (đây là đúng)");
   });
 
+  // ── REGRESSION: Công thức cố định kỳ (VIỆC 1) ─────────────────────────────
+  section("REGRESSION — monthly calculators: lãi cố định mỗi kỳ (không chia ngày)...", () => {
+    const LOAN_AMOUNT = 10_000_000;
+    const RATE = 2;
+    const LOAN_DATE = "2026-07-19";
+
+    // A) monthly_percent_periodic: mỗi kỳ = loanAmount * (rate/100) = 200,000
+    const calcPP = InterestCalculatorFactory.getCalculator("monthly_percent_periodic");
+    const resPP = calcPP.calculate({ loanAmount: LOAN_AMOUNT, interestRate: RATE, loanDays: 90, periodValue: 30, loanDateInput: LOAN_DATE, isUpfront: false });
+    for (const item of resPP.schedule) {
+      const ef = Math.round(LOAN_AMOUNT * (RATE / 100));
+      assert(item.interest === ef, `monthly_percent_periodic ky${item.period}: lai phai co dinh ${ef}, thuc te: ${item.interest}`);
+    }
+    assert(resPP.totalInterestPayable === 600000, `monthly_percent_periodic 3 ky: tong phai 600000, thuc te: ${resPP.totalInterestPayable}`);
+
+    // B) monthly_amount_periodic: mỗi kỳ = interestRate * 1000 = 2,000
+    const calcAP = InterestCalculatorFactory.getCalculator("monthly_amount_periodic");
+    const resAP = calcAP.calculate({ loanAmount: LOAN_AMOUNT, interestRate: RATE, loanDays: 90, periodValue: 30, loanDateInput: LOAN_DATE, isUpfront: false });
+    for (const item of resAP.schedule) {
+      const ef = Math.round(RATE * 1000);
+      assert(item.interest === ef, `monthly_amount_periodic ky${item.period}: lai phai co dinh ${ef}, thuc te: ${item.interest}`);
+    }
+
+    // C) flat_rate_monthly: mỗi kỳ = loanAmount * (rate/100) = 200,000
+    const calcFM = InterestCalculatorFactory.getCalculator("flat_rate_monthly");
+    const resFM = calcFM.calculate({ loanAmount: LOAN_AMOUNT, interestRate: RATE, loanDays: 90, periodValue: 30, loanDateInput: LOAN_DATE, isUpfront: false });
+    for (const item of resFM.schedule) {
+      const ef = Math.round(LOAN_AMOUNT * (RATE / 100));
+      assert(item.interest === ef, `flat_rate_monthly ky${item.period}: lai phai co dinh ${ef}, thuc te: ${item.interest}`);
+    }
+  });
+
+  // ── REGRESSION: Partial period fixed (VIỆC 1) ─────────────────────────────
+  section("REGRESSION — monthly_amount_periodic partial 15/30 ngay: van co dinh 500000...", () => {
+    const calc = InterestCalculatorFactory.getCalculator("monthly_amount_periodic");
+    const res = calc.calculate({ loanAmount: 10_000_000, interestRate: 500, loanDays: 15, periodValue: 30, loanDateInput: "2026-07-01", isUpfront: false });
+    assert(res.schedule.length === 1, `Partial period phai co dung 1 ky, thuc te: ${res.schedule.length}`);
+    assert(res.totalInterestPayable === 500000, `Partial period: lai phai co dinh 500000 (khong chia theo 15/30), thuc te: ${res.totalInterestPayable}`);
+  });
+
+  // ── TEST: Unit multiplier thang/tuan/ngay (VIỆC 2) ────────────────────────
+  section("UNIT MULTIPLIER — thang x30, tuan x7, ngay x1...", () => {
+    const getUnitMult = (code: string): number => {
+      const l = code.toLowerCase();
+      if (l.includes("monthly") || l.includes("month") || (l.includes("flat_rate") && !l.includes("daily")) || l.includes("reducing_balance")) return 30;
+      if (l.includes("weekly") || l.includes("week")) return 7;
+      return 1;
+    };
+    // Thang: flat_rate_monthly
+    assert(getUnitMult("flat_rate_monthly") === 30, "flat_rate_monthly: he so phai 30");
+    assert(getUnitMult("monthly_percent_periodic") === 30, "monthly_percent_periodic: he so phai 30");
+    assert(getUnitMult("monthly_amount_periodic") === 30, "monthly_amount_periodic: he so phai 30");
+    assert(Math.round(3 * 30) === 90, "3 thang -> loanDays phai la 90");
+    assert(Math.round(1 * 30) === 30, "1 thang -> periodValue phai la 30");
+    // End-to-end: CĐ-37: 10M, 2.1%/thang, 3 thang, ky 1 thang → loanDays=90, pVal=30
+    const calcFM = InterestCalculatorFactory.getCalculator("flat_rate_monthly");
+    const resFM = calcFM.calculate({ loanAmount: 10_000_000, interestRate: 2.1, loanDays: 90, periodValue: 30, loanDateInput: "2026-07-19", isUpfront: false });
+    assert(resFM.schedule.length === 3, `3 thang -> phai co 3 ky, thuc te: ${resFM.schedule.length}`);
+    const epc = Math.round(10_000_000 * (2.1 / 100)); // 210,000
+    assert(resFM.schedule[0].interest === epc, `Ky 1 lai phai ${epc}d, thuc te: ${resFM.schedule[0].interest}`);
+    const k1To = resFM.schedule[0].to_date.toISOString().split("T")[0];
+    assert(k1To === "2026-08-17", `Ky 1 to_date phai 2026-08-17, thuc te: ${k1To}`);
+    // Tuan: weekly_percent, weekly_amount
+    assert(getUnitMult("weekly_percent") === 7, "weekly_percent: he so phai 7");
+    assert(getUnitMult("weekly_amount") === 7, "weekly_amount: he so phai 7");
+    assert(Math.round(2 * 7) === 14, "2 tuan -> loanDays phai la 14");
+    // Ngay: daily luon la 1
+    assert(getUnitMult("daily_k_million") === 1, "daily_k_million: he so phai 1");
+    assert(getUnitMult("daily_k_day") === 1, "daily_k_day: he so phai 1");
+    assert(getUnitMult("flat_rate_daily") === 1, "flat_rate_daily: he so phai 1");
+  });
+
+  // ── TEST: Tuan weekly_amount sau quy doi dung (VIỆC 2) ────────────────────
+  section("UNIT MULTIPLIER — tuan: weekly_amount 2tuan/ky1tuan = 14ngay/2ky...", () => {
+    const calc = InterestCalculatorFactory.getCalculator("weekly_amount");
+    const res = calc.calculate({ loanAmount: 10_000_000, interestRate: 100, loanDays: 14, periodValue: 7, loanDateInput: "2026-07-19", isUpfront: false });
+    assert(res.schedule.length === 2, `2 tuan / ky 1 tuan -> phai co 2 ky, thuc te: ${res.schedule.length}`);
+    const ei = Math.round((100 * 1000 / 7) * 7); // 100,000
+    assert(res.schedule[0].interest === ei, `Ky 1 lai tuan (7 ngay) phai la ${ei}, thuc te: ${res.schedule[0].interest}`);
+    const toDate = res.schedule[0].to_date.toISOString().split("T")[0];
+    assert(toDate === "2026-07-25", `Ky 1 to_date phai 2026-07-25 (19/07+7-1=25/07), thuc te: ${toDate}`);
+  });
 
   // ── Summary ─────────────────────────────────────────────────────────────────
   console.log("==================================================");

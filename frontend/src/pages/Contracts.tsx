@@ -589,6 +589,16 @@ export const Contracts: React.FC = () => {
         return;
       }
 
+      // Quy đổi đơn vị: loanDays và interestPeriod trên form lưu theo đơn vị hiển thị
+      // (tháng / tuần / ngày). Backend chỉ nhận số ngày thuần túy.
+      const _itCode = interestTypes.find((t: any) => t.id === formData.interestType)?.code ?? "";
+      const _lower = _itCode.toLowerCase();
+      const _unitMult = (_lower === "flat_rate_monthly" || _lower.includes("monthly") || _lower.includes("month") || (_lower.includes("flat_rate") && !_lower.includes("daily")) || _lower.includes("reducing_balance"))
+        ? 30
+        : (_lower.includes("weekly") || _lower.includes("week"))
+          ? 7
+          : 1;
+
       const payload = {
         customer_id: finalCustomerId,
         commodity_id: formData.commodityId,
@@ -596,8 +606,8 @@ export const Contracts: React.FC = () => {
         loan_amount: Number(formData.loanAmount),
         interest_type_id: formData.interestType,
         is_upfront_interest: formData.isUpfrontInterest,
-        loan_days: Number(formData.loanDays),
-        period_value: Number(formData.interestPeriod),
+        loan_days: Math.round(Number(formData.loanDays) * _unitMult),
+        period_value: Math.round(Number(formData.interestPeriod) * _unitMult),
         interest_rate: normalizeNumericInput(formData.interestRate),
         loan_date: formData.loanDate || undefined,
         collector_id: formData.staffId,
@@ -655,14 +665,24 @@ export const Contracts: React.FC = () => {
         return;
       }
 
+      // Quy đổi đơn vị: loanDays và interestPeriod trên form lưu theo đơn vị hiển thị
+      // (tháng / tuần / ngày). Backend chỉ nhận số ngày thuần túy.
+      const _itCode2 = interestTypes.find((t: any) => t.id === formData.interestType)?.code ?? "";
+      const _lower2 = _itCode2.toLowerCase();
+      const _unitMult2 = (_lower2 === "flat_rate_monthly" || _lower2.includes("monthly") || _lower2.includes("month") || (_lower2.includes("flat_rate") && !_lower2.includes("daily")) || _lower2.includes("reducing_balance"))
+        ? 30
+        : (_lower2.includes("weekly") || _lower2.includes("week"))
+          ? 7
+          : 1;
+
       const payload = {
         customer_id: finalCustomerId,
         commodity_id: formData.commodityId || undefined,
         loan_amount: Number(formData.loanAmount),
         interest_type_id: formData.interestType,
         is_upfront_interest: formData.isUpfrontInterest,
-        loan_days: Number(formData.loanDays),
-        period_value: Number(formData.interestPeriod),
+        loan_days: Math.round(Number(formData.loanDays) * _unitMult2),
+        period_value: Math.round(Number(formData.interestPeriod) * _unitMult2),
         interest_rate: normalizeNumericInput(formData.interestRate),
         loan_date: formData.loanDate || undefined,
         collector_id: formData.staffId,
