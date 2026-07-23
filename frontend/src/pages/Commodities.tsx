@@ -14,6 +14,7 @@ import { MoneyInput } from "../components/shared/MoneyInput";
 import { normalizeNumericInput, formatInterestRateText } from "../utils/interestFormatter";
 import { LoadingOverlay } from "../components/shared/LoadingOverlay";
 import { useConfirm } from "../context/ConfirmContext";
+import { convertDurationToDays, convertDaysToDisplayUnit } from "../utils/durationUtils";
 
 interface InterestType {
   id: string;
@@ -206,8 +207,10 @@ export const Commodities: React.FC = () => {
     setIsUpfrontInterest(comm.is_upfront_interest);
     setDefaultAmount(comm.default_amount);
     setDefaultInterestRate(String(comm.default_interest_rate));
-    setDefaultPeriodValue(String(comm.default_period_value));
-    setDefaultLoanDays(String(comm.default_loan_days));
+    
+    const itCode = comm.interest_type?.code || interestTypes.find((t) => t.id === comm.interest_type_id)?.code || "";
+    setDefaultPeriodValue(String(convertDaysToDisplayUnit(comm.default_period_value, itCode)));
+    setDefaultLoanDays(String(convertDaysToDisplayUnit(comm.default_loan_days, itCode)));
     setLiquidationAfterDays(String(comm.liquidation_after_days));
 
     setShowSectionInfo(true);
@@ -233,6 +236,10 @@ export const Commodities: React.FC = () => {
         ? `${name.trim()}|${cleanAttrs.join(",")}`
         : name.trim();
 
+      const itCode = interestTypes.find((t) => t.id === interestTypeId)?.code || "";
+      const finalPeriodValue = convertDurationToDays(defaultPeriodValue, itCode);
+      const finalLoanDays = convertDurationToDays(defaultLoanDays, itCode);
+
       const payload = {
         category,
         code: code.toUpperCase().trim(),
@@ -242,8 +249,8 @@ export const Commodities: React.FC = () => {
         is_upfront_interest: isUpfrontInterest,
         default_amount: defaultAmount,
         default_interest_rate: normalizeNumericInput(defaultInterestRate),
-        default_period_value: Number(defaultPeriodValue) || 10,
-        default_loan_days: Number(defaultLoanDays) || 30,
+        default_period_value: finalPeriodValue,
+        default_loan_days: finalLoanDays,
         liquidation_after_days: Number(liquidationAfterDays) || 5,
       };
 

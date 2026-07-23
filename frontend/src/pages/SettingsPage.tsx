@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { 
-  Settings, 
-  Save, 
-  Upload, 
+import {
+  Settings,
+  Save,
+  Upload,
   Image as ImageIcon,
   HelpCircle,
   Printer,
@@ -15,10 +15,11 @@ import {
   Building2
 } from "lucide-react";
 import { toast } from "../lib/toast";
-import { 
-  getTemplatesByModule, 
+import { convertDurationToDays, convertDaysToDisplayUnit } from "../utils/durationUtils";
+import {
+  getTemplatesByModule,
   MODULE_PLACEHOLDERS,
-  type PrintModuleType 
+  type PrintModuleType
 } from "../services/print/PrintTemplateManager";
 
 const BANK_LIST = [
@@ -62,6 +63,12 @@ export const SettingsPage: React.FC = () => {
   // Tab State
   const [activeMainTab, setActiveMainTab] = useState<"general" | "templates" | "placeholders">("general");
   const [activePlaceholderTab, setActivePlaceholderTab] = useState<PrintModuleType>("pawn");
+
+  // Capital Settings state
+  const [capitalRate, setCapitalRate] = useState<number>(1.5);
+  const [capitalPeriod, setCapitalPeriod] = useState<number>(1);
+  const [capitalUpfront, setCapitalUpfront] = useState<boolean>(false);
+  const [capitalMgmtFee, setCapitalMgmtFee] = useState<number>(0);
 
   // Fetch VietQR banks list
   useEffect(() => {
@@ -116,6 +123,13 @@ export const SettingsPage: React.FC = () => {
       setSystemBankName(res.data.system_bank_name || "");
       setSystemBankAccountNumber(res.data.system_bank_account_number || "");
       setSystemBankAccountHolder(res.data.system_bank_account_holder || "");
+
+      // Capital configs
+      setCapitalRate(Number(res.data.capital_default_interest_rate) || 1.5);
+      const capPeriodDays = Number(res.data.capital_default_period_value) || 30;
+      setCapitalPeriod(convertDaysToDisplayUnit(capPeriodDays, "thang"));
+      setCapitalUpfront(res.data.capital_default_upfront === "true" || res.data.capital_default_upfront === true);
+      setCapitalMgmtFee(Number(res.data.capital_management_fee) || 0);
 
       // Load print template settings
       const pawnCode = res.data.pawn_print_template || localStorage.getItem("pawn_print_template") || "CD_01_001";
@@ -192,6 +206,10 @@ export const SettingsPage: React.FC = () => {
         system_bank_name: systemBankName,
         system_bank_account_number: systemBankAccountNumber,
         system_bank_account_holder: systemBankAccountHolder,
+        capital_default_interest_rate: capitalRate,
+        capital_default_period_value: convertDurationToDays(capitalPeriod, "thang"),
+        capital_default_upfront: capitalUpfront,
+        capital_management_fee: capitalMgmtFee,
         pawn_print_template: pawnTemplate,
         unsecured_print_template: unsecuredTemplate,
         installment_print_template: installmentTemplate,
@@ -242,11 +260,10 @@ export const SettingsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveMainTab("general")}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all whitespace-nowrap rounded-t-2xl ${
-            activeMainTab === "general"
+          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all whitespace-nowrap rounded-t-2xl ${activeMainTab === "general"
               ? "border-amber-500 text-amber-600 bg-white shadow-sm"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60"
-          }`}
+            }`}
         >
           <Building2 className="w-4 h-4" />
           <span>1. Thông tin hệ thống & Ngân hàng</span>
@@ -255,11 +272,10 @@ export const SettingsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveMainTab("templates")}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all whitespace-nowrap rounded-t-2xl ${
-            activeMainTab === "templates"
+          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all whitespace-nowrap rounded-t-2xl ${activeMainTab === "templates"
               ? "border-amber-500 text-amber-600 bg-white shadow-sm"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60"
-          }`}
+            }`}
         >
           <Printer className="w-4 h-4" />
           <span>2. Cấu hình Mẫu In Theo Mã</span>
@@ -268,11 +284,10 @@ export const SettingsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveMainTab("placeholders")}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all whitespace-nowrap rounded-t-2xl ${
-            activeMainTab === "placeholders"
+          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all whitespace-nowrap rounded-t-2xl ${activeMainTab === "placeholders"
               ? "border-amber-500 text-amber-600 bg-white shadow-sm"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60"
-          }`}
+            }`}
         >
           <FileCode className="w-4 h-4" />
           <span>3. Thẻ Biến Chèn Mẫu In (Placeholders)</span>
@@ -280,12 +295,12 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <form onSubmit={handleSaveSystem} className="space-y-6">
-        
+
         {/* TAB 1: THÔNG TIN HỆ THỐNG & NGÂN HÀNG */}
         {activeMainTab === "general" && (
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6 animate-fade-in">
             <h3 className="font-bold text-base text-slate-800 border-b pb-2">Thông tin chung & Logo thương hiệu</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
               {/* Logo Uploader */}
               <div className="md:col-span-1 flex flex-col items-center justify-center border border-slate-200 border-dashed rounded-2xl p-4 bg-slate-50/50">
@@ -302,11 +317,11 @@ export const SettingsPage: React.FC = () => {
                   <label className="btn btn-outline border-slate-300 text-slate-700 btn-xs rounded-lg w-full flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-50">
                     <Upload className="w-3 h-3" />
                     <span>Tải ảnh lên (Base64)</span>
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       accept="image/*"
                       onChange={handleLogoUpload}
-                      className="hidden" 
+                      className="hidden"
                     />
                   </label>
                   <p className="text-[10px] text-slate-500 mt-2 text-center font-medium">Hỗ trợ JPG, PNG, WEBP</p>
@@ -561,11 +576,10 @@ export const SettingsPage: React.FC = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setActivePlaceholderTab(tab.id as PrintModuleType)}
-                  className={`btn btn-xs rounded-lg font-bold px-3 ${
-                    activePlaceholderTab === tab.id
+                  className={`btn btn-xs rounded-lg font-bold px-3 ${activePlaceholderTab === tab.id
                       ? "bg-amber-500 text-slate-950 border-none"
                       : "btn-ghost text-slate-600 hover:bg-slate-100"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -575,8 +589,8 @@ export const SettingsPage: React.FC = () => {
             {/* Grid of placeholders */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
               {MODULE_PLACEHOLDERS[activePlaceholderTab]?.map((item) => (
-                <div 
-                  key={item.key} 
+                <div
+                  key={item.key}
                   onClick={() => handleCopyTag(item.key)}
                   className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-amber-50/50 hover:border-amber-200 transition-all cursor-pointer group"
                 >
