@@ -42,15 +42,24 @@ export const Login: React.FC = () => {
 
     try {
       setLoading(true);
-      // Bước 1: Login Check (Kiểm tra tài khoản tồn tại/khóa & cấp precheck token chống DDoS)
-      const checkRes = await authApi.loginCheck(username);
-      if (!checkRes.allowed || !checkRes.precheck_token) {
-        toast.error("Kiểm tra thông tin đăng nhập không hợp lệ.");
-        return;
+      // Bước 1: Pre-check thông tin tài khoản (nếu backend hỗ trợ)
+      let precheckToken: string | undefined = undefined;
+      try {
+        const checkRes = await authApi.loginCheck(username);
+        if (checkRes && checkRes.allowed) {
+          precheckToken = checkRes.precheck_token;
+        }
+      } catch (checkErr: any) {
+        // Nếu tài khoản bị tạm khóa (400/403) -> Hiển thị thông báo và dừng lại
+        if (checkErr.response?.status === 400 || checkErr.response?.status === 403) {
+          toast.error(checkErr.response?.data?.error || "Tài khoản của bạn đã bị tạm khóa.");
+          return;
+        }
+        // Nếu lỗi 404 (backend cũ chưa có route /login-check) -> Tự động fallback đăng nhập trực tiếp
       }
 
-      // Bước 2: Đăng nhập chính thức kèm precheck_token
-      const data = await authApi.login(username, password, checkRes.precheck_token);
+      // Bước 2: Đăng nhập chính thức
+      const data = await authApi.login(username, password, precheckToken);
       login(data.token, data.user, data.refreshToken || data.token_id);
     } catch (err: any) {
       toast.error(
