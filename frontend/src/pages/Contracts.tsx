@@ -1131,12 +1131,14 @@ export const Contracts: React.FC = () => {
                             {item.customer?.full_name}
                           </button>
                         </td>
-                        <td className="text-slate-500 font-mono text-[11px]">{item.license_plate || <span className="text-slate-300">—</span>}</td>
+                        <td className="font-mono text-[11px] font-bold text-amber-600">
+                          {item.commodity?.code || <span className="text-slate-300">—</span>}
+                        </td>
                         <td className="text-slate-700">
-                          <div className="font-bold">{item.asset_name || "—"}</div>
-                          {item.commodity && (
-                            <div className="text-[10px] text-slate-400 font-medium">
-                              [{item.commodity.code}] {item.commodity.name?.split("|")[0]}
+                          <div className="font-bold text-slate-800">{item.asset_name || item.commodity?.name?.split("|")[0] || "—"}</div>
+                          {item.license_plate && (
+                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                              {item.license_plate}
                             </div>
                           )}
                         </td>
