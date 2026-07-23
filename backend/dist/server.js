@@ -11,7 +11,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 // Initialize routers
 const auth_1 = __importDefault(require("./routes/auth"));
-const stores_1 = __importDefault(require("./routes/stores"));
+const branches_1 = __importDefault(require("./routes/branches"));
 const employees_1 = __importDefault(require("./routes/employees"));
 const customers_1 = __importDefault(require("./routes/customers"));
 const collaborators_1 = __importDefault(require("./routes/collaborators"));
@@ -28,14 +28,22 @@ const warnings_1 = __importDefault(require("./routes/warnings"));
 const settings_1 = __importDefault(require("./routes/settings"));
 const interestTypes_1 = __importDefault(require("./routes/interestTypes"));
 const public_1 = __importDefault(require("./routes/public"));
+// Global error handler
+const errorHandler_1 = require("./middleware/errorHandler");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5001;
 // Middlewares
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: true, // Chấp nhận động origin gửi từ client (localhost:3000, 8080, 5173, production domain)
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Branch-ID"],
+}));
 app.use(express_1.default.json());
 // API Routes
 app.use("/api/auth", auth_1.default);
-app.use("/api/stores", stores_1.default);
+app.use("/api/branches", branches_1.default);
+app.use("/api/stores", branches_1.default); // Backward compatibility
 app.use("/api/employees", employees_1.default);
 app.use("/api/customers", customers_1.default);
 app.use("/api/collaborators", collaborators_1.default);
@@ -69,6 +77,8 @@ app.get("*", (req, res, next) => {
         }
     });
 });
+// Global error handler — MUST be last middleware
+app.use(errorHandler_1.errorHandler);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

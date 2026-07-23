@@ -1857,6 +1857,18 @@ router.put("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: A
 
       const newPrincipal = loan_amount !== undefined ? Number(loan_amount) : Number(contract.loan_amount);
       const newRate = interest_rate !== undefined ? Number(interest_rate) : Number(contract.interest_rate);
+      const newUpfront = is_upfront_interest !== undefined ? !!is_upfront_interest : contract.is_upfront_interest;
+      const newLoanDate = loan_date ? new Date(loan_date) : new Date(contract.loan_date);
+
+      // Recreate schedules
+      const interestType = await tx.interestType.findUnique({
+        where: { id: interest_type_id || contract.interest_type_id },
+      });
+
+      if (!interestType) {
+        throw new Error("Interest type not found");
+      }
+
       const newDays = convertDurationToDays(
         loan_days !== undefined ? Number(loan_days) : contract.loan_days,
         interestType.code

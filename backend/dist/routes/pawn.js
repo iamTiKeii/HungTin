@@ -12,6 +12,7 @@ const permission_1 = require("../middleware/permission");
 const codeGen_1 = require("../utils/codeGen");
 const interest_1 = require("../utils/interest");
 const cash_1 = require("../utils/cash");
+const durationUtils_1 = require("../utils/durationUtils");
 const uuid_1 = require("uuid");
 const crypto_1 = __importDefault(require("crypto"));
 const router = (0, express_1.Router)();
@@ -84,11 +85,15 @@ function calculateDailyInterestRate(principal, rate, periodValue, interestTypeCo
 function calculateAccruedInterest(contract) {
     if (contract.status !== "active")
         return 0;
+    const interestTypeCode = contract.interest_type?.code;
+    if (!interestTypeCode)
+        return 0; // HĐ mồ côi (interest_type bị xóa) → không tính lãi
     const paidPayments = contract.interest_payments?.filter((p) => p.is_paid) || [];
     let startDate = new Date(contract.loan_date);
     if (paidPayments.length > 0) {
         const sorted = [...paidPayments].sort((a, b) => b.cycle_number - a.cycle_number);
-        startDate = new Date(sorted[0].to_date);
+        const lastToDate = new Date(sorted[0].to_date);
+        startDate = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
     }
     const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     const today = new Date();
@@ -96,20 +101,20 @@ function calculateAccruedInterest(contract) {
     const diffMs = todayMidnight.getTime() - startMidnight.getTime();
     if (diffMs < 0)
         return 0;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
     const principal = Number(contract.loan_amount) || 0;
     const rate = Number(contract.interest_rate) || 0;
     const pValue = Number(contract.period_value) || 1;
-    const interestTypeCode = contract.interest_type?.code;
     const dailyRate = calculateDailyInterestRate(principal, rate, pValue, interestTypeCode);
-    return Math.round(dailyRate * diffDays);
+    const result = Math.round(dailyRate * diffDays);
+    return isNaN(result) ? 0 : result;
 }
 // 1. Get Pawn Contracts list (with search, filter)
 router.get("/", async (req, res) => {
     try {
-        const storeId = req.user.store_id;
+        const storeId = req.user.branch_id;
         const { status, search, searchAsset, commodityId, page, limit } = req.query;
-        const whereClause = { store_id: storeId };
+        const whereClause = { branch_id: storeId };
         if (status) {
             if (status === "all_active") {
                 whereClause.status = "active";
@@ -165,7 +170,14 @@ router.get("/", async (req, res) => {
         });
         const totalLent = allMatching.reduce((sum, item) => sum + Number(item.loan_amount || 0), 0);
         const totalDebt = allMatching.reduce((sum, item) => sum + Number(item.debt_amount || 0), 0);
-        const totalExpectedInterest = allMatching.reduce((sum, item) => sum + calculateAccruedInterest(item), 0);
+        const totalExpectedInterest = allMatching.reduce((sum, item) => {
+            try {
+                return sum + calculateAccruedInterest(item);
+            }
+            catch {
+                return sum; // bỏ qua HĐ lỗi (ví dụ interest_type bị xóa), không làm sập toàn bộ reduce
+            }
+        }, 0);
         const totalPaidInterest = allMatching.reduce((sum, item) => {
             const paidSum = item.interest_payments
                 .filter((p) => p.is_paid)
@@ -226,6 +238,9 @@ router.get("/", async (req, res) => {
         return res.json(contracts);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -236,6 +251,9 @@ router.get("/next-code-number", async (req, res) => {
         return res.json({ nextCodeNumber: nextNum });
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -271,16 +289,22 @@ router.get("/:id", async (req, res) => {
         if (!contract) {
             return res.status(404).json({ error: "Pawn contract not found" });
         }
+        if (!req.user.branch_ids.includes(contract.branch_id)) {
+            return res.status(403).json({ error: "Forbidden: You do not have access to this branch's data" });
+        }
         return res.json(contract);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
 // 3. Create Pawn Contract
 router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), async (req, res) => {
     try {
-        const storeId = req.user.store_id;
+        const storeId = req.user.branch_id;
         const employeeId = req.user.id;
         const { customer_id, commodity_id, asset_name, loan_amount, interest_type_id, is_upfront_interest, loan_days, period_value, interest_rate, loan_date, collector_id, collaborator_id, license_plate, chassis_number, engine_number, notes, contract_code, } = req.body;
         let comm = null;
@@ -344,8 +368,12 @@ router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), asyn
             if (!interestType) {
                 throw new Error("Interest type not found");
             }
+            // Auto-convert unit using standard convertDurationToDays helper
+            const finalDays = (0, durationUtils_1.convertDurationToDays)(days, interestType.code);
+            const finalPeriodValue = (0, durationUtils_1.convertDurationToDays)(pValue, interestType.code);
             // Generate expected interest payments schedule
-            const cycles = (0, interest_1.generateInterestSchedule)(principal, rate, days, pValue, interestType.code, normalizedLoanDate, resolvedIsUpfront);
+            console.log(`[PAWN CREATE] contractCode=${contractCode} | interestType=${interestType.code} | days=${finalDays} | pValue=${finalPeriodValue} | loanDate=${normalizedLoanDate.toISOString().split("T")[0]}`);
+            const cycles = (0, interest_1.generateInterestSchedule)(principal, rate, finalDays, finalPeriodValue, interestType.code, normalizedLoanDate, resolvedIsUpfront);
             const origin = req.headers.origin || `${req.secure ? "https" : "http"}://${req.get("host") || "localhost:5001"}`;
             const contractId = (0, uuid_1.v4)();
             const lookupToken = crypto_1.default.randomBytes(16).toString("hex");
@@ -354,7 +382,7 @@ router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), asyn
             const contract = await tx.pawnContract.create({
                 data: {
                     id: contractId,
-                    store_id: storeId,
+                    branch_id: storeId,
                     contract_code: contractCode,
                     customer_id,
                     commodity_id,
@@ -362,8 +390,8 @@ router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), asyn
                     loan_amount: principal,
                     interest_type_id: resolvedInterestTypeId,
                     is_upfront_interest: resolvedIsUpfront,
-                    loan_days: days,
-                    period_value: pValue,
+                    loan_days: finalDays,
+                    period_value: finalPeriodValue,
                     interest_rate: rate,
                     loan_date: normalizedLoanDate,
                     collector_id,
@@ -419,6 +447,9 @@ router.post("/", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), asyn
         return res.status(201).json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -456,7 +487,7 @@ router.post("/:id/pay-interest", (0, permission_1.requirePermission)(["CONTRACTS
                 },
             });
             // Update cash fund (+ payAmount)
-            await (0, cash_1.adjustDailyCash)(tx, payment.contract.store_id, today, payAmount, "pawn_interest_pay", employeeId, `Thu lãi kỳ ${payment.cycle_number} HĐ ${payment.contract.contract_code}. Thực thu: ${payAmount}`);
+            await (0, cash_1.adjustDailyCash)(tx, payment.contract.branch_id, today, payAmount, "pawn_interest_pay", employeeId, `Thu lãi kỳ ${payment.cycle_number} HĐ ${payment.contract.contract_code}. Thực thu: ${payAmount}`);
             // Save to ledger
             await tx.pawnTransactionLedger.create({
                 data: {
@@ -474,6 +505,9 @@ router.post("/:id/pay-interest", (0, permission_1.requirePermission)(["CONTRACTS
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -499,7 +533,7 @@ const handleCancelInterest = async (req, res) => {
             const today = new Date();
             const refundAmount = Number(payment.actual_paid);
             // Revert daily cash (- refundAmount)
-            await (0, cash_1.adjustDailyCash)(tx, payment.contract.store_id, today, -refundAmount, "pawn_interest_cancel", employeeId, `Hủy thu lãi kỳ ${payment.cycle_number} HĐ ${payment.contract.contract_code}. Trừ két: ${refundAmount}`);
+            await (0, cash_1.adjustDailyCash)(tx, payment.contract.branch_id, today, -refundAmount, "pawn_interest_cancel", employeeId, `Hủy thu lãi kỳ ${payment.cycle_number} HĐ ${payment.contract.contract_code}. Trừ két: ${refundAmount}`);
             // Save to ledger (negative credit or debit)
             await tx.pawnTransactionLedger.create({
                 data: {
@@ -526,6 +560,9 @@ const handleCancelInterest = async (req, res) => {
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 };
@@ -573,7 +610,7 @@ router.post("/:id/pay-down", (0, permission_1.requirePermission)(["CONTRACTS_OPE
                 },
             });
             // 3. Adjust daily cash (+ paydownAmount)
-            await (0, cash_1.adjustDailyCash)(tx, contract.store_id, date, paydownAmount, "pawn_principal_paydown", employeeId, `Khách đóng bớt gốc HĐ ${contract.contract_code}. Nhận: ${paydownAmount}`);
+            await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, date, paydownAmount, "pawn_principal_paydown", employeeId, `Khách đóng bớt gốc HĐ ${contract.contract_code}. Nhận: ${paydownAmount}`);
             // 4. Ledger
             await tx.pawnTransactionLedger.create({
                 data: {
@@ -592,6 +629,9 @@ router.post("/:id/pay-down", (0, permission_1.requirePermission)(["CONTRACTS_OPE
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -633,7 +673,7 @@ router.post("/:id/borrow-more", (0, permission_1.requirePermission)(["CONTRACTS_
                 },
             });
             // 3. Adjust daily cash (- borrowAmount)
-            await (0, cash_1.adjustDailyCash)(tx, contract.store_id, date, -borrowAmount, "pawn_principal_borrow_more", employeeId, `Khách vay thêm gốc HĐ ${contract.contract_code}. Giải ngân: ${borrowAmount}`);
+            await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, date, -borrowAmount, "pawn_principal_borrow_more", employeeId, `Khách vay thêm gốc HĐ ${contract.contract_code}. Giải ngân: ${borrowAmount}`);
             // 4. Ledger
             await tx.pawnTransactionLedger.create({
                 data: {
@@ -652,6 +692,9 @@ router.post("/:id/borrow-more", (0, permission_1.requirePermission)(["CONTRACTS_
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -670,12 +713,12 @@ router.delete("/:id/principal-transaction/:txId", (0, permission_1.requirePermis
             const today = new Date();
             const amount = Number(pTx.amount);
             if (pTx.type === "pay_down") {
-                // Restore: Increments contract loan_amount, deducts amount from daily cash
+                // Rebranch: Increments contract loan_amount, deducts amount from daily cash
                 await tx.pawnContract.update({
                     where: { id: contractId },
                     data: { loan_amount: { increment: amount } },
                 });
-                await (0, cash_1.adjustDailyCash)(tx, contract.store_id, today, -amount, "pawn_principal_revert", employeeId, `Hủy thu nợ gốc HĐ ${contract.contract_code}. Trừ két: ${amount}`);
+                await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, today, -amount, "pawn_principal_revert", employeeId, `Hủy thu nợ gốc HĐ ${contract.contract_code}. Trừ két: ${amount}`);
                 await tx.pawnTransactionLedger.create({
                     data: {
                         contract_id: contractId,
@@ -688,12 +731,12 @@ router.delete("/:id/principal-transaction/:txId", (0, permission_1.requirePermis
                 });
             }
             else if (pTx.type === "borrow_more") {
-                // Restore: Decrements contract loan_amount, adds amount to daily cash
+                // Rebranch: Decrements contract loan_amount, adds amount to daily cash
                 await tx.pawnContract.update({
                     where: { id: contractId },
                     data: { loan_amount: { decrement: amount } },
                 });
-                await (0, cash_1.adjustDailyCash)(tx, contract.store_id, today, amount, "pawn_principal_revert", employeeId, `Hủy giải ngân thêm nợ gốc HĐ ${contract.contract_code}. Hoàn lại két: ${amount}`);
+                await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, today, amount, "pawn_principal_revert", employeeId, `Hủy giải ngân thêm nợ gốc HĐ ${contract.contract_code}. Hoàn lại két: ${amount}`);
                 await tx.pawnTransactionLedger.create({
                     data: {
                         contract_id: contractId,
@@ -714,6 +757,9 @@ router.delete("/:id/principal-transaction/:txId", (0, permission_1.requirePermis
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -795,6 +841,9 @@ router.post("/:id/extend", (0, permission_1.requirePermission)(["CONTRACTS_OPERA
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -856,6 +905,9 @@ router.delete("/:id/extend/:extendId", (0, permission_1.requirePermission)(["CON
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -886,18 +938,18 @@ router.post("/:id/redeem", (0, permission_1.requirePermission)(["CONTRACTS_OPERA
             const lastPaid = contract.interest_payments
                 .filter((p) => p.is_paid)
                 .pop();
-            const accrualStart = lastPaid ? new Date(lastPaid.to_date) : new Date(contract.loan_date);
+            let accrualStart = new Date(contract.loan_date);
+            if (lastPaid) {
+                const lastToDate = new Date(lastPaid.to_date);
+                accrualStart = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
+            }
             // Normalize dates to midnight to compute absolute difference in days
             const startMidnight = new Date(accrualStart.getFullYear(), accrualStart.getMonth(), accrualStart.getDate());
             const endMidnight = new Date(rDate.getFullYear(), rDate.getMonth(), rDate.getDate());
             const diffMs = endMidnight.getTime() - startMidnight.getTime();
-            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
             let daysAccrued = 0;
-            if (diffDays > 0) {
-                daysAccrued = lastPaid ? diffDays : diffDays + 1;
-            }
-            else if (diffDays === 0) {
-                daysAccrued = lastPaid ? 0 : 1;
+            if (diffMs >= 0) {
+                daysAccrued = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
             }
             const dailyRate = calculateDailyInterestRate(principal, Number(contract.interest_rate), contract.period_value, contract.interest_type.code);
             const interestAmount = Math.round(dailyRate * daysAccrued);
@@ -940,7 +992,7 @@ router.post("/:id/redeem", (0, permission_1.requirePermission)(["CONTRACTS_OPERA
                 const cycleEndMid = (0, cash_1.normalizeToMidnight)(rDate);
                 const cycleDiffMs = cycleEndMid.getTime() - cycleStartMid.getTime();
                 const cycleDiffDays = Math.round(cycleDiffMs / (1000 * 60 * 60 * 24));
-                const elapsedDays = Math.max(1, lastPaid ? cycleDiffDays : cycleDiffDays + 1);
+                const elapsedDays = Math.max(1, cycleDiffDays + 1);
                 const cycleInterest = Math.round(dailyRate * elapsedDays);
                 await tx.pawnInterestPayment.update({
                     where: { id: activeCycle.id },
@@ -968,7 +1020,7 @@ router.post("/:id/redeem", (0, permission_1.requirePermission)(["CONTRACTS_OPERA
                 },
             });
             // Adjust cash fund (+ totalRedeem)
-            await (0, cash_1.adjustDailyCash)(tx, contract.store_id, rDate, totalRedeem, "pawn_redeem", employeeId, `Chuộc đồ tất toán HĐ ${contract.contract_code}. Thu quỹ: ${totalRedeem} (Gốc: ${principal}, Nợ cũ: ${outstandingDebt}, Lãi tích lũy: ${interestAmount}, Khác: ${otherVal})`);
+            await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, rDate, totalRedeem, "pawn_redeem", employeeId, `Chuộc đồ tất toán HĐ ${contract.contract_code}. Thu quỹ: ${totalRedeem} (Gốc: ${principal}, Nợ cũ: ${outstandingDebt}, Lãi tích lũy: ${interestAmount}, Khác: ${otherVal})`);
             // Ledger log
             await tx.pawnTransactionLedger.create({
                 data: {
@@ -985,6 +1037,9 @@ router.post("/:id/redeem", (0, permission_1.requirePermission)(["CONTRACTS_OPERA
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1009,7 +1064,7 @@ router.post("/:id/cancel-redeem", (0, permission_1.requirePermission)(["CONTRACT
             const today = new Date();
             const refundAmount = Number(redemption.total_amount);
             // Revert Cash flow (- refundAmount)
-            await (0, cash_1.adjustDailyCash)(tx, contract.store_id, today, -refundAmount, "pawn_redeem_cancel", employeeId, `Hủy chuộc đồ tất toán HĐ ${contract.contract_code}. Trừ két hoàn khách: ${refundAmount}`);
+            await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, today, -refundAmount, "pawn_redeem_cancel", employeeId, `Hủy chuộc đồ tất toán HĐ ${contract.contract_code}. Trừ két hoàn khách: ${refundAmount}`);
             // Restore status
             await tx.pawnContract.update({
                 where: { id: contractId },
@@ -1049,6 +1104,9 @@ router.post("/:id/cancel-redeem", (0, permission_1.requirePermission)(["CONTRACT
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1096,6 +1154,9 @@ router.post("/:id/record-debt", (0, permission_1.requirePermission)(["CONTRACTS_
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1140,7 +1201,7 @@ router.post("/:id/pay-debt", (0, permission_1.requirePermission)(["CONTRACTS_OPE
                 },
             });
             // 3. Update cash fund (+ value)
-            await (0, cash_1.adjustDailyCash)(tx, contract.store_id, today, value, "pawn_debt_payment", employeeId, `Thu tiền trả nợ HĐ ${contract.contract_code}. Số tiền: ${value}`);
+            await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, today, value, "pawn_debt_payment", employeeId, `Thu tiền trả nợ HĐ ${contract.contract_code}. Số tiền: ${value}`);
             // 4. Ledger
             await tx.pawnTransactionLedger.create({
                 data: {
@@ -1157,6 +1218,9 @@ router.post("/:id/pay-debt", (0, permission_1.requirePermission)(["CONTRACTS_OPE
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1195,7 +1259,7 @@ router.delete("/:id/debt-transaction/:txId", (0, permission_1.requirePermission)
                     where: { id: contractId },
                     data: { debt_amount: { increment: amount } },
                 });
-                await (0, cash_1.adjustDailyCash)(tx, contract.store_id, today, -amount, "pawn_debt_revert", employeeId, `Hủy thu nợ cũ HĐ ${contract.contract_code}. Trừ két: ${amount}`);
+                await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, today, -amount, "pawn_debt_revert", employeeId, `Hủy thu nợ cũ HĐ ${contract.contract_code}. Trừ két: ${amount}`);
                 await tx.pawnTransactionLedger.create({
                     data: {
                         contract_id: contractId,
@@ -1214,6 +1278,9 @@ router.delete("/:id/debt-transaction/:txId", (0, permission_1.requirePermission)
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1237,6 +1304,9 @@ router.post("/:id/documents", async (req, res) => {
         return res.status(201).json(doc);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1250,6 +1320,9 @@ router.delete("/:id/documents/:docId", async (req, res) => {
         return res.json({ message: "Document deleted successfully" });
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1272,6 +1345,9 @@ router.post("/:id/reminders/log", async (req, res) => {
         return res.status(201).json(log);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1311,6 +1387,7 @@ router.post("/:id/timers", async (req, res) => {
                 // Create new global reminder
                 await tx.reminder.create({
                     data: {
+                        branch_id: contract.branch_id,
                         employee_id: req.user.id,
                         contract_code: contract.contract_code,
                         customer_name: contract.customer.full_name,
@@ -1328,6 +1405,9 @@ router.post("/:id/timers", async (req, res) => {
         return res.status(201).json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1355,6 +1435,9 @@ router.put("/:id/timers/:timerId/stop", async (req, res) => {
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1402,8 +1485,6 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
             const oldNetDisbursed = Number(contract.loan_amount) - oldUpfront;
             const newPrincipal = loan_amount !== undefined ? Number(loan_amount) : Number(contract.loan_amount);
             const newRate = interest_rate !== undefined ? Number(interest_rate) : Number(contract.interest_rate);
-            const newDays = loan_days !== undefined ? Number(loan_days) : contract.loan_days;
-            const newPeriod = period_value !== undefined ? Number(period_value) : contract.period_value;
             const newUpfront = is_upfront_interest !== undefined ? !!is_upfront_interest : contract.is_upfront_interest;
             const newLoanDate = loan_date ? new Date(loan_date) : new Date(contract.loan_date);
             // Recreate schedules
@@ -1413,6 +1494,8 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
             if (!interestType) {
                 throw new Error("Interest type not found");
             }
+            const newDays = (0, durationUtils_1.convertDurationToDays)(loan_days !== undefined ? Number(loan_days) : contract.loan_days, interestType.code);
+            const newPeriod = (0, durationUtils_1.convertDurationToDays)(period_value !== undefined ? Number(period_value) : contract.period_value, interestType.code);
             const cycles = (0, interest_1.generateInterestSchedule)(newPrincipal, newRate, newDays, newPeriod, interestType.code, newLoanDate, newUpfront);
             // Compute new net disbursement
             let newUpfrontAmt = 0;
@@ -1464,7 +1547,7 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
             // Sync cash flow difference (Δ = newNet - oldNet)
             const diff = newNetDisbursed - oldNetDisbursed;
             if (diff !== 0) {
-                await (0, cash_1.adjustDailyCash)(tx, contract.store_id, new Date(), -diff, // If newNet is higher, cash goes out (-diff). If lower, cash comes in (+diff).
+                await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, new Date(), -diff, // If newNet is higher, cash goes out (-diff). If lower, cash comes in (+diff).
                 "contract_edit", employeeId, `Điều chỉnh vốn giải ngân HĐ ${contract.contract_code} do sửa thông số. Chênh lệch: ${-diff}`);
                 // Update ledger record
                 await tx.pawnTransactionLedger.create({
@@ -1483,6 +1566,9 @@ router.put("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]), as
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1505,7 +1591,7 @@ router.delete("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]),
                 throw new Error("Contract not found");
             }
             // Check daily cash lock for original loan date
-            await (0, cash_1.checkDailyCashLock)(tx, contract.store_id, contract.loan_date);
+            await (0, cash_1.checkDailyCashLock)(tx, contract.branch_id, contract.loan_date);
             // Calculate old upfront
             let oldUpfront = 0;
             if (contract.is_upfront_interest && contract.interest_payments.length > 0) {
@@ -1534,7 +1620,7 @@ router.delete("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]),
             const netCashFlow = totalInflows - totalOutflows;
             // Revert Cash fund (If Net > 0 (we are in profit), we deduct it. If Net < 0 (we are in deficit), we refund it)
             if (netCashFlow !== 0) {
-                await (0, cash_1.adjustDailyCash)(tx, contract.store_id, new Date(), -netCashFlow, "contract_deleted", employeeId, `Khấu trừ/Hoàn trả quỹ két do xóa hợp đồng cầm đồ ${contract.contract_code}. Lượng hoàn két: ${-netCashFlow}`);
+                await (0, cash_1.adjustDailyCash)(tx, contract.branch_id, new Date(), -netCashFlow, "contract_deleted", employeeId, `Khấu trừ/Hoàn trả quỹ két do xóa hợp đồng cầm đồ ${contract.contract_code}. Lượng hoàn két: ${-netCashFlow}`);
             }
             // Soft delete: set status to 'cancelled'
             await tx.pawnContract.update({
@@ -1546,6 +1632,9 @@ router.delete("/:id", (0, permission_1.requirePermission)(["CONTRACTS_MANAGE"]),
         return res.json(result);
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });
@@ -1554,7 +1643,7 @@ router.post("/:id/liquidate", (0, permission_1.requirePermission)(["CONTRACTS_OP
     try {
         const contractId = req.params.id;
         const employeeId = req.user.id;
-        const storeId = req.user.store_id;
+        const storeId = req.user.branch_id;
         const { liquidation_price, buyer, notes } = req.body;
         if (liquidation_price === undefined || !buyer) {
             return res.status(400).json({ error: "liquidation_price and buyer are required" });
@@ -1593,16 +1682,17 @@ router.post("/:id/liquidate", (0, permission_1.requirePermission)(["CONTRACTS_OP
             const principal = Number(contract.loan_amount);
             const outstandingDebt = Number(contract.debt_amount);
             const lastPaid = contract.interest_payments.filter((p) => p.is_paid).pop();
-            const accrualStart = lastPaid ? new Date(lastPaid.to_date) : new Date(contract.loan_date);
-            const startMidnight = new Date(accrualStart.getFullYear(), accrualStart.getMonth(), accrualStart.getDate());
-            const diffMs = today.getTime() - startMidnight.getTime();
-            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-            let daysAccrued = 0;
-            if (diffDays > 0) {
-                daysAccrued = lastPaid ? diffDays : diffDays + 1;
+            let accrualStart = new Date(contract.loan_date);
+            if (lastPaid) {
+                const lastToDate = new Date(lastPaid.to_date);
+                accrualStart = new Date(lastToDate.getFullYear(), lastToDate.getMonth(), lastToDate.getDate() + 1);
             }
-            else if (diffDays === 0) {
-                daysAccrued = lastPaid ? 0 : 1;
+            const startMidnight = new Date(accrualStart.getFullYear(), accrualStart.getMonth(), accrualStart.getDate());
+            const endMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const diffMs = endMidnight.getTime() - startMidnight.getTime();
+            let daysAccrued = 0;
+            if (diffMs >= 0) {
+                daysAccrued = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
             }
             const dailyRate = calculateDailyInterestRate(principal, Number(contract.interest_rate), contract.period_value, contract.interest_type.code);
             const overdueInterest = Math.round(dailyRate * daysAccrued);
@@ -1631,7 +1721,7 @@ router.post("/:id/liquidate", (0, permission_1.requirePermission)(["CONTRACTS_OP
                 : `Lỗ thanh lý (Chi phí thất thoát): -${Math.abs(profitOrLoss).toLocaleString("vi-VN")} đ`;
             await tx.receiptVoucher.create({
                 data: {
-                    store_id: storeId,
+                    branch_id: storeId,
                     voucher_code: voucherCode,
                     category_id: category.id,
                     amount: price,
@@ -1662,6 +1752,9 @@ router.post("/:id/liquidate", (0, permission_1.requirePermission)(["CONTRACTS_OP
         return res.json({ message: "Thực thi thanh lý tài sản hợp đồng thành công!", contract: result });
     }
     catch (error) {
+        if (error instanceof interest_1.InvalidLoanParamsError) {
+            return res.status(400).json({ error: error.message });
+        }
         return res.status(500).json({ error: error.message });
     }
 });

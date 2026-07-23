@@ -3,14 +3,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticateToken = void 0;
+exports.authenticateToken = exports.getCookieValue = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("../utils/db");
+const getCookieValue = (req, name) => {
+    const reqCookies = req.cookies;
+    if (reqCookies && reqCookies[name]) {
+        return reqCookies[name];
+    }
+    const rawCookie = req.headers.cookie;
+    if (!rawCookie)
+        return undefined;
+    const match = rawCookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, "\\$1") + "=([^;]*)"));
+    return match ? decodeURIComponent(match[1]) : undefined;
+};
+exports.getCookieValue = getCookieValue;
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+    const bearerToken = authHeader && authHeader.split(" ")[1];
+    const cookieToken = (0, exports.getCookieValue)(req, "access_token");
+    const token = bearerToken || cookieToken;
     if (!token) {
-        return res.status(401).json({ error: "Access token required" });
+        return res.status(401).json({ error: "Access token required", code: "TOKEN_REQUIRED" });
     }
     try {
         const secret = process.env.JWT_SECRET || "pawn_manager_secret_key_2026";
@@ -18,6 +32,11 @@ const authenticateToken = async (req, res, next) => {
         const employee = await db_1.prisma.employee.findUnique({
             where: { id: decoded.id },
             include: {
+                branches: {
+                    include: {
+                        branch: true,
+                    },
+                },
                 permissions: {
                     include: {
                         permission: true,
@@ -28,17 +47,37 @@ const authenticateToken = async (req, res, next) => {
         if (!employee || employee.status !== "active") {
             return res.status(403).json({ error: "User is inactive or disabled" });
         }
+        const permissions = employee.permissions.map((ep) => ep.permission.code);
+        const isAdmin = permissions.includes("SETTINGS_MANAGE") || permissions.includes("BRANCHES_VIEW_ALL");
+        let branchIds = [];
+        if (isAdmin) {
+            const allBranches = await db_1.prisma.branch.findMany({
+                where: { status: "active" },
+                select: { id: true },
+            });
+            branchIds = allBranches.map((b) => b.id);
+        }
+        else {
+            branchIds = employee.branches.map((ub) => ub.branch_id);
+        }
+        const reqBranchId = req.headers["x-branch-id"];
+        let activeBranchId = reqBranchId;
+        if (!activeBranchId || !branchIds.includes(activeBranchId)) {
+            activeBranchId = branchIds[0] || "";
+        }
         req.user = {
             id: employee.id,
             username: employee.username,
             full_name: employee.full_name,
-            store_id: employee.store_id,
-            permissions: employee.permissions.map((ep) => ep.permission.code),
+            store_id: activeBranchId, // set store_id to active branch for backward compatibility
+            branch_id: activeBranchId, // set branch_id
+            branch_ids: branchIds, // list of allowed branches
+            permissions,
         };
         next();
     }
     catch (error) {
-        return res.status(403).json({ error: "Invalid or expired token" });
+        return res.status(401).json({ error: "Invalid or expired access token", code: "TOKEN_EXPIRED" });
     }
 };
 exports.authenticateToken = authenticateToken;

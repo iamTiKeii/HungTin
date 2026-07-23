@@ -10,11 +10,39 @@ const db_1 = require("../utils/db");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 const JWT_SECRET = process.env.JWT_SECRET || "pawn_manager_secret_key_2026";
+const setAuthCookies = (res, accessToken, refreshToken) => {
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+    };
+    res.cookie("access_token", accessToken, {
+        ...cookieOptions,
+        maxAge: 60 * 60 * 1000, // 60 minutes
+    });
+    res.cookie("token_id", refreshToken, {
+        ...cookieOptions,
+        maxAge: 12 * 60 * 60 * 1000, // 12 hours
+    });
+};
+const clearAuthCookies = (res) => {
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+    };
+    res.clearCookie("access_token", cookieOptions);
+    res.clearCookie("token_id", cookieOptions);
+};
 // Status Check
 router.get("/status", async (req, res) => {
     try {
-        const storeCount = await db_1.prisma.store.count();
-        return res.json({ bootstrapped: storeCount > 0 });
+        const branchCount = await db_1.prisma.branch.count();
+        return res.json({ bootstrapped: branchCount > 0 });
     }
     catch (error) {
         return res.status(500).json({ error: error.message });
@@ -106,12 +134,13 @@ const permissionsData = [
     { code: "CONTRACTS_OPERATE", name: "Thực hiện Giao dịch Hợp đồng (Legacy)", category: "Hệ thống", description: "Legacy CONTRACTS_OPERATE" },
     { code: "VOUCHERS_MANAGE", name: "Quản lý Thu Chi ngoài nghiệp vụ (Legacy)", category: "Hệ thống", description: "Legacy VOUCHERS_MANAGE" },
     { code: "SETTINGS_MANAGE", name: "Quản trị hệ thống (Admin)", category: "Hệ thống", description: "Quyền quản trị cao nhất của hệ thống" },
+    { code: "BRANCHES_VIEW_ALL", name: "Xem chéo tất cả chi nhánh", category: "Hệ thống", description: "Cho phép xem và quản lý dữ liệu của tất cả các chi nhánh" },
 ];
-// 1. Bootstrapping Endpoint - Creates first store & admin if system is empty
+// 1. Bootstrapping Endpoint - Creates first branch & admin if system is empty
 router.post("/bootstrap", async (req, res) => {
     try {
-        const storeCount = await db_1.prisma.store.count();
-        if (storeCount > 0) {
+        const branchCount = await db_1.prisma.branch.count();
+        if (branchCount > 0) {
             return res.status(400).json({ error: "System is already bootstrapped" });
         }
         const { storeName, investmentCapital, username, password, fullName } = req.body;
@@ -119,9 +148,16 @@ router.post("/bootstrap", async (req, res) => {
             return res.status(400).json({ error: "Missing required fields for bootstrap" });
         }
         const hash = await bcryptjs_1.default.hash(password, 10);
-        // Create store and admin employee in a transaction
+        // Step 1: Seed permissions OUTSIDE the transaction to avoid timeout on remote DB.
+        // permissionsData has 50+ entries; upserts on a remote DB would exceed the 5s limit.
+        const seededPermissions = await Promise.all(permissionsData.map((p) => db_1.prisma.permission.upsert({
+            where: { code: p.code },
+            update: { name: p.name, category: p.category, description: p.description },
+            create: p,
+        })));
+        // Step 2: Atomic transaction — only the 4 fast writes that MUST be atomic.
         const result = await db_1.prisma.$transaction(async (tx) => {
-            const store = await tx.store.create({
+            const branch = await tx.branch.create({
                 data: {
                     name: storeName,
                     investment_capital: Number(investmentCapital) || 0,
@@ -130,43 +166,56 @@ router.post("/bootstrap", async (req, res) => {
             });
             const admin = await tx.employee.create({
                 data: {
-                    store_id: store.id,
                     username,
                     password_hash: hash,
                     full_name: fullName,
                     status: "active",
                 },
             });
-            // Ensure all predefined permissions exist in the database (Upsert)
-            const seededPermissions = [];
-            for (const p of permissionsData) {
-                const perm = await tx.permission.upsert({
-                    where: { code: p.code },
-                    update: { name: p.name, category: p.category, description: p.description },
-                    create: p,
-                });
-                seededPermissions.push(perm);
-            }
-            // Assign all of them to the newly created admin
+            await tx.userBranch.create({
+                data: {
+                    user_id: admin.id,
+                    branch_id: branch.id,
+                },
+            });
+            // Assign all seeded permissions to the newly created admin
             await tx.employeePermission.createMany({
                 data: seededPermissions.map((p) => ({
                     employee_id: admin.id,
                     permission_id: p.id,
                 })),
             });
-            return { store, admin };
+            return { branch, admin };
         });
-        const token = jsonwebtoken_1.default.sign({ id: result.admin.id, username: result.admin.username }, JWT_SECRET, {
-            expiresIn: "12h",
-        });
+        const token = jsonwebtoken_1.default.sign({ id: result.admin.id, username: result.admin.username, type: "access" }, JWT_SECRET, { expiresIn: "60m" });
+        const refreshToken = jsonwebtoken_1.default.sign({ id: result.admin.id, username: result.admin.username, type: "refresh" }, JWT_SECRET, { expiresIn: "12h" });
+        setAuthCookies(res, token, refreshToken);
         return res.status(201).json({
             message: "Bootstrap successful",
             token,
+            refreshToken,
+            token_id: refreshToken,
             user: {
                 id: result.admin.id,
                 username: result.admin.username,
                 full_name: result.admin.full_name,
-                store_id: result.admin.store_id,
+                store_id: result.branch.id,
+                store: {
+                    id: result.branch.id,
+                    name: result.branch.name,
+                    investment_capital: Number(result.branch.investment_capital),
+                },
+                activeBranch: {
+                    id: result.branch.id,
+                    name: result.branch.name,
+                    investment_capital: Number(result.branch.investment_capital),
+                },
+                branches: [{
+                        id: result.branch.id,
+                        name: result.branch.name,
+                        investment_capital: Number(result.branch.investment_capital),
+                    }],
+                permissions: permissionsData.map((p) => p.code),
             },
         });
     }
@@ -174,17 +223,64 @@ router.post("/bootstrap", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
-// 2. Login Endpoint
+// 2a. Pre-check Endpoint (Anti-DDoS & Account Status Check)
+router.post("/login-check", async (req, res) => {
+    try {
+        const { username } = req.body;
+        if (!username) {
+            return res.status(400).json({ error: "Vui lòng nhập tên đăng nhập!" });
+        }
+        const employee = await db_1.prisma.employee.findUnique({
+            where: { username: String(username).trim() },
+        });
+        if (!employee) {
+            return res.status(401).json({ error: "Tên đăng nhập không tồn tại trên hệ thống!" });
+        }
+        if (employee.status !== "active" || (employee.failed_login_attempts && employee.failed_login_attempts >= 5)) {
+            return res.status(403).json({
+                error: "Tài khoản của bạn đã bị tạm khóa do nhập sai mật khẩu quá 5 lần. Vui lòng liên hệ Admin để mở khóa!"
+            });
+        }
+        // Generate a 60-second precheck token for login authorization
+        const precheckToken = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username, type: "precheck" }, JWT_SECRET, { expiresIn: "60s" });
+        return res.json({
+            allowed: true,
+            username: employee.username,
+            precheck_token: precheckToken,
+            failed_login_attempts: employee.failed_login_attempts || 0,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 2b. Login Endpoint (Protected by precheck_token)
 router.post("/login", async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, precheck_token } = req.body;
         if (!username || !password) {
-            return res.status(400).json({ error: "Username and password are required" });
+            return res.status(400).json({ error: "Vui lòng nhập tên đăng nhập và mật khẩu!" });
+        }
+        // Verify precheck token if provided
+        if (precheck_token) {
+            try {
+                const decoded = jsonwebtoken_1.default.verify(precheck_token, JWT_SECRET);
+                if (decoded.type !== "precheck" || decoded.username !== username) {
+                    return res.status(403).json({ error: "Pre-check token không hợp lệ hoặc đã hết hạn!" });
+                }
+            }
+            catch (err) {
+                return res.status(403).json({ error: "Pre-check token hết hạn hoặc không hợp lệ. Vui lòng thử lại!" });
+            }
         }
         const employee = await db_1.prisma.employee.findUnique({
             where: { username },
             include: {
-                store: true,
+                branches: {
+                    include: {
+                        branch: true,
+                    },
+                },
                 permissions: {
                     include: {
                         permission: true,
@@ -192,26 +288,88 @@ router.post("/login", async (req, res) => {
                 },
             },
         });
-        if (!employee || employee.status !== "active") {
-            return res.status(401).json({ error: "Invalid username or account is suspended" });
+        if (!employee) {
+            return res.status(401).json({ error: "Tên đăng nhập hoặc mật khẩu không chính xác" });
+        }
+        if (employee.status !== "active") {
+            return res.status(403).json({
+                error: "Tài khoản đã bị tạm khóa do nhập sai mật khẩu quá 5 lần. Vui lòng liên hệ Admin để mở khóa!"
+            });
         }
         const passwordMatch = await bcryptjs_1.default.compare(password, employee.password_hash);
         if (!passwordMatch) {
-            return res.status(401).json({ error: "Invalid password" });
+            const newAttempts = (employee.failed_login_attempts || 0) + 1;
+            if (newAttempts >= 5) {
+                await db_1.prisma.employee.update({
+                    where: { id: employee.id },
+                    data: {
+                        failed_login_attempts: newAttempts,
+                        status: "locked",
+                    },
+                });
+                return res.status(403).json({
+                    error: "Tài khoản của bạn đã bị tạm khóa do nhập sai mật khẩu 5 lần liên tiếp. Vui lòng liên hệ Admin để mở khóa!"
+                });
+            }
+            else {
+                await db_1.prisma.employee.update({
+                    where: { id: employee.id },
+                    data: {
+                        failed_login_attempts: newAttempts,
+                    },
+                });
+                return res.status(401).json({
+                    error: `Mật khẩu không chính xác! (Lần sai: ${newAttempts}/5). Sai 5 lần liên tiếp tài khoản sẽ bị tạm khóa.`
+                });
+            }
         }
-        const token = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username }, JWT_SECRET, {
-            expiresIn: "12h",
-        });
+        // Success login -> Reset failed attempts
+        if (employee.failed_login_attempts > 0) {
+            await db_1.prisma.employee.update({
+                where: { id: employee.id },
+                data: { failed_login_attempts: 0 },
+            });
+        }
+        const token = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username, type: "access" }, JWT_SECRET, { expiresIn: "60m" });
+        const refreshToken = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username, type: "refresh" }, JWT_SECRET, { expiresIn: "12h" });
+        const permissions = employee.permissions.map((ep) => ep.permission.code);
+        const isAdmin = permissions.includes("SETTINGS_MANAGE") || permissions.includes("BRANCHES_VIEW_ALL");
+        let allowedBranches = [];
+        if (isAdmin) {
+            const allBranches = await db_1.prisma.branch.findMany({
+                where: { status: "active" },
+                orderBy: { name: "asc" },
+            });
+            allowedBranches = allBranches.map((b) => ({
+                id: b.id,
+                name: b.name,
+                investment_capital: Number(b.investment_capital),
+            }));
+        }
+        else {
+            allowedBranches = employee.branches.map((ub) => ({
+                id: ub.branch.id,
+                name: ub.branch.name,
+                investment_capital: Number(ub.branch.investment_capital),
+            }));
+        }
+        const activeBranch = allowedBranches[0] || { id: "", name: "Không có chi nhánh", investment_capital: 0 };
+        setAuthCookies(res, token, refreshToken);
         return res.json({
             message: "Login successful",
             token,
+            refreshToken,
+            token_id: refreshToken,
             user: {
                 id: employee.id,
                 username: employee.username,
                 full_name: employee.full_name,
-                store_id: employee.store_id,
-                store_name: employee.store.name,
-                permissions: employee.permissions.map((ep) => ep.permission.code),
+                store_id: activeBranch.id,
+                store_name: activeBranch.name,
+                store: activeBranch,
+                activeBranch: activeBranch,
+                branches: allowedBranches,
+                permissions,
             },
         });
     }
@@ -219,13 +377,64 @@ router.post("/login", async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+// 2.5 Refresh Token Endpoint (dùng token_id có hạn 12h để đổi access token 60m mới)
+router.post("/refresh", async (req, res) => {
+    try {
+        const token_id = (0, auth_1.getCookieValue)(req, "token_id") || req.body.token_id || req.body.refreshToken;
+        if (!token_id) {
+            return res.status(401).json({ error: "Refresh token (token_id) is required", code: "REFRESH_TOKEN_REQUIRED" });
+        }
+        let decoded;
+        try {
+            decoded = jsonwebtoken_1.default.verify(token_id, JWT_SECRET);
+        }
+        catch (err) {
+            clearAuthCookies(res);
+            return res.status(401).json({
+                error: "Phiên đăng nhập đã hết hạn (quá 12 giờ). Vui lòng đăng nhập lại.",
+                code: "REFRESH_TOKEN_EXPIRED",
+            });
+        }
+        if (decoded.type && decoded.type !== "refresh") {
+            return res.status(401).json({ error: "Invalid token type", code: "INVALID_TOKEN_TYPE" });
+        }
+        const employee = await db_1.prisma.employee.findUnique({
+            where: { id: decoded.id },
+        });
+        if (!employee || employee.status !== "active") {
+            clearAuthCookies(res);
+            return res.status(403).json({ error: "Account is suspended or invalid" });
+        }
+        const newToken = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username, type: "access" }, JWT_SECRET, { expiresIn: "60m" });
+        const newRefreshToken = jsonwebtoken_1.default.sign({ id: employee.id, username: employee.username, type: "refresh" }, JWT_SECRET, { expiresIn: "12h" });
+        setAuthCookies(res, newToken, newRefreshToken);
+        return res.json({
+            message: "Token refreshed successfully",
+            token: newToken,
+            refreshToken: newRefreshToken,
+            token_id: newRefreshToken,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 2.8 Logout & Token Revocation Endpoint (Xóa HttpOnly cookies & thu hồi token)
+router.post("/logout", (req, res) => {
+    clearAuthCookies(res);
+    return res.json({ message: "Thu hồi token và đăng xuất thành công" });
+});
 // 3. Get current user profile info
 router.get("/me", auth_1.authenticateToken, async (req, res) => {
     try {
         const employee = await db_1.prisma.employee.findUnique({
             where: { id: req.user.id },
             include: {
-                store: true,
+                branches: {
+                    include: {
+                        branch: true,
+                    },
+                },
                 permissions: {
                     include: {
                         permission: true,
@@ -236,6 +445,28 @@ router.get("/me", auth_1.authenticateToken, async (req, res) => {
         if (!employee) {
             return res.status(404).json({ error: "User not found" });
         }
+        const permissions = employee.permissions.map((ep) => ep.permission.code);
+        const isAdmin = permissions.includes("SETTINGS_MANAGE") || permissions.includes("BRANCHES_VIEW_ALL");
+        let allowedBranches = [];
+        if (isAdmin) {
+            const allBranches = await db_1.prisma.branch.findMany({
+                where: { status: "active" },
+                orderBy: { name: "asc" },
+            });
+            allowedBranches = allBranches.map((b) => ({
+                id: b.id,
+                name: b.name,
+                investment_capital: Number(b.investment_capital),
+            }));
+        }
+        else {
+            allowedBranches = employee.branches.map((ub) => ({
+                id: ub.branch.id,
+                name: ub.branch.name,
+                investment_capital: Number(ub.branch.investment_capital),
+            }));
+        }
+        const activeBranch = allowedBranches.find((b) => b.id === req.user.branch_id) || allowedBranches[0] || { id: "", name: "Không có chi nhánh", investment_capital: 0 };
         return res.json({
             id: employee.id,
             username: employee.username,
@@ -248,12 +479,10 @@ router.get("/me", auth_1.authenticateToken, async (req, res) => {
             gender: employee.gender,
             birthday: employee.birthday,
             two_factor_enabled: employee.two_factor_enabled,
-            store: {
-                id: employee.store.id,
-                name: employee.store.name,
-                investment_capital: employee.store.investment_capital,
-            },
-            permissions: employee.permissions.map((ep) => ep.permission.code),
+            store: activeBranch,
+            activeBranch: activeBranch,
+            branches: allowedBranches,
+            permissions,
         });
     }
     catch (error) {
