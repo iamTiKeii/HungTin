@@ -1099,7 +1099,6 @@ export const Contracts: React.FC = () => {
                     <th className="py-3 bg-slate-50/30">#</th>
                     <th className="py-3">Mã HĐ</th>
                     <th className="py-3">Khách hàng</th>
-                    <th className="py-3">Biển số</th>
                     <th className="py-3">Tên tài sản</th>
                     <th className="py-3">Tiền cầm</th>
                     <th className="py-3">Ngày cầm</th>
@@ -1131,7 +1130,6 @@ export const Contracts: React.FC = () => {
                             {item.customer?.full_name}
                           </button>
                         </td>
-                        <td className="text-slate-500 font-mono text-[11px]">{item.license_plate || <span className="text-slate-300">—</span>}</td>
                         <td className="text-slate-500">{item.asset_name}</td>
                         <td>
                           <span className="font-bold text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</span>
