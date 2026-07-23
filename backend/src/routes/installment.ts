@@ -137,7 +137,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response) => {
         where: whereClause,
         include: {
           customer: {
-            select: { id: true, full_name: true, phone: true, identity_card_number: true }
+            select: { id: true, full_name: true, phone: true, address: true, identity_card_number: true, identity_card_date: true, identity_card_place: true }
           },
           collector: { select: { full_name: true } },
           payments: true

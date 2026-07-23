@@ -98,23 +98,45 @@ export const ContractForm: React.FC<ContractFormProps> = ({
 
         const rawDays = initialData.loan_duration || initialData.loan_days || initialData.loan_term_days || 30;
         const rawPeriod = initialData.period_value || initialData.interest_period || 10;
+        const formatDateForInput = (val: any) => {
+          if (!val) return "";
+          try {
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return "";
+            return d.toISOString().split("T")[0];
+          } catch {
+            return "";
+          }
+        };
+
+        const formattedCardDate = formatDateForInput(
+          initialData.customer?.identity_card_date ||
+            initialData.identity_card_date ||
+            initialData.customer_id_card_date
+        );
+        const formattedLoanDate =
+          formatDateForInput(
+            initialData.loan_date ||
+              initialData.start_date ||
+              initialData.investment_date
+          ) || new Date().toISOString().split("T")[0];
 
         setState({
           customerType: "existing",
           contractCode: initialData.contract_code || "",
           customerId: initialData.customer_id || "",
-          customerName: initialData.customer?.full_name || initialData.investor_name || "",
-          customerIdCard: initialData.customer?.identity_card_number || initialData.investor_id_card || "",
-          customerIdCardDate: initialData.customer?.identity_card_date || "",
-          customerIdCardPlace: initialData.customer?.identity_card_place || "",
-          customerPhone: initialData.customer?.phone || initialData.investor_phone || "",
-          customerAddress: initialData.customer?.address || initialData.investor_address || "",
-          customerSearchQuery: initialData.customer?.full_name || initialData.investor_name || "",
+          customerName: initialData.customer?.full_name || initialData.customer_name || initialData.investor_name || "",
+          customerIdCard: initialData.customer?.identity_card_number || initialData.customer_id_card || initialData.investor_id_card || "",
+          customerIdCardDate: formattedCardDate,
+          customerIdCardPlace: initialData.customer?.identity_card_place || initialData.identity_card_place || initialData.customer_id_card_place || "",
+          customerPhone: initialData.customer?.phone || initialData.customer_phone || initialData.investor_phone || "",
+          customerAddress: initialData.customer?.address || initialData.customer_address || initialData.investor_address || "",
+          customerSearchQuery: initialData.customer?.full_name || initialData.customer_name || initialData.investor_name || "",
 
           contractCodeNumber: codeNum,
           loanAmount: initialData.loan_amount || initialData.disbursed_amount || initialData.amount || "",
           repaymentAmount: initialData.repayment_amount || "",
-          loanDate: initialData.loan_date || initialData.start_date || initialData.investment_date || new Date().toISOString().split("T")[0],
+          loanDate: formattedLoanDate,
           loanDays: convertDaysToDisplayUnit(rawDays, itCode),
           installmentCycles: initialData.installment_cycles || 50,
           installmentPeriod: initialData.cycle_days || 1,
