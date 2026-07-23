@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { Shield, Lock, User, Store, DollarSign, ArrowRight } from "lucide-react";
+import { authApi } from "../api/auth.api";
+import { Shield, Lock, User, Store, ArrowRight } from "lucide-react";
 import { toast } from "../lib/toast";
+import { MoneyInput } from "../components/shared/MoneyInput";
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
   const [isBootstrapped, setIsBootstrapped] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
-  const setError = (msg: string) => { if (msg) toast.error(msg); };
 
   // Login form fields
   const [username, setUsername] = useState("");
@@ -16,16 +16,16 @@ export const Login: React.FC = () => {
 
   // Bootstrap form fields
   const [storeName, setStoreName] = useState("");
-  const [investmentCapital, setInvestmentCapital] = useState("");
+  const [investmentCapital, setInvestmentCapital] = useState<number | string>("");
   const [fullName, setFullName] = useState("");
 
   const checkStatus = async () => {
     try {
-      const res = await axios.get("/api/auth/status");
-      setIsBootstrapped(res.data.bootstrapped);
+      const data = await authApi.getStatus();
+      setIsBootstrapped(data.bootstrapped);
     } catch (err) {
       console.error("Failed to fetch system status:", err);
-      setError("Không thể kết nối đến máy chủ API.");
+      toast.error("Không thể kết nối đến máy chủ API.");
     }
   };
 
@@ -36,17 +36,27 @@ export const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
-      setError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu");
+      toast.error("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu");
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
-      const res = await axios.post("/api/auth/login", { username, password });
-      login(res.data.token, res.data.user);
+      // Bước 1: Login Check (Kiểm tra tài khoản tồn tại/khóa & cấp precheck token chống DDoS)
+      const checkRes = await authApi.loginCheck(username);
+      if (!checkRes.allowed || !checkRes.precheck_token) {
+        toast.error("Kiểm tra thông tin đăng nhập không hợp lệ.");
+        return;
+      }
+
+      // Bước 2: Đăng nhập chính thức kèm precheck_token
+      const data = await authApi.login(username, password, checkRes.precheck_token);
+      login(data.token, data.user, data.refreshToken || data.token_id);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      toast.error(
+        err.response?.data?.error ||
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+      );
     } finally {
       setLoading(false);
     }
@@ -55,23 +65,22 @@ export const Login: React.FC = () => {
   const handleBootstrap = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storeName || !username || !password || !fullName) {
-      setError("Vui lòng điền đầy đủ các thông tin bắt buộc");
+      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc");
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
-      const res = await axios.post("/api/auth/bootstrap", {
+      const data = await authApi.bootstrap({
         storeName,
         investmentCapital: Number(investmentCapital) || 0,
         username,
         password,
         fullName,
       });
-      login(res.data.token, res.data.user);
+      login(data.token, data.user, data.refreshToken || data.token_id);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Khởi tạo hệ thống thất bại.");
+      toast.error(err.response?.data?.error || "Khởi tạo hệ thống thất bại.");
     } finally {
       setLoading(false);
     }
@@ -109,8 +118,6 @@ export const Login: React.FC = () => {
               : "Chào mừng! Hãy tạo chi nhánh và tài khoản quản trị đầu tiên"}
           </p>
         </div>
-
-
 
         {isBootstrapped ? (
           /* Login Form */
@@ -186,19 +193,13 @@ export const Login: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="label text-slate-600 font-semibold text-xs py-1">Vốn đầu tư (VNĐ)</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
-                    <DollarSign className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="number"
-                    placeholder="5000000000"
-                    value={investmentCapital}
-                    onChange={(e) => setInvestmentCapital(e.target.value)}
-                    className="input input-bordered w-full pl-9 bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl input-sm"
-                  />
-                </div>
+                <label className="label text-slate-600 font-semibold text-xs py-1">Vốn đầu tư</label>
+                <MoneyInput
+                  value={investmentCapital}
+                  onChange={(val) => setInvestmentCapital(val)}
+                  placeholder="5.000.000.000"
+                  className="input-sm bg-white border-slate-200 text-slate-800 focus:border-amber-500 focus:outline-none rounded-xl"
+                />
               </div>
             </div>
 

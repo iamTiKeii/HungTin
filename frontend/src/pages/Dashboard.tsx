@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import {
   Wallet,
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export const Dashboard: React.FC = () => {
-  const { activeStore } = useAuth();
+  const { user, activeStore } = useAuth();
   const [cashSummary, setCashSummary] = useState<any>(null);
   const [cashHistory, setCashHistory] = useState<any[]>([]);
   const [pawnCount, setPawnCount] = useState(0);
@@ -22,13 +22,14 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {
-    if (!activeStore) return;
+    const token = localStorage.getItem("token");
+    if (!activeStore || !token) return;
     try {
       setLoading(true);
       const [summaryRes, historyRes, metricsRes] = await Promise.all([
-        axios.get("/api/cash/summary"),
-        axios.get("/api/cash/history"),
-        axios.get("/api/reports/dashboard-metrics"),
+        apiClient.get("/api/cash/summary"),
+        apiClient.get("/api/cash/history"),
+        apiClient.get("/api/reports/dashboard-metrics"),
       ]);
 
       setCashSummary(summaryRes.data);
@@ -37,8 +38,10 @@ export const Dashboard: React.FC = () => {
       setUnsecuredCount(metricsRes.data.unsecuredCount || 0);
       setInstallmentCount(metricsRes.data.installmentCount || 0);
       setBlacklistCount(metricsRes.data.blacklistCount || 0);
-    } catch (err) {
-      console.error("Error loading dashboard metrics", err);
+    } catch (err: any) {
+      if (err.response?.status !== 401) {
+        console.error("Error loading dashboard metrics", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -71,7 +74,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 p-6 rounded-2xl">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800">
-            Xin chào! Chi nhánh: {activeStore?.name}
+            Xin chào! {user?.full_name || user?.username || ""}
           </h1>
           <p className="text-slate-500 text-sm mt-1">
             Theo dõi trạng thái dòng tiền, lịch thanh toán nợ và hoạt động giao dịch hôm nay.

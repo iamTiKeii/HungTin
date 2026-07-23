@@ -1,60 +1,65 @@
+/**
+ * AuthContext — Quản lý trạng thái xác thực toàn cục.
+ *
+ * Sử dụng apiClient (api/client.ts) thay vì axios trực tiếp.
+ * Interceptors 401/403/network đã được chuyển vào api/client.ts.
+ */
 import React, { createContext, useState, useEffect, useContext } from "react";
-import axios from "axios";
-import { toast } from "../lib/toast";
+import { authApi } from "../api/auth.api";
+import type { BranchInfo, UserInfo } from "../types";
 
-export interface StoreInfo {
-  id: string;
-  name: string;
-  investment_capital: number;
-}
-
-export interface UserInfo {
-  id: string;
-  username: string;
-  full_name: string;
-  phone?: string;
-  email?: string;
-  avatar_url?: string;
-  store: StoreInfo;
-  permissions: string[];
-}
+// Re-export các types cần thiết để backward compatibility
+export type { BranchInfo as StoreInfo, UserInfo };
 
 interface AuthContextType {
   token: string | null;
   user: UserInfo | null;
-  activeStore: StoreInfo | null;
+  activeStore: BranchInfo | null; // backward compatibility alias
+  activeBranch: BranchInfo | null;
+  branches: BranchInfo[];
   loading: boolean;
-  login: (token: string, user: UserInfo) => void;
+  login: (token: string, user: UserInfo, refreshToken?: string) => void;
   logout: () => void;
-  switchStore: (store: StoreInfo) => void;
+  switchStore: (store: BranchInfo) => void; // backward compatibility alias
+  switchBranch: (branch: BranchInfo) => void;
   hasPermission: (code: string) => boolean;
   fetchProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [activeStore, setActiveStore] = useState<StoreInfo | null>(null);
+  const [activeBranch, setActiveBranch] = useState<BranchInfo | null>(null);
+  const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Set default auth header for Axios
-  if (token) {
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  } else {
-    delete axios.defaults.headers.common["Authorization"];
-  }
+  // ─── Helpers ─────────────────────────────────────────────────────
+  const applyBranch = (branch: BranchInfo) => {
+    localStorage.setItem("active_branch_id", branch.id);
+    setActiveBranch(branch);
+  };
 
+  // ─── Fetch Profile ────────────────────────────────────────────────
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/api/auth/me");
-      setUser(res.data);
-      // Initialize activeStore with the employee's direct store
-      setActiveStore((prev) => prev || res.data.store);
-    } catch (err) {
-      console.error("Failed to load user profile:", err);
+      const data = await authApi.getMe();
+      setUser(data);
+
+      const userBranches = data.branches || [];
+      setBranches(userBranches);
+
+      const storedId = localStorage.getItem("active_branch_id");
+      const found = userBranches.find((b: BranchInfo) => b.id === storedId);
+      const initial = found || data.activeBranch || userBranches[0] || null;
+      if (initial) applyBranch(initial);
+    } catch {
       logout();
     } finally {
       setLoading(false);
@@ -67,61 +72,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const login = (newToken: string, newUser: UserInfo) => {
+  // ─── Login ────────────────────────────────────────────────────────
+  const login = (newToken: string, newUser: UserInfo, refreshToken?: string) => {
     localStorage.setItem("token", newToken);
-    axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+    if (refreshToken) {
+      localStorage.setItem("token_id", refreshToken);
+    }
     setToken(newToken);
     setUser(newUser);
-    setActiveStore(newUser.store);
+
+    const userBranches = newUser.branches || [];
+    setBranches(userBranches);
+
+    const initial = newUser.activeBranch || userBranches[0] || null;
+    if (initial) applyBranch(initial);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    delete axios.defaults.headers.common["Authorization"];
-    setToken(null);
-    setUser(null);
-    setActiveStore(null);
-  };
-
-  // Auto-logout when API returns 401 or 403 (e.g. token expired after 12h)
-  // Also auto-toast error for all API failures
-  useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response) {
-          const status = error.response.status;
-          if (status === 401) {
-            toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-            logout();
-          } else if (status === 403) {
-            toast.warning("Bạn không có quyền thực hiện chức năng này!");
-          }
-          // Don't auto-toast here — let individual handlers decide
-          // because they have context-specific messages
-        } else if (error.request) {
-          // Network error (no response received)
-          toast.error("Lỗi kết nối mạng. Vui lòng kiểm tra đường truyền.");
-        }
-        return Promise.reject(error);
-      }
-    );
-    return () => {
-      axios.interceptors.response.eject(interceptor);
-    };
-  }, []);
-
-  const switchStore = (store: StoreInfo) => {
-    if (user?.permissions.includes("STORES_MANAGE")) {
-      setActiveStore(store);
+  // ─── Logout ───────────────────────────────────────────────────────
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Bỏ qua lỗi nếu mất mạng, tiếp tục xoá bộ nhớ tạm local
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("token_id");
+      localStorage.removeItem("active_branch_id");
+      setToken(null);
+      setUser(null);
+      setActiveBranch(null);
+      setBranches([]);
     }
   };
 
+  // ─── Switch Branch ────────────────────────────────────────────────
+  const switchBranch = (branch: BranchInfo) => {
+    applyBranch(branch);
+    // Reload để các components re-fetch với branch mới
+    setTimeout(() => window.location.reload(), 300);
+  };
+
+  const switchStore = (store: BranchInfo) => switchBranch(store);
+
+  // ─── Permission Check ─────────────────────────────────────────────
   const hasPermission = (code: string): boolean => {
     if (!user) return false;
-    return user.permissions.includes(code) || user.permissions.includes("SETTINGS_MANAGE");
+    return (
+      user.permissions.includes(code) ||
+      user.permissions.includes("SETTINGS_MANAGE")
+    );
   };
 
   return (
@@ -129,11 +131,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         token,
         user,
-        activeStore,
+        activeStore: activeBranch, // backward compat
+        activeBranch,
+        branches,
         loading,
         login,
         logout,
         switchStore,
+        switchBranch,
         hasPermission,
         fetchProfile,
       }}

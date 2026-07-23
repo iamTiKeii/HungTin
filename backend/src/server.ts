@@ -8,7 +8,7 @@ dotenv.config();
 
 // Initialize routers
 import authRouter from "./routes/auth";
-import storesRouter from "./routes/stores";
+import branchesRouter from "./routes/branches";
 import employeesRouter from "./routes/employees";
 import customersRouter from "./routes/customers";
 import collaboratorsRouter from "./routes/collaborators";
@@ -26,16 +26,28 @@ import settingsRouter from "./routes/settings";
 import interestTypesRouter from "./routes/interestTypes";
 import publicRouter from "./routes/public";
 
+// Global error handler
+import { errorHandler } from "./middleware/errorHandler";
+
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: true, // Chấp nhận động origin gửi từ client (localhost:3000, 8080, 5173, production domain)
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Branch-ID"],
+  })
+);
 app.use(express.json());
 
 // API Routes
 app.use("/api/auth", authRouter);
-app.use("/api/stores", storesRouter);
+app.use("/api/branches", branchesRouter);
+app.use("/api/stores", branchesRouter); // Backward compatibility
 app.use("/api/employees", employeesRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/collaborators", collaboratorsRouter);
@@ -71,6 +83,9 @@ app.get("*", (req, res, next) => {
     }
   });
 });
+
+// Global error handler — MUST be last middleware
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

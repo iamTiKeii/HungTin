@@ -2,7 +2,8 @@ import { ModalPortal } from "../components/shared/ModalPortal";
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useReactToPrint } from "react-to-print";
-import axios from "axios";
+import apiClient from "../api/client";
+import { useContracts } from "../hooks/useContracts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Plus, 
@@ -27,6 +28,7 @@ import { useAuth } from "../context/AuthContext";
 import { PawnDetail } from "./PawnDetail";
 import { UnsecuredDetail } from "./UnsecuredDetail";
 import { InstallmentDetail } from "./InstallmentDetail";
+import { convertDurationToDays } from "../utils/durationUtils";
 import { toast } from "../lib/toast";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 import { useConfirm } from "../context/ConfirmContext";
@@ -60,36 +62,48 @@ export const Contracts: React.FC = () => {
     ? "installment"
     : "pawn";
   
-  // Data lists
-  const [pawnList, setPawnList] = useState<any[]>([]);
-  const [unsecuredList, setUnsecuredList] = useState<any[]>([]);
-  const [installmentList, setInstallmentList] = useState<any[]>([]);
-  
-  // Search query & loading/error
+  // ─── Search & filter state (UI-local) ────────────────────────────────────
   const [search, setSearch] = useState("");
   const [searchAsset, setSearchAsset] = useState("");
   const [commodityIdFilter, setCommodityIdFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all_active"); // all_active, closed, overdue, all
-  const [loading, setLoading] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const limit = 15;
-  const [contractTotals, setContractTotals] = useState({
-    totalLent: 0,
-    totalDebt: 0,
-    totalExpectedInterest: 0,
-    totalPaidInterest: 0
-  });
+  const [statusFilter, setStatusFilter] = useState("all_active");
+
+  // ─── useContracts hook — data fetching & pagination ──────────────────────
+  const {
+    pawnList,
+    unsecuredList,
+    installmentList,
+    contractTotals,
+    cashSummary,
+    currentPage,
+    totalPages,
+    totalRecords,
+    loading,
+    isPending,
+    fetchContracts: _fetchContracts,
+    fetchCashSummary,
+    setCurrentPage,
+    setIsPending,
+  } = useContracts(activeTab as any, activeStore?.id);
+
+  // Wrapper to pass current filters to the hook
+  const fetchContracts = (pageVal?: number) => {
+    const page = typeof pageVal === "number" ? pageVal : currentPage;
+    return _fetchContracts({
+      page,
+      search: search || undefined,
+      status: statusFilter || undefined,
+      searchAsset: searchAsset || undefined,
+      commodityId: commodityIdFilter || undefined,
+      tab: activeTab as any,
+    });
+  };
 
   // Helpers choice lists
-
   const [collaborators, setCollaborators] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [commodities, setCommodities] = useState<any[]>([]);
   const [interestTypes, setInterestTypes] = useState<any[]>([]);
-  const [cashSummary, setCashSummary] = useState<any>(null);
 
   // Open modals
   const [isPawnOpen, setIsPawnOpen] = useState(false);
@@ -106,96 +120,13 @@ export const Contracts: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedHistoryCustomerId, setSelectedHistoryCustomerId] = useState("");
   const [selectedHistoryCustomerName, setSelectedHistoryCustomerName] = useState("");
-  
+
   // Details Modal Popup State
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null);
   const [detailDefaultTab, setDetailDefaultTab] = useState<string>("interest");
-  
+
   const [unsecuredSortField, setUnsecuredSortField] = useState<string | null>(null);
   const [unsecuredSortOrder, setUnsecuredSortOrder] = useState<"asc" | "desc">("asc");
-
-  const fetchContracts = async (pageVal?: number | any) => {
-    if (!activeStore) return;
-    try {
-      setLoading(true);
-      const actualPage = typeof pageVal === "number" ? pageVal : currentPage;
-      const params = new URLSearchParams();
-      if (search) params.append("search", search);
-      if (statusFilter) params.append("status", statusFilter);
-      params.append("page", actualPage.toString());
-      params.append("limit", limit.toString());
-
-      let res;
-      if (activeTab === "pawn") {
-        if (searchAsset) params.append("searchAsset", searchAsset);
-        if (commodityIdFilter) params.append("commodityId", commodityIdFilter);
-        res = await axios.get(`/api/contracts/pawn?${params.toString()}`);
-      } else if (activeTab === "unsecured") {
-        res = await axios.get(`/api/contracts/unsecured?${params.toString()}`);
-      } else {
-        res = await axios.get(`/api/contracts/installment?${params.toString()}`);
-      }
-
-      let data = res.data;
-      let totals = {
-        totalLent: 0,
-        totalDebt: 0,
-        totalExpectedInterest: 0,
-        totalPaidInterest: 0
-      };
-
-      if (res.data && res.data.data) {
-        data = res.data.data;
-        // Bảo vệ: nếu backend không trả totals (lỗi hoặc thiếu field), giữ nguyên default 0
-        totals = res.data.totals ?? totals;
-        setTotalPages(res.data.pagination.totalPages || 1);
-        setTotalRecords(res.data.pagination.total || 0);
-      } else {
-        // compute totals locally for backward compatibility
-        if (activeTab === "pawn") {
-          totals.totalLent = res.data.reduce((sum: number, item: any) => sum + Number(item.loan_amount || 0), 0);
-          totals.totalDebt = res.data.reduce((sum: number, item: any) => sum + Number(item.debt_amount || 0), 0);
-          totals.totalExpectedInterest = res.data.reduce((sum: number, item: any) => sum + getAccruedInterest(item), 0);
-          totals.totalPaidInterest = res.data.reduce((sum: number, item: any) => sum + getPaidInterest(item), 0);
-        } else if (activeTab === "unsecured") {
-          totals.totalLent = res.data.reduce((sum: number, item: any) => sum + Number(item.loan_amount || 0), 0);
-          totals.totalDebt = res.data.reduce((sum: number, item: any) => sum + Number(item.debt_amount || 0), 0);
-          totals.totalExpectedInterest = res.data.filter((item: any) => item.status === "active").reduce((sum: number, item: any) => sum + getAccruedInterest(item), 0);
-          totals.totalPaidInterest = res.data.reduce((sum: number, item: any) => sum + getPaidInterest(item), 0);
-        } else {
-          totals.totalLent = res.data.reduce((sum: number, c: any) => sum + (c.remaining_amount || 0), 0);
-          totals.totalDebt = res.data.reduce((sum: number, c: any) => sum + Number(c.debt_amount || 0), 0);
-          totals.totalExpectedInterest = res.data.reduce((sum: number, c: any) => sum + (c.expected_interest || 0), 0);
-          totals.totalPaidInterest = res.data.reduce((sum: number, c: any) => sum + (c.collected_interest || 0), 0);
-        }
-        setTotalPages(1);
-        setTotalRecords(res.data.length);
-      }
-
-      setContractTotals(totals);
-
-      if (activeTab === "pawn") {
-        setPawnList(data);
-      } else if (activeTab === "unsecured") {
-        setUnsecuredList(data);
-      } else {
-        setInstallmentList(data);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Lỗi tải danh sách hợp đồng.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCashSummary = async () => {
-    try {
-      const res = await axios.get("/api/cash/summary");
-      setCashSummary(res.data);
-    } catch (err) {
-      console.error("Error fetching cash summary", err);
-    }
-  };
 
   const handleExportExcel = () => {
     let headers: string[] = [];
@@ -444,11 +375,11 @@ export const Contracts: React.FC = () => {
   const fetchHelpers = async () => {
     try {
       const [collabs, emps, comms, pawnInt, storesRes] = await Promise.all([
-        axios.get("/api/collaborators"),
-        axios.get("/api/employees"),
-        axios.get("/api/commodities"),
-        axios.get("/api/interest-types"),
-        axios.get("/api/stores")
+        apiClient.get("/api/collaborators"),
+        apiClient.get("/api/employees"),
+        apiClient.get("/api/commodities"),
+        apiClient.get("/api/interest-types"),
+        apiClient.get("/api/stores")
       ]);
       setCollaborators(collabs.data);
       setEmployees(emps.data.filter((e: any) => e.status === "active"));
@@ -476,7 +407,7 @@ export const Contracts: React.FC = () => {
 
   useEffect(() => {
     if (isPawnOpen && !editingId) {
-      axios.get("/api/contracts/pawn/next-code-number")
+      apiClient.get("/api/contracts/pawn/next-code-number")
         .then(res => setNextPawnCodeNum(res.data.nextCodeNumber))
         .catch(err => console.error("Failed to fetch next pawn code number", err));
     }
@@ -484,7 +415,7 @@ export const Contracts: React.FC = () => {
 
   useEffect(() => {
     if (isUnsecuredOpen && !editingId) {
-      axios.get("/api/contracts/unsecured/next-code-number")
+      apiClient.get("/api/contracts/unsecured/next-code-number")
         .then(res => setNextUnsecuredCodeNum(res.data.nextCodeNumber))
         .catch(err => console.error("Failed to fetch next unsecured code number", err));
     }
@@ -492,7 +423,7 @@ export const Contracts: React.FC = () => {
 
   useEffect(() => {
     if (isInstallmentOpen && !editingId) {
-      axios.get("/api/contracts/installment/next-code-number")
+      apiClient.get("/api/contracts/installment/next-code-number")
         .then(res => setNextInstallmentCodeNum(res.data.nextCodeNumber))
         .catch(err => console.error("Failed to fetch next installment code number", err));
     }
@@ -536,7 +467,7 @@ export const Contracts: React.FC = () => {
       onConfirm: async () => {
         try {
           setIsPending(true);
-          await axios.delete(`/api/contracts/unsecured/${contractId}`);
+          await apiClient.delete(`/api/contracts/unsecured/${contractId}`);
           fetchContracts();
           fetchCashSummary();
         } catch (err: any) {
@@ -572,7 +503,7 @@ export const Contracts: React.FC = () => {
           toast.warning("Vui lòng nhập tên khách hàng mới");
           return;
         }
-        const custRes = await axios.post("/api/customers", {
+        const custRes = await apiClient.post("/api/customers", {
           full_name: formData.customerName,
           phone: formData.customerPhone || undefined,
           identity_card_number: formData.customerIdCard || undefined,
@@ -589,15 +520,10 @@ export const Contracts: React.FC = () => {
         return;
       }
 
-      // Quy đổi đơn vị: loanDays và interestPeriod trên form lưu theo đơn vị hiển thị
-      // (tháng / tuần / ngày). Backend chỉ nhận số ngày thuần túy.
-      const _itCode = interestTypes.find((t: any) => t.id === formData.interestType)?.code ?? "";
-      const _lower = _itCode.toLowerCase();
-      const _unitMult = (_lower === "flat_rate_monthly" || _lower.includes("monthly") || _lower.includes("month") || (_lower.includes("flat_rate") && !_lower.includes("daily")) || _lower.includes("reducing_balance"))
-        ? 30
-        : (_lower.includes("weekly") || _lower.includes("week"))
-          ? 7
-          : 1;
+      // Quy đổi đơn vị dùng convertDurationToDays (tháng = x30, tuần = x7, ngày = x1)
+      const _itCode = interestTypes.find((t: any) => t.id === formData.interestType || t.code === formData.interestType)?.code ?? formData.interestType ?? "";
+      const loanDaysInDays = convertDurationToDays(formData.loanDays, _itCode);
+      const periodValueInDays = convertDurationToDays(formData.interestPeriod, _itCode);
 
       const payload = {
         customer_id: finalCustomerId,
@@ -606,8 +532,8 @@ export const Contracts: React.FC = () => {
         loan_amount: Number(formData.loanAmount),
         interest_type_id: formData.interestType,
         is_upfront_interest: formData.isUpfrontInterest,
-        loan_days: Math.round(Number(formData.loanDays) * _unitMult),
-        period_value: Math.round(Number(formData.interestPeriod) * _unitMult),
+        loan_days: loanDaysInDays,
+        period_value: periodValueInDays,
         interest_rate: normalizeNumericInput(formData.interestRate),
         loan_date: formData.loanDate || undefined,
         collector_id: formData.staffId,
@@ -620,10 +546,10 @@ export const Contracts: React.FC = () => {
       };
 
       if (editingId) {
-        await axios.put(`/api/contracts/pawn/${editingId}`, payload);
+        await apiClient.put(`/api/contracts/pawn/${editingId}`, payload);
         toast.success("Cập nhật hợp đồng cầm đồ thành công!");
       } else {
-        await axios.post("/api/contracts/pawn", payload);
+        await apiClient.post("/api/contracts/pawn", payload);
         toast.success("Tạo mới hợp đồng cầm đồ thành công!");
       }
 
@@ -648,7 +574,7 @@ export const Contracts: React.FC = () => {
           toast.warning("Vui lòng nhập tên khách hàng mới");
           return;
         }
-        const custRes = await axios.post("/api/customers", {
+        const custRes = await apiClient.post("/api/customers", {
           full_name: formData.customerName,
           phone: formData.customerPhone || undefined,
           identity_card_number: formData.customerIdCard || undefined,
@@ -665,15 +591,9 @@ export const Contracts: React.FC = () => {
         return;
       }
 
-      // Quy đổi đơn vị: loanDays và interestPeriod trên form lưu theo đơn vị hiển thị
-      // (tháng / tuần / ngày). Backend chỉ nhận số ngày thuần túy.
-      const _itCode2 = interestTypes.find((t: any) => t.id === formData.interestType)?.code ?? "";
-      const _lower2 = _itCode2.toLowerCase();
-      const _unitMult2 = (_lower2 === "flat_rate_monthly" || _lower2.includes("monthly") || _lower2.includes("month") || (_lower2.includes("flat_rate") && !_lower2.includes("daily")) || _lower2.includes("reducing_balance"))
-        ? 30
-        : (_lower2.includes("weekly") || _lower2.includes("week"))
-          ? 7
-          : 1;
+      const _itCode2 = interestTypes.find((t: any) => t.id === formData.interestType || t.code === formData.interestType)?.code ?? formData.interestType ?? "";
+      const loanDaysInDays2 = convertDurationToDays(formData.loanDays, _itCode2);
+      const periodValueInDays2 = convertDurationToDays(formData.interestPeriod, _itCode2);
 
       const payload = {
         customer_id: finalCustomerId,
@@ -681,8 +601,8 @@ export const Contracts: React.FC = () => {
         loan_amount: Number(formData.loanAmount),
         interest_type_id: formData.interestType,
         is_upfront_interest: formData.isUpfrontInterest,
-        loan_days: Math.round(Number(formData.loanDays) * _unitMult2),
-        period_value: Math.round(Number(formData.interestPeriod) * _unitMult2),
+        loan_days: loanDaysInDays2,
+        period_value: periodValueInDays2,
         interest_rate: normalizeNumericInput(formData.interestRate),
         loan_date: formData.loanDate || undefined,
         collector_id: formData.staffId,
@@ -692,10 +612,10 @@ export const Contracts: React.FC = () => {
       };
 
       if (editingId) {
-        await axios.put(`/api/contracts/unsecured/${editingId}`, payload);
+        await apiClient.put(`/api/contracts/unsecured/${editingId}`, payload);
         toast.success("Cập nhật hợp đồng tín chấp thành công!");
       } else {
-        await axios.post("/api/contracts/unsecured", payload);
+        await apiClient.post("/api/contracts/unsecured", payload);
         toast.success("Tạo mới hợp đồng tín chấp thành công!");
       }
 
@@ -720,7 +640,7 @@ export const Contracts: React.FC = () => {
           toast.warning("Vui lòng nhập tên khách hàng mới");
           return;
         }
-        const custRes = await axios.post("/api/customers", {
+        const custRes = await apiClient.post("/api/customers", {
           full_name: formData.customerName,
           phone: formData.customerPhone || undefined,
           identity_card_number: formData.customerIdCard || undefined,
@@ -753,10 +673,10 @@ export const Contracts: React.FC = () => {
       };
 
       if (editingId) {
-        await axios.put(`/api/contracts/installment/${editingId}`, payload);
+        await apiClient.put(`/api/contracts/installment/${editingId}`, payload);
         toast.success("Cập nhật hợp đồng trả góp thành công!");
       } else {
-        await axios.post("/api/contracts/installment", payload);
+        await apiClient.post("/api/contracts/installment", payload);
         toast.success("Tạo mới hợp đồng trả góp thành công!");
       }
 
@@ -781,7 +701,7 @@ export const Contracts: React.FC = () => {
       onConfirm: async () => {
         try {
           setIsPending(true);
-          await axios.delete(`/api/contracts/pawn/${contractId}`);
+          await apiClient.delete(`/api/contracts/pawn/${contractId}`);
           fetchContracts();
           fetchCashSummary();
         } catch (err: any) {
@@ -803,7 +723,7 @@ export const Contracts: React.FC = () => {
       onConfirm: async () => {
         try {
           setIsPending(true);
-          await axios.delete(`/api/contracts/installment/${contractId}`);
+          await apiClient.delete(`/api/contracts/installment/${contractId}`);
           fetchContracts();
           fetchCashSummary();
         } catch (err: any) {
@@ -981,7 +901,7 @@ export const Contracts: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <button onClick={fetchContracts} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
+          <button onClick={() => fetchContracts()} className="btn btn-outline border-slate-200 text-slate-600 btn-sm">
             <RefreshCw className="w-4 h-4 animate-spin-hover" />
           </button>
         </div>
@@ -1103,7 +1023,7 @@ export const Contracts: React.FC = () => {
 
           {/* Buttons: Lọc, + Thêm mới, ... */}
           <div className="md:col-span-2 flex gap-1.5 w-full justify-end">
-            <button onClick={fetchContracts} className="btn btn-outline border-blue-200 text-blue-500 hover:bg-blue-50 btn-sm text-xs rounded-xl flex items-center gap-1">
+            <button onClick={() => fetchContracts()} className="btn btn-outline border-blue-200 text-blue-500 hover:bg-blue-50 btn-sm text-xs rounded-xl flex items-center gap-1">
               <Filter className="w-3.5 h-3.5" />
               Lọc
             </button>
@@ -1656,7 +1576,7 @@ export const Contracts: React.FC = () => {
                                 {
                                   label: "Load lại dữ liệu tiền",
                                   icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />,
-                                  onClick: fetchContracts
+                                  onClick: () => { fetchContracts(); }
                                 },
                                 {
                                   label: "Sửa hợp đồng",
@@ -1704,46 +1624,45 @@ export const Contracts: React.FC = () => {
           </div>
 
           {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-4 mt-4 shadow-sm">
-              <span className="text-xs text-slate-500 font-medium">
-                Hiển thị {(currentPage - 1) * limit + 1} - {Math.min(currentPage * limit, totalRecords)} trong tổng số {totalRecords} hợp đồng
-              </span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={currentPage === 1}
-                  onClick={() => {
-                    setCurrentPage((prev) => {
-                      const next = prev - 1;
-                      fetchContracts(next);
-                      return next;
-                    });
-                  }}
-                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Trang trước
-                </button>
-                <span className="flex items-center text-xs font-semibold text-slate-700 px-3 bg-slate-50 border border-slate-100 rounded-lg">
-                  Trang {currentPage} / {totalPages}
+          {totalPages > 1 && (() => {
+            const pageSize = 15;
+            return (
+              <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-4 mt-4 shadow-sm">
+                <span className="text-xs text-slate-500 font-medium">
+                  Hiển thị {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalRecords)} trong tổng số {totalRecords} hợp đồng
                 </span>
-                <button
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => {
-                    setCurrentPage((prev) => {
-                      const next = prev + 1;
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={currentPage === 1}
+                    onClick={() => {
+                      const next = currentPage - 1;
+                      setCurrentPage(next);
                       fetchContracts(next);
-                      return next;
-                    });
-                  }}
-                  className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Trang sau
-                </button>
+                    }}
+                    className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Trang trước
+                  </button>
+                  <span className="flex items-center text-xs font-semibold text-slate-700 px-3 bg-slate-50 border border-slate-100 rounded-lg">
+                    Trang {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={currentPage === totalPages}
+                    onClick={() => {
+                      const next = currentPage + 1;
+                      setCurrentPage(next);
+                      fetchContracts(next);
+                    }}
+                    className="btn btn-sm btn-outline border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Trang sau
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
