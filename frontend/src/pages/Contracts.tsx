@@ -546,16 +546,18 @@ export const Contracts: React.FC = () => {
       };
 
       if (editingId) {
-        await apiClient.put(`/api/contracts/pawn/${editingId}`, payload);
+        const res = await apiClient.put(`/api/contracts/pawn/${editingId}`, payload);
         toast.success("Cập nhật hợp đồng cầm đồ thành công!");
+        if (res.data) setEditingContract(res.data);
       } else {
-        await apiClient.post("/api/contracts/pawn", payload);
-        toast.success("Tạo mới hợp đồng cầm đồ thành công!");
+        const res = await apiClient.post("/api/contracts/pawn", payload);
+        toast.success("Tạo mới hợp đồng cầm đồ thành công! Nhấn 'In hợp đồng' hoặc 'Cập nhật' khi cần.");
+        if (res.data && res.data.id) {
+          setEditingId(res.data.id);
+          setEditingContract(res.data);
+        }
       }
 
-      setIsPawnOpen(false);
-      setEditingContract(null);
-      setEditingId(null);
       fetchContracts();
       fetchCashSummary();
     } catch (err: any) {
@@ -612,16 +614,18 @@ export const Contracts: React.FC = () => {
       };
 
       if (editingId) {
-        await apiClient.put(`/api/contracts/unsecured/${editingId}`, payload);
+        const res = await apiClient.put(`/api/contracts/unsecured/${editingId}`, payload);
         toast.success("Cập nhật hợp đồng tín chấp thành công!");
+        if (res.data) setEditingContract(res.data);
       } else {
-        await apiClient.post("/api/contracts/unsecured", payload);
-        toast.success("Tạo mới hợp đồng tín chấp thành công!");
+        const res = await apiClient.post("/api/contracts/unsecured", payload);
+        toast.success("Tạo mới hợp đồng tín chấp thành công! Nhấn 'In hợp đồng' hoặc 'Cập nhật' khi cần.");
+        if (res.data && res.data.id) {
+          setEditingId(res.data.id);
+          setEditingContract(res.data);
+        }
       }
 
-      setIsUnsecuredOpen(false);
-      setEditingContract(null);
-      setEditingId(null);
       fetchContracts();
       fetchCashSummary();
     } catch (err: any) {
@@ -673,16 +677,18 @@ export const Contracts: React.FC = () => {
       };
 
       if (editingId) {
-        await apiClient.put(`/api/contracts/installment/${editingId}`, payload);
+        const res = await apiClient.put(`/api/contracts/installment/${editingId}`, payload);
         toast.success("Cập nhật hợp đồng trả góp thành công!");
+        if (res.data) setEditingContract(res.data);
       } else {
-        await apiClient.post("/api/contracts/installment", payload);
-        toast.success("Tạo mới hợp đồng trả góp thành công!");
+        const res = await apiClient.post("/api/contracts/installment", payload);
+        toast.success("Tạo mới hợp đồng trả góp thành công! Nhấn 'In hợp đồng' hoặc 'Cập nhật' khi cần.");
+        if (res.data && res.data.id) {
+          setEditingId(res.data.id);
+          setEditingContract(res.data);
+        }
       }
 
-      setIsInstallmentOpen(false);
-      setEditingContract(null);
-      setEditingId(null);
       fetchContracts();
       fetchCashSummary();
     } catch (err: any) {
@@ -1702,6 +1708,7 @@ export const Contracts: React.FC = () => {
           setEditingId(null);
         }}
         onSubmit={handleSavePawnContract}
+        onPrint={editingContract ? () => setActivePrintContract(editingContract) : undefined}
         initialData={editingContract}
         staffs={employees}
         collaborators={collaborators}
@@ -1725,6 +1732,7 @@ export const Contracts: React.FC = () => {
           setEditingId(null);
         }}
         onSubmit={handleSaveUnsecuredContract}
+        onPrint={editingContract ? () => setActivePrintContract(editingContract) : undefined}
         initialData={editingContract}
         staffs={employees}
         collaborators={collaborators}
@@ -1739,6 +1747,7 @@ export const Contracts: React.FC = () => {
       />
 
       <ContractForm
+        key={`installment-form-${editingId ?? "new"}`}
         config={contractConfigs.installment}
         isOpen={isInstallmentOpen}
         onClose={() => {
@@ -1747,6 +1756,7 @@ export const Contracts: React.FC = () => {
           setEditingId(null);
         }}
         onSubmit={handleSaveInstallmentContract}
+        onPrint={editingContract ? () => setActivePrintContract(editingContract) : undefined}
         initialData={editingContract}
         staffs={employees}
         collaborators={collaborators}

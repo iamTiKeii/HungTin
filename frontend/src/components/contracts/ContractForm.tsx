@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, BookOpen, Info } from "lucide-react";
+import { X, BookOpen, Info, Printer } from "lucide-react";
 import type { ContractFormConfig } from "./contract.config";
 import { ContractCustomerSection } from "./ContractCustomerSection";
 import { ContractGoodsSection, ContractAssetAttributesSection } from "./ContractGoodsSection";
@@ -17,6 +17,7 @@ export interface ContractFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: any) => void | Promise<void>;
+  onPrint?: () => void;
   initialData?: any; // populated when editing
   // lookup collections
   staffs: any[];
@@ -34,6 +35,7 @@ export const ContractForm: React.FC<ContractFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onPrint,
   initialData,
   staffs,
   collaborators,
@@ -298,13 +300,23 @@ export const ContractForm: React.FC<ContractFormProps> = ({
           )}
 
           {/* Modal Actions Footer */}
-          <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 mt-6">
+          <div className="flex justify-end items-center gap-2 border-t border-slate-200 pt-4 mt-6">
             <button
               type="submit"
               className="btn bg-[#1abc9c] hover:bg-[#16a085] border-none text-white h-10 min-h-[40px] px-6 text-sm font-bold rounded-lg transition-colors"
             >
               {initialData ? "Cập nhật" : "+ Thêm mới"}
             </button>
+            {onPrint && (
+              <button
+                type="button"
+                onClick={onPrint}
+                className="btn bg-amber-500 hover:bg-amber-600 border-none text-slate-950 h-10 min-h-[40px] px-5 text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Printer className="w-4 h-4" />
+                <span>In hợp đồng</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
