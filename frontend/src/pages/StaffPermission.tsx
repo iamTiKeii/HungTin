@@ -247,6 +247,7 @@ export const StaffPermission: React.FC = () => {
 
   // Node helper check
   const isNodeChecked = (node: PermissionNode): boolean => {
+    if (!grantedPerms) return false;
     if (!node.children) {
       return grantedPerms.includes(node.code);
     }

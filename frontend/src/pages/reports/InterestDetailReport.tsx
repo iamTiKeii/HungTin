@@ -177,7 +177,7 @@ export const InterestDetailReport: React.FC = () => {
                       <td className="font-semibold text-slate-700">{d.contract_code}</td>
                       <td>
                         <span className="badge badge-sm badge-warning badge-outline text-[10px] font-bold">
-                          {d.type.includes("Cầm đồ") ? "Cầm đồ" : "Tín chấp"}
+                          {d.type?.includes("Cầm đồ") ? "Cầm đồ" : "Tín chấp"}
                         </span>
                       </td>
                       <td className="font-bold text-slate-800">{d.customer_name}</td>

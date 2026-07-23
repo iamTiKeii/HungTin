@@ -185,9 +185,9 @@ export const TransactionsSummaryReport: React.FC = () => {
                               ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
                               : l.type === "Trả góp"
                               ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                              : l.type.includes("Thu")
+                              : l.type?.includes("Thu")
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : l.type.includes("Chi")
+                              : l.type?.includes("Chi")
                               ? "bg-red-500/10 text-red-400 border border-red-500/20"
                               : "bg-slate-50 text-slate-600"
                           }`}

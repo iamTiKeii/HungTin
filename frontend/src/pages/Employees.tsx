@@ -220,16 +220,18 @@ export const Employees: React.FC = () => {
 
   const openPermissionsModal = (emp: Employee) => {
     setSelectedEmp(emp);
-    const codes = (emp.permissions as any[]).map((p) => p.permission?.code).filter(Boolean);
+    const codes = Array.isArray(emp.permissions)
+      ? (emp.permissions as any[]).map((p) => p.permission?.code || p.code || p).filter(Boolean)
+      : [];
     setSelectedPerms(codes);
     setIsPermsOpen(true);
   };
 
   const handlePermissionToggle = (code: string) => {
-    if (selectedPerms.includes(code)) {
+    if (selectedPerms && selectedPerms.includes(code)) {
       setSelectedPerms(selectedPerms.filter((p) => p !== code));
     } else {
-      setSelectedPerms([...selectedPerms, code]);
+      setSelectedPerms([...(selectedPerms || []), code]);
     }
   };
 
