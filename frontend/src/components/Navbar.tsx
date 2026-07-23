@@ -311,7 +311,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   title={ind.title}
                   type="button"
                 >
-                  <Icon className="w-5 h-5 text-[#3b82f6] shrink-0" />
+                  <Icon className={`w-5 h-5 ${ind.color} shrink-0`} />
                   <div className="bg-white rounded-full min-w-[28px] h-7 px-1.5 flex items-center justify-center shadow-sm shrink-0">
                     <span className="text-[#ef4444] font-extrabold text-xs tracking-tight leading-none">
                       {displayCount}
