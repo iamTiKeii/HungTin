@@ -1132,7 +1132,14 @@ export const Contracts: React.FC = () => {
                           </button>
                         </td>
                         <td className="text-slate-500 font-mono text-[11px]">{item.license_plate || <span className="text-slate-300">—</span>}</td>
-                        <td className="text-slate-500">{item.asset_name}</td>
+                        <td className="text-slate-700">
+                          <div className="font-bold">{item.asset_name || "—"}</div>
+                          {item.commodity && (
+                            <div className="text-[10px] text-slate-400 font-medium">
+                              [{item.commodity.code}] {item.commodity.name?.split("|")[0]}
+                            </div>
+                          )}
+                        </td>
                         <td>
                           <span className="font-bold text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</span>
                           <span className="block text-[10px] text-red-500 font-semibold">
@@ -1301,8 +1308,15 @@ export const Contracts: React.FC = () => {
                             {item.customer?.full_name}
                           </button>
                         </td>
-                        <td className="text-slate-400">
-                          {item.commodity?.code || ""}
+                        <td>
+                          <div className="font-bold text-slate-800">
+                            {item.commodity?.name?.split("|")[0] || "Vay tín chấp"}
+                          </div>
+                          {item.commodity?.code && (
+                            <div className="text-[10px] font-mono text-amber-600 font-semibold">
+                              [{item.commodity.code}]
+                            </div>
+                          )}
                         </td>
                         <td>
                           <div className="font-black text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</div>

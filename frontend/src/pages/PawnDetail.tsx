@@ -312,19 +312,35 @@ export const PawnDetail: React.FC<PawnDetailProps> = ({ idProp, onClose, isModal
     if (details.length === 0) return null;
 
     return (
-      <div className="bg-slate-50 border border-slate-200/65 p-3 rounded-xl text-slate-700 text-xs">
-        <h4 className="font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1">
-          <Anchor className="w-3.5 h-3.5 text-blue-500" />
-          Thông tin tài sản thế chấp
+      <div className="bg-slate-50 border border-slate-200/65 p-3.5 rounded-xl text-slate-700 text-xs space-y-3">
+        <h4 className="font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
+          <Anchor className="w-4 h-4 text-blue-500" />
+          <span>Thông tin tài sản thế chấp</span>
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {details.map((d, i) => (
-            <div key={i} className="flex justify-between md:flex-col border-b md:border-none border-slate-100 pb-1 md:pb-0">
-              <span className="text-slate-400 font-semibold">{d.label}:</span>
-              <span className="font-bold text-slate-800">{d.value}</span>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-200/60 pb-2.5">
+          <div>
+            <span className="text-slate-400 font-semibold block text-[11px]">Tên tài sản:</span>
+            <span className="font-bold text-slate-800 text-sm">{contract.asset_name || "—"}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 font-semibold block text-[11px]">Loại tài sản:</span>
+            <span className="font-bold text-slate-800">{contract.commodity?.name?.split("|")[0] || "Tài sản"}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 font-semibold block text-[11px]">Mã loại tài sản:</span>
+            <span className="font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 inline-block mt-0.5">{contract.commodity?.code || "—"}</span>
+          </div>
         </div>
+        {details.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+            {details.map((d, i) => (
+              <div key={i} className="flex justify-between md:flex-col border-b md:border-none border-slate-100 pb-1 md:pb-0">
+                <span className="text-slate-400 font-semibold">{d.label}:</span>
+                <span className="font-bold text-slate-800">{d.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
