@@ -9,7 +9,14 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { toast } from "../lib/toast";
 
-const baseURL = import.meta.env.PROD ? (import.meta.env.VITE_API_URL || "") : "";
+const defaultTarget = "https://hungtin-prod.up.railway.app";
+const baseURL = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_URL || defaultTarget)
+  : (import.meta.env.VITE_API_URL || "");
+
+if (baseURL) {
+  axios.defaults.baseURL = baseURL;
+}
 
 const apiClient = axios.create({
   baseURL,
