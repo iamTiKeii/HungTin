@@ -28,7 +28,7 @@ import { useAuth } from "../context/AuthContext";
 import { PawnDetail } from "./PawnDetail";
 import { UnsecuredDetail } from "./UnsecuredDetail";
 import { InstallmentDetail } from "./InstallmentDetail";
-import { convertDurationToDays } from "../utils/durationUtils";
+import { convertDurationToDays, formatLoanDurationText } from "../utils/durationUtils";
 import { toast } from "../lib/toast";
 import { CustomerHistoryModal } from "../components/shared/CustomerHistoryModal";
 import { useConfirm } from "../context/ConfirmContext";
@@ -1135,7 +1135,7 @@ export const Contracts: React.FC = () => {
                         </td>
                         <td>
                           <span className="text-slate-700">{new Date(item.loan_date).toLocaleDateString("vi-VN")}</span>
-                          <span className="block text-[10px] text-slate-400 font-semibold">({item.loan_days} ngày)</span>
+                          <span className="block text-[10px] text-slate-400 font-semibold">({formatLoanDurationText(item.loan_days, item.interest_type?.code)})</span>
                         </td>
                         <td className="font-semibold text-slate-700">{formatCurrency(getPaidInterest(item)).replace("₫", "")}</td>
                         <td className="font-bold text-red-500">{formatCurrency(item.debt_amount || 0).replace("₫", "")}</td>
@@ -1307,7 +1307,7 @@ export const Contracts: React.FC = () => {
                         </td>
                         <td>
                           <div>{new Date(item.loan_date).toLocaleDateString("vi-VN")}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">({item.loan_days} ngày)</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">({formatLoanDurationText(item.loan_days, item.interest_type?.code)})</div>
                         </td>
                         <td className="font-bold text-slate-600">
                           {formatCurrency(paidInt).replace("₫", "")}

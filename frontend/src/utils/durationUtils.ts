@@ -58,3 +58,41 @@ export function convertDaysToDisplayUnit(
   const mult = getUnitMultiplier(interestTypeCodeOrUnit);
   return mult > 1 ? Math.round((num / mult) * 100) / 100 : num;
 }
+
+export function formatLoanDurationText(
+  days: number | string,
+  interestTypeCodeOrUnit?: string
+): string {
+  const numDays = typeof days === "number" ? days : parseFloat(String(days)) || 0;
+  if (!numDays) return "0 ngày";
+
+  const mult = getUnitMultiplier(interestTypeCodeOrUnit);
+  const displayVal = convertDaysToDisplayUnit(numDays, interestTypeCodeOrUnit);
+
+  if (mult === 30) {
+    return `${displayVal} tháng`;
+  }
+  if (mult === 7) {
+    return `${displayVal} tuần`;
+  }
+  return `${displayVal} ngày`;
+}
+
+export function formatPeriodValueText(
+  periodDays: number | string,
+  interestTypeCodeOrUnit?: string
+): string {
+  const numDays = typeof periodDays === "number" ? periodDays : parseFloat(String(periodDays)) || 0;
+  if (!numDays) return "0 ngày";
+
+  const mult = getUnitMultiplier(interestTypeCodeOrUnit);
+  const displayVal = convertDaysToDisplayUnit(numDays, interestTypeCodeOrUnit);
+
+  if (mult === 30) {
+    return `${displayVal} tháng`;
+  }
+  if (mult === 7) {
+    return `${displayVal} tuần`;
+  }
+  return `${displayVal} ngày`;
+}
