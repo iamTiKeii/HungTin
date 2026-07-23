@@ -518,6 +518,14 @@ export const Contracts: React.FC = () => {
         });
         finalCustomerId = custRes.data.id;
         fetchHelpers();
+      } else if (formData.customerType === "existing" && finalCustomerId) {
+        await apiClient.put(`/api/customers/${finalCustomerId}`, {
+          phone: formData.customerPhone || undefined,
+          address: formData.customerAddress || undefined,
+          identity_card_number: formData.customerIdCard || undefined,
+          identity_card_date: formData.customerIdCardDate || undefined,
+          identity_card_place: formData.customerIdCardPlace || undefined,
+        }).catch(() => {});
       }
 
       if (!finalCustomerId) {
@@ -525,13 +533,17 @@ export const Contracts: React.FC = () => {
         return;
       }
 
-      // Quy đổi đơn vị dùng convertDurationToDays (tháng = x30, tuần = x7, ngày = x1)
       const _itCode = interestTypes.find((t: any) => t.id === formData.interestType || t.code === formData.interestType)?.code ?? formData.interestType ?? "";
       const loanDaysInDays = convertDurationToDays(formData.loanDays, _itCode);
       const periodValueInDays = convertDurationToDays(formData.interestPeriod, _itCode);
 
       const payload = {
         customer_id: finalCustomerId,
+        customer_phone: formData.customerPhone || undefined,
+        customer_address: formData.customerAddress || undefined,
+        customer_id_card: formData.customerIdCard || undefined,
+        customer_id_card_date: formData.customerIdCardDate || undefined,
+        customer_id_card_place: formData.customerIdCardPlace || undefined,
         commodity_id: formData.commodityId,
         asset_name: formData.assetName,
         loan_amount: Number(formData.loanAmount),
@@ -591,6 +603,14 @@ export const Contracts: React.FC = () => {
         });
         finalCustomerId = custRes.data.id;
         fetchHelpers();
+      } else if (formData.customerType === "existing" && finalCustomerId) {
+        await apiClient.put(`/api/customers/${finalCustomerId}`, {
+          phone: formData.customerPhone || undefined,
+          address: formData.customerAddress || undefined,
+          identity_card_number: formData.customerIdCard || undefined,
+          identity_card_date: formData.customerIdCardDate || undefined,
+          identity_card_place: formData.customerIdCardPlace || undefined,
+        }).catch(() => {});
       }
 
       if (!finalCustomerId) {
@@ -604,6 +624,11 @@ export const Contracts: React.FC = () => {
 
       const payload = {
         customer_id: finalCustomerId,
+        customer_phone: formData.customerPhone || undefined,
+        customer_address: formData.customerAddress || undefined,
+        customer_id_card: formData.customerIdCard || undefined,
+        customer_id_card_date: formData.customerIdCardDate || undefined,
+        customer_id_card_place: formData.customerIdCardPlace || undefined,
         commodity_id: formData.commodityId || undefined,
         loan_amount: Number(formData.loanAmount),
         interest_type_id: formData.interestType,
@@ -659,6 +684,14 @@ export const Contracts: React.FC = () => {
         });
         finalCustomerId = custRes.data.id;
         fetchHelpers();
+      } else if (formData.customerType === "existing" && finalCustomerId) {
+        await apiClient.put(`/api/customers/${finalCustomerId}`, {
+          phone: formData.customerPhone || undefined,
+          address: formData.customerAddress || undefined,
+          identity_card_number: formData.customerIdCard || undefined,
+          identity_card_date: formData.customerIdCardDate || undefined,
+          identity_card_place: formData.customerIdCardPlace || undefined,
+        }).catch(() => {});
       }
 
       if (!finalCustomerId) {
@@ -668,6 +701,11 @@ export const Contracts: React.FC = () => {
 
       const payload = {
         customer_id: finalCustomerId,
+        customer_phone: formData.customerPhone || undefined,
+        customer_address: formData.customerAddress || undefined,
+        customer_id_card: formData.customerIdCard || undefined,
+        customer_id_card_date: formData.customerIdCardDate || undefined,
+        customer_id_card_place: formData.customerIdCardPlace || undefined,
         contract_code: `TG-${formData.contractCodeNumber}`,
         repayment_amount: Number(formData.repaymentAmount),
         disbursed_amount: Number(formData.loanAmount),

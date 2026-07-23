@@ -133,16 +133,20 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
                 value={state.customerSearchQuery}
                 onChange={(val) => onChange({ customerSearchQuery: val })}
                 onSelect={(c: any) => {
+                  const formattedDate = c.identity_card_date
+                    ? new Date(c.identity_card_date).toISOString().split("T")[0]
+                    : "";
                   onChange({
                     customerId: c.id,
                     customerSearchQuery: c.full_name,
                     customerName: c.full_name,
                     customerIdCard: c.identity_card_number || "",
-                    customerIdCardDate: c.identity_card_date || "",
+                    customerIdCardDate: formattedDate,
                     customerIdCardPlace: c.identity_card_place || "",
                     customerPhone: c.phone || "",
                     customerAddress: c.address || "",
                   });
+                  setShowCardDetails(true);
                 }}
                 onClear={() => {
                   onChange({
@@ -198,7 +202,7 @@ export const ContractCustomerSection: React.FC<CustomerSectionProps> = ({
         </div>
 
         {/* Conditional Card Details (Ngày cấp / Nơi cấp) */}
-        {showCardDetails && state.customerType === "new" && (
+        {showCardDetails && (
           <>
             <div className="flex items-center">
               <label className={labelClass}>Ngày cấp</label>
