@@ -50,9 +50,14 @@ export const Contracts: React.FC = () => {
   const [activePrintContract, setActivePrintContract] = useState<any | null>(null);
   const [allStores, setAllStores] = useState<any[]>([]);
 
+  const printFileName = activePrintContract
+    ? `${activePrintContract.contract_code || activePrintContract.code || "HopDong"} - ${activePrintContract.customer?.full_name || activePrintContract.customer_name || activePrintContract.investor_name || activePrintContract.person_name || "KhachHang"}`
+    : "HopDong";
+
   const printContractRef = useRef<HTMLDivElement>(null);
   const handlePrintContractTrigger = useReactToPrint({
     content: () => printContractRef.current,
+    documentTitle: printFileName,
     onAfterPrint: () => setActivePrintContract(null),
   });
 

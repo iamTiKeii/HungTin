@@ -155,8 +155,13 @@ export const Vouchers: React.FC = () => {
     });
   };
 
+  const voucherPrintFileName = activePrintVoucher
+    ? `${activePrintVoucher.voucher_code || (activePrintVoucher as any).code || "Phieu"} - ${(activePrintVoucher as any).person_name || activePrintVoucher.employee?.full_name || "KhachHang"}`
+    : "PhieuThuChi";
+
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
+    documentTitle: voucherPrintFileName,
     onAfterPrint: () => setActivePrintVoucher(null),
   });
 

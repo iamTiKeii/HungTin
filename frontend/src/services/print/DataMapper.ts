@@ -115,6 +115,70 @@ export const generateRepaymentScheduleTable = (payments: any[]): string => {
   `;
 };
 
+// Common Customer extraction helper
+const getCustomerDetails = (contract: any) => {
+  const cust = contract.customer || {};
+  const name = cust.full_name || cust.name || contract.customer_name || contract.investor_name || contract.person_name || "";
+  const phone = cust.phone || contract.customer_phone || contract.investor_phone || "";
+  const address = cust.address || contract.customer_address || contract.investor_address || contract.person_address || "";
+  const identityNumber = cust.identity_card_number || cust.identity_number || cust.id_card || cust.cmnd || cust.cccd || contract.investor_id_card || contract.customer_id_card || "";
+  
+  const rawIssueDate = cust.identity_card_date || cust.identity_date || cust.issue_date || contract.customer_id_card_date || "";
+  const identityIssueDate = rawIssueDate ? new Date(rawIssueDate).toLocaleDateString("vi-VN") : "";
+  
+  const identityIssuePlace = cust.identity_card_place || cust.identity_place || cust.issue_place || contract.customer_id_card_place || "";
+  const bankAccount = cust.bank_account_number || cust.bank_account || "";
+  const bankName = cust.bank_name || "";
+
+  return {
+    name,
+    phone,
+    address,
+    identityNumber,
+    identityIssueDate,
+    identityIssuePlace,
+    bankAccount,
+    bankName,
+  };
+};
+
+// Common Commodity Asset extraction helper
+const getAssetDetails = (contract: any) => {
+  const parts = contract.commodity?.name?.split("|") || [];
+  const assetType = parts[0] || contract.commodity?.name || "Tài sản";
+  const attrs = parts[1] ? parts[1].split(",") : [];
+
+  const attr1Label = attrs[0] || (contract.license_plate ? "Biển số/ĐK" : "");
+  const attr2Label = attrs[1] || (contract.chassis_number ? "Số khung" : "");
+  const attr3Label = attrs[2] || (contract.engine_number ? "Số máy" : "");
+
+  const assetDetailParts: string[] = [];
+  if (contract.asset_name) {
+    assetDetailParts.push(`Tên tài sản: ${contract.asset_name}`);
+  }
+  if (contract.license_plate) {
+    assetDetailParts.push(attr1Label ? `${attr1Label}: ${contract.license_plate}` : contract.license_plate);
+  }
+  if (contract.chassis_number) {
+    assetDetailParts.push(attr2Label ? `${attr2Label}: ${contract.chassis_number}` : contract.chassis_number);
+  }
+  if (contract.engine_number) {
+    assetDetailParts.push(attr3Label ? `${attr3Label}: ${contract.engine_number}` : contract.engine_number);
+  }
+
+  const assetDetail = assetDetailParts.join(", ") || contract.asset_name || assetType || "—";
+
+  return {
+    assetType,
+    assetDetail,
+    assetCode: contract.commodity?.code || "",
+    assetName: contract.asset_name || assetType,
+    licensePlate: contract.license_plate || "",
+    chassisNumber: contract.chassis_number || "",
+    engineNumber: contract.engine_number || "",
+  };
+};
+
 // Map Pawn Contract to standardized flat dictionary
 export const buildPawnContractPrintData = (
   contract: any,
@@ -131,9 +195,8 @@ export const buildPawnContractPrintData = (
     rep = store?.notes || "Thực";
   }
 
-  const identityDate = contract.customer?.identity_card_date
-    ? new Date(contract.customer.identity_card_date).toLocaleDateString("vi-VN")
-    : "";
+  const cust = getCustomerDetails(contract);
+  const asset = getAssetDetails(contract);
 
   const loanStartDate = contract.loan_date
     ? new Date(contract.loan_date).toLocaleDateString("vi-VN")
@@ -145,15 +208,6 @@ export const buildPawnContractPrintData = (
           contract.loan_days * 24 * 60 * 60 * 1000
       ).toLocaleDateString("vi-VN")
     : "";
-
-  const assetType = contract.commodity?.name?.split("|")[0] || "Tài sản";
-  const assetDetailParts = [
-    contract.asset_name,
-    contract.license_plate ? `Biển kiểm soát: ${contract.license_plate}` : "",
-    contract.chassis_number ? `Số khung: ${contract.chassis_number}` : "",
-    contract.engine_number ? `Số máy: ${contract.engine_number}` : "",
-  ].filter(Boolean);
-  const assetDetail = assetDetailParts.join(", ") || "—";
 
   let interestRateVal = "";
   if (isNegotiated) {
@@ -176,6 +230,7 @@ export const buildPawnContractPrintData = (
     CreatedDate: loanStartDate || "",
     NgayVay: loanStartDate || "",
     ContractDate: loanStartDate || "",
+
     StoreName: store?.name || "Hưng Tín",
     TenCuaHang: store?.name || "Hưng Tín",
     StoreAddress: store?.address || "",
@@ -183,41 +238,67 @@ export const buildPawnContractPrintData = (
     StorePhone: store?.phone || "",
     DienThoaiCuaHang: store?.phone || "",
     Representative: rep,
-    CustomerName: contract.customer?.full_name || "",
-    TenKhachHang: contract.customer?.full_name || "",
-    CustomerPhone: contract.customer?.phone || "",
-    SoDienThoai: contract.customer?.phone || "",
-    CustomerAddress: contract.customer?.address || "",
-    DiaChiKhachHang: contract.customer?.address || "",
-    IdentityNumber: contract.customer?.identity_card_number || "",
-    CustomerIdentity: contract.customer?.identity_card_number || "",
-    SoCMND: contract.customer?.identity_card_number || "",
-    IdentityIssueDate: identityDate,
-    IdentityIssuePlace: contract.customer?.identity_card_place || "",
-    CustomerBankAccount: contract.customer?.bank_account_number || "",
-    CustomerBankName: contract.customer?.bank_name || "",
+
+    CustomerName: cust.name,
+    TenKhachHang: cust.name,
+    CustomerPhone: cust.phone,
+    SoDienThoai: cust.phone,
+    CustomerAddress: cust.address,
+    DiaChiKhachHang: cust.address,
+    DiaChi: cust.address,
+
+    IdentityNumber: cust.identityNumber,
+    CustomerIdentity: cust.identityNumber,
+    SoCMND: cust.identityNumber,
+    SoCCCD: cust.identityNumber,
+    CCCD: cust.identityNumber,
+    CMND: cust.identityNumber,
+
+    IdentityIssueDate: cust.identityIssueDate,
+    NgayCap: cust.identityIssueDate,
+    NgayCapCMND: cust.identityIssueDate,
+
+    IdentityIssuePlace: cust.identityIssuePlace,
+    NoiCap: cust.identityIssuePlace,
+    NoiCapCMND: cust.identityIssuePlace,
+
+    CustomerBankAccount: cust.bankAccount,
+    CustomerBankName: cust.bankName,
+
     LoanAmount: loanAmountStr,
     LoanAmountFormat: loanAmountStr,
     SoTienVay: loanAmountStr,
     LoanAmountText: loanAmountText,
     LoanAmountInWords: loanAmountText,
     SoTienBangChu: loanAmountText,
+
+    LoanDays: String(contract.loan_days || 30),
     LoanStartDate: loanStartDate,
     LoanEndDate: loanEndDate,
     NgayHetHan: loanEndDate,
     InterestRate: interestRateVal,
     InterestRateFormatted: interestRateVal,
     InterestTypeFormatted: contract.interest_type?.name || "Lãi suất ngày",
-    AssetCode: contract.commodity?.code || "",
-    MaTaiSan: contract.commodity?.code || contract.asset_name || "",
-    MaHangHoa: contract.commodity?.code || "",
-    AssetType: assetType,
-    LoaiTaiSan: assetType,
-    AssetName: contract.asset_name || assetType,
-    TenTaiSan: contract.asset_name || assetType,
-    AssetDetail: assetDetail,
-    AssetDescription: assetDetail,
-    MoTaTaiSan: assetDetail,
+
+    AssetCode: asset.assetCode,
+    MaTaiSan: asset.assetCode || asset.assetName,
+    MaHangHoa: asset.assetCode,
+    AssetType: asset.assetType,
+    LoaiTaiSan: asset.assetType,
+    AssetName: asset.assetName,
+    TenTaiSan: asset.assetName,
+    AssetDetail: asset.assetDetail,
+    AssetDescription: asset.assetDetail,
+    MoTaTaiSan: asset.assetDetail,
+    ThuocTinhTaiSan: asset.assetDetail,
+
+    LicensePlate: asset.licensePlate,
+    BienSoXe: asset.licensePlate,
+    BienSo: asset.licensePlate,
+    ChassisNumber: asset.chassisNumber,
+    SoKhung: asset.chassisNumber,
+    EngineNumber: asset.engineNumber,
+    SoMay: asset.engineNumber,
   };
 };
 
@@ -236,9 +317,8 @@ export const buildLoanContractPrintData = (
     rep = store?.notes || "Thực";
   }
 
-  const identityDate = contract.customer?.identity_card_date
-    ? new Date(contract.customer.identity_card_date).toLocaleDateString("vi-VN")
-    : "";
+  const cust = getCustomerDetails(contract);
+  const asset = getAssetDetails(contract);
 
   const loanStartDate = contract.loan_date
     ? new Date(contract.loan_date).toLocaleDateString("vi-VN")
@@ -250,8 +330,6 @@ export const buildLoanContractPrintData = (
           contract.loan_days * 24 * 60 * 60 * 1000
       ).toLocaleDateString("vi-VN")
     : "";
-
-  const assetType = contract.commodity?.name?.split("|")[0] || "Cho vay tín chấp";
 
   const interestRateVal =
     contract.interest_rate !== undefined && contract.interest_rate !== null
@@ -270,6 +348,7 @@ export const buildLoanContractPrintData = (
     CreatedDate: loanStartDate || "",
     NgayVay: loanStartDate || "",
     ContractDate: loanStartDate || "",
+
     StoreName: store?.name || "Hưng Tín",
     TenCuaHang: store?.name || "Hưng Tín",
     StoreAddress: store?.address || "",
@@ -277,34 +356,61 @@ export const buildLoanContractPrintData = (
     StorePhone: store?.phone || "",
     DienThoaiCuaHang: store?.phone || "",
     Representative: rep,
-    CustomerName: contract.customer?.full_name || "",
-    TenKhachHang: contract.customer?.full_name || "",
-    CustomerPhone: contract.customer?.phone || "",
-    SoDienThoai: contract.customer?.phone || "",
-    CustomerAddress: contract.customer?.address || "",
-    DiaChiKhachHang: contract.customer?.address || "",
-    IdentityNumber: contract.customer?.identity_card_number || "",
-    CustomerIdentity: contract.customer?.identity_card_number || "",
-    SoCMND: contract.customer?.identity_card_number || "",
-    IdentityIssueDate: identityDate,
-    IdentityIssuePlace: contract.customer?.identity_card_place || "",
-    CustomerBankAccount: contract.customer?.bank_account_number || "",
-    CustomerBankName: contract.customer?.bank_name || "",
+
+    CustomerName: cust.name,
+    TenKhachHang: cust.name,
+    CustomerPhone: cust.phone,
+    SoDienThoai: cust.phone,
+    CustomerAddress: cust.address,
+    DiaChiKhachHang: cust.address,
+    DiaChi: cust.address,
+
+    IdentityNumber: cust.identityNumber,
+    CustomerIdentity: cust.identityNumber,
+    SoCMND: cust.identityNumber,
+    SoCCCD: cust.identityNumber,
+    CCCD: cust.identityNumber,
+    CMND: cust.identityNumber,
+
+    IdentityIssueDate: cust.identityIssueDate,
+    NgayCap: cust.identityIssueDate,
+    NgayCapCMND: cust.identityIssueDate,
+
+    IdentityIssuePlace: cust.identityIssuePlace,
+    NoiCap: cust.identityIssuePlace,
+    NoiCapCMND: cust.identityIssuePlace,
+
+    CustomerBankAccount: cust.bankAccount,
+    CustomerBankName: cust.bankName,
+
     LoanAmount: loanAmountStr,
     LoanAmountFormat: loanAmountStr,
     SoTienVay: loanAmountStr,
     LoanAmountText: loanAmountText,
     LoanAmountInWords: loanAmountText,
     SoTienBangChu: loanAmountText,
+
     LoanDays: String(contract.loan_days || 30),
     LoanStartDate: loanStartDate,
     LoanEndDate: loanEndDate,
     NgayHetHan: loanEndDate,
+
     InterestRate: interestRateVal,
     InterestRateFormatted: interestRateVal,
     InterestTypeFormatted: contract.interest_type?.name || "Tín chấp tiêu dùng",
-    AssetType: assetType,
-    AssetDetail: "—",
+
+    AssetCode: asset.assetCode,
+    MaTaiSan: asset.assetCode || asset.assetName,
+    MaHangHoa: asset.assetCode,
+    AssetType: asset.assetType || "Cho vay tín chấp",
+    LoaiTaiSan: asset.assetType || "Cho vay tín chấp",
+    AssetName: asset.assetName,
+    TenTaiSan: asset.assetName,
+    AssetDetail: asset.assetDetail,
+    AssetDescription: asset.assetDetail,
+    MoTaTaiSan: asset.assetDetail,
+    ThuocTinhTaiSan: asset.assetDetail,
+
     TotalInterest: formatCurrency(totalInterestVal),
     TotalRepayment: formatCurrency(totalRepaymentVal),
     TotalRepaymentText: convertNumberToVietnameseWords(totalRepaymentVal),
@@ -326,9 +432,8 @@ export const buildInstallmentPrintData = (
     rep = store?.notes || "Thực";
   }
 
-  const identityDate = contract.customer?.identity_card_date
-    ? new Date(contract.customer.identity_card_date).toLocaleDateString("vi-VN")
-    : "";
+  const cust = getCustomerDetails(contract);
+  const asset = getAssetDetails(contract);
 
   const loanStartDate = contract.loan_date
     ? new Date(contract.loan_date).toLocaleDateString("vi-VN")
@@ -340,8 +445,6 @@ export const buildInstallmentPrintData = (
           contract.loan_days * 24 * 60 * 60 * 1000
       ).toLocaleDateString("vi-VN")
     : "";
-
-  const assetType = contract.commodity?.name?.split("|")[0] || "Cho vay trả góp";
 
   const interestRateVal =
     contract.interest_rate !== undefined && contract.interest_rate !== null
@@ -371,6 +474,7 @@ export const buildInstallmentPrintData = (
     CreatedDate: loanStartDate || "",
     NgayVay: loanStartDate || "",
     ContractDate: loanStartDate || "",
+
     StoreName: store?.name || "Hưng Tín",
     TenCuaHang: store?.name || "Hưng Tín",
     StoreAddress: store?.address || "",
@@ -378,34 +482,61 @@ export const buildInstallmentPrintData = (
     StorePhone: store?.phone || "",
     DienThoaiCuaHang: store?.phone || "",
     Representative: rep,
-    CustomerName: contract.customer?.full_name || "",
-    TenKhachHang: contract.customer?.full_name || "",
-    CustomerPhone: contract.customer?.phone || "",
-    SoDienThoai: contract.customer?.phone || "",
-    CustomerAddress: contract.customer?.address || "",
-    DiaChiKhachHang: contract.customer?.address || "",
-    IdentityNumber: contract.customer?.identity_card_number || "",
-    CustomerIdentity: contract.customer?.identity_card_number || "",
-    SoCMND: contract.customer?.identity_card_number || "",
-    IdentityIssueDate: identityDate,
-    IdentityIssuePlace: contract.customer?.identity_card_place || "",
-    CustomerBankAccount: contract.customer?.bank_account_number || "",
-    CustomerBankName: contract.customer?.bank_name || "",
+
+    CustomerName: cust.name,
+    TenKhachHang: cust.name,
+    CustomerPhone: cust.phone,
+    SoDienThoai: cust.phone,
+    CustomerAddress: cust.address,
+    DiaChiKhachHang: cust.address,
+    DiaChi: cust.address,
+
+    IdentityNumber: cust.identityNumber,
+    CustomerIdentity: cust.identityNumber,
+    SoCMND: cust.identityNumber,
+    SoCCCD: cust.identityNumber,
+    CCCD: cust.identityNumber,
+    CMND: cust.identityNumber,
+
+    IdentityIssueDate: cust.identityIssueDate,
+    NgayCap: cust.identityIssueDate,
+    NgayCapCMND: cust.identityIssueDate,
+
+    IdentityIssuePlace: cust.identityIssuePlace,
+    NoiCap: cust.identityIssuePlace,
+    NoiCapCMND: cust.identityIssuePlace,
+
+    CustomerBankAccount: cust.bankAccount,
+    CustomerBankName: cust.bankName,
+
     LoanAmount: loanAmountStr,
     LoanAmountFormat: loanAmountStr,
     SoTienVay: loanAmountStr,
     LoanAmountText: loanAmountText,
     LoanAmountInWords: loanAmountText,
     SoTienBangChu: loanAmountText,
+
     TotalAmountPayableFormat: totalRepaymentStr,
     AmountPerPeriodFormat: amountPerPeriodStr,
     LoanDays: String(contract.loan_days || loanDuration),
     LoanStartDate: loanStartDate,
     LoanEndDate: loanEndDate,
     NgayHetHan: loanEndDate,
+
     InterestRate: interestRateVal,
-    AssetType: assetType,
-    AssetDetail: "—",
+
+    AssetCode: asset.assetCode,
+    MaTaiSan: asset.assetCode || asset.assetName,
+    MaHangHoa: asset.assetCode,
+    AssetType: asset.assetType || "Cho vay trả góp",
+    LoaiTaiSan: asset.assetType || "Cho vay trả góp",
+    AssetName: asset.assetName,
+    TenTaiSan: asset.assetName,
+    AssetDetail: asset.assetDetail,
+    AssetDescription: asset.assetDetail,
+    MoTaTaiSan: asset.assetDetail,
+    ThuocTinhTaiSan: asset.assetDetail,
+
     RepaymentAmount: totalRepaymentStr,
     PeriodType: contract.period_type || "ngày",
     LoanDuration: String(loanDuration),
@@ -437,30 +568,51 @@ export const buildCapitalContractPrintData = (
     ? `${contract.profit_rate}%`
     : "Thỏa thuận";
 
-  const investorName = contract.investor_name || contract.collaborator?.full_name || contract.customer_name || "—";
-  const investorIdentity = contract.investor_identity || contract.collaborator?.identity_card_number || "—";
-  const investorPhone = contract.investor_phone || contract.collaborator?.phone || "—";
-  const investorAddress = contract.investor_address || contract.collaborator?.address || "—";
+  const cust = getCustomerDetails(contract);
 
   return {
     ContractCode: contract.contract_code || contract.code || "",
     MaHopDong: contract.contract_code || contract.code || "",
     CreatedDate: startDate,
     NgayLap: startDate,
-    InvestorName: investorName,
-    TenNhaDauTu: investorName,
-    InvestorIdentity: investorIdentity,
-    CustomerIdentity: investorIdentity,
-    SoCMND: investorIdentity,
-    InvestorPhone: investorPhone,
-    SoDienThoai: investorPhone,
-    InvestorAddress: investorAddress,
-    DiaChiNhaDauTu: investorAddress,
+
+    InvestorName: cust.name,
+    TenNhaDauTu: cust.name,
+    CustomerName: cust.name,
+    TenKhachHang: cust.name,
+
+    InvestorIdentity: cust.identityNumber,
+    CustomerIdentity: cust.identityNumber,
+    IdentityNumber: cust.identityNumber,
+    SoCMND: cust.identityNumber,
+    SoCCCD: cust.identityNumber,
+    CCCD: cust.identityNumber,
+    CMND: cust.identityNumber,
+
+    IdentityIssueDate: cust.identityIssueDate,
+    NgayCap: cust.identityIssueDate,
+    NgayCapCMND: cust.identityIssueDate,
+
+    IdentityIssuePlace: cust.identityIssuePlace,
+    NoiCap: cust.identityIssuePlace,
+    NoiCapCMND: cust.identityIssuePlace,
+
+    InvestorPhone: cust.phone,
+    CustomerPhone: cust.phone,
+    SoDienThoai: cust.phone,
+
+    InvestorAddress: cust.address,
+    CustomerAddress: cust.address,
+    DiaChiNhaDauTu: cust.address,
+    DiaChiKhachHang: cust.address,
+    DiaChi: cust.address,
+
     CapitalAmountFormat: capitalAmtStr,
     CapitalAmount: capitalAmtStr,
     SoTienGop: capitalAmtStr,
     CapitalAmountInWords: capitalAmtText,
     SoTienBangChu: capitalAmtText,
+
     ProfitRateFormatted: profitRateStr,
     ProfitRate: profitRateStr,
     CapitalDays: String(contract.capital_days || contract.duration_days || 30),
@@ -468,6 +620,7 @@ export const buildCapitalContractPrintData = (
     NgayBatDau: startDate,
     CapitalEndDate: endDate,
     NgayKetThuc: endDate,
+
     StoreName: store?.name || "Hưng Tín",
     TenCuaHang: store?.name || "Hưng Tín",
     StoreAddress: store?.address || "",
@@ -489,8 +642,9 @@ export const buildVoucherPrintData = (
   const createdDateObj = voucher.created_at ? new Date(voucher.created_at) : new Date();
   const createdDateStr = createdDateObj.toLocaleDateString("vi-VN");
 
-  const payerName = voucher.person_name || voucher.customer?.full_name || voucher.employee?.full_name || "—";
-  const payerAddress = voucher.person_address || voucher.customer?.address || "—";
+  const cust = getCustomerDetails(voucher);
+  const payerName = voucher.person_name || cust.name || "—";
+  const payerAddress = voucher.person_address || cust.address || "—";
   const createdByName = voucher.employee?.full_name || voucher.created_by_name || "Quản trị viên";
   const reason = voucher.reason || voucher.description || "—";
 
@@ -502,22 +656,35 @@ export const buildVoucherPrintData = (
     VoucherDay: String(createdDateObj.getDate()),
     VoucherMonth: String(createdDateObj.getMonth() + 1),
     VoucherYear: String(createdDateObj.getFullYear()),
+
     PayerName: payerName,
     NguoiNopNhan: payerName,
     TenKhachHang: payerName,
+    CustomerName: payerName,
+
     PayerAddress: payerAddress,
     DiaChiNguoiNop: payerAddress,
+    CustomerAddress: payerAddress,
+    DiaChiKhachHang: payerAddress,
+
+    IdentityNumber: cust.identityNumber,
+    CustomerIdentity: cust.identityNumber,
+    SoCMND: cust.identityNumber,
+
     Reason: reason,
     LyDo: reason,
+
     AmountFormat: amtStr,
     Amount: amtStr,
     SoTien: amtStr,
     AmountInWords: amtText,
     SoTienBangChu: amtText,
+
     CreatedByName: createdByName,
     NguoiLapPhieu: createdByName,
     AttachmentCount: String(voucher.attachment_count || 1),
     ChungTuKemTheo: String(voucher.attachment_count || 1),
+
     StoreName: store?.name || "Hưng Tín",
     TenCuaHang: store?.name || "Hưng Tín",
     StoreAddress: store?.address || "",
