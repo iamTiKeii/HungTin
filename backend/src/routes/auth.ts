@@ -312,20 +312,16 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Vui lòng nhập tên đăng nhập và mật khẩu!" });
     }
 
-    if (!precheck_token) {
-      return res.status(403).json({
-        error: "Yêu cầu đăng nhập không hợp lệ. Vui lòng thông qua bước kiểm tra trước (login-check)!"
-      });
-    }
-
-    // Verify precheck token
-    try {
-      const decoded: any = jwt.verify(precheck_token, JWT_SECRET);
-      if (decoded.type !== "precheck" || decoded.username !== username) {
-        return res.status(403).json({ error: "Pre-check token không hợp lệ hoặc đã hết hạn!" });
+    // Verify precheck token if provided
+    if (precheck_token) {
+      try {
+        const decoded: any = jwt.verify(precheck_token, JWT_SECRET);
+        if (decoded.type !== "precheck" || decoded.username !== username) {
+          return res.status(403).json({ error: "Pre-check token không hợp lệ hoặc đã hết hạn!" });
+        }
+      } catch (err) {
+        return res.status(403).json({ error: "Pre-check token hết hạn hoặc không hợp lệ. Vui lòng thử lại!" });
       }
-    } catch (err) {
-      return res.status(403).json({ error: "Pre-check token hết hạn hoặc không hợp lệ. Vui lòng thử lại!" });
     }
 
     const employee = await prisma.employee.findUnique({

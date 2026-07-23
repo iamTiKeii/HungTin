@@ -1,3 +1,4 @@
+
 # Nhật Ký Thay Đổi & Chỉnh Sửa Mã Nguồn (Project Change Log)
 
 Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor và sửa lỗi đã được thực hiện trên dự án kể từ khi clone/khởi tạo repository.
@@ -5,6 +6,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ---
 
 ## 1. 🛡️ Bảo Mật & Xác Thực (Authentication & Security)
+
 - **Cơ chế chống Brute-force / DDoS khi Đăng nhập:**
   - Bổ sung trường `failed_login_attempts` trong bảng `Employee` (`backend/prisma/schema.prisma`).
   - Xây dựng endpoint Pre-check (`POST /api/auth/login-check`) phát hành `precheck_token` ngắn hạn dựa trên thuật toán HMAC-SHA256 để xác thực client hợp lệ trước khi gửi thông tin mật khẩu.
@@ -20,6 +22,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ---
 
 ## 2. 🏗️ Tái Cấu Trúc Frontend & Kiến Trúc Mã Nguồn (Frontend Refactoring)
+
 - **Tách Lớp API Chuyên Biệt (Modular API Layer):**
   - Tách toàn bộ logic gọi API từ monolith `App.tsx` thành các module nhỏ gọn trong thư mục `frontend/src/api/`:
     - `client.ts`: Axios client dùng chung với interceptors xử lý Token/Auth Header.
@@ -37,6 +40,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ---
 
 ## 3. 💼 Phân Hệ Nghiệp Vụ Hợp Đồng & Lãi Suất (Financial & Loan Modules)
+
 - **Chuẩn Hóa Quy Trình Lãi Suất Dạng "k" (k-Interest Flow):**
   - Áp dụng triệt để quy tắc 4 bước với các gói lãi dạng `daily_k_million`, `daily_k_day`, `monthly_k`, `weekly_k`:
     1. **Nhập liệu**: Người dùng nhập số tối giản (VD: `2` hoặc `3`).
@@ -52,6 +56,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ---
 
 ## 4. 💰 Quản Lý Quỹ Két, Thu Chi & Báo Cáo (Cash Fund, Vouchers & Reports)
+
 - **Kiểm Kho & Chốt Quỹ Cuối Ngày (Cash Closing):**
   - Tích hợp công cụ kiểm đếm mệnh giá tiền mặt thực tế từ 1,000đ đến 500,000đ.
   - Tự động so sánh số dư thực tế với số dư hệ thống để tính chênh lệch thừa/thiếu (Variance).
@@ -64,6 +69,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ---
 
 ## 5. 🏪 Đa Chi Nhánh & Phân Quyền Chi Nhánh (Multi-Branch Support)
+
 - Refactor chuyển đổi từ hệ thống đơn cửa hàng sang đa chi nhánh (`Branch` / `Store`).
 - Thay thế route backend `stores.ts` thành `branches.ts`.
 - Hỗ trợ chọn chi nhánh làm việc linh hoạt dựa trên danh sách chi nhánh nhân viên được cấp quyền truy cập.
@@ -71,6 +77,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ---
 
 ## 6. 🎨 Giao Diện Người Dùng & Trải Nghiệm (UI/UX System)
+
 - **Hệ Thống Design System Modern:**
   - Đưa font **Poppins** / Inter làm font chủ đạo, chuẩn hóa typography scale & button sizes.
   - Áp dụng các card bo góc hiện đại `rounded-2xl` / `rounded-3xl`, badge trạng thái uppercase `badge badge-sm uppercase`.
@@ -86,6 +93,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 ## 7. 📁 Danh Sách Tập Tin Thay Đổi Chính (Key Files Summary)
 
 ### Backend:
+
 - [schema.prisma](file:///Users/suns/Downloads/OutSource/HungTin/backend/prisma/schema.prisma): Thêm `failed_login_attempts`, nâng cấp quan hệ Employee & Branch.
 - [auth.ts](file:///Users/suns/Downloads/OutSource/HungTin/backend/src/routes/auth.ts): Bổ sung `/login-check`, mã hóa token precheck, khóa tài khoản sai pass 5 lần.
 - [employees.ts](file:///Users/suns/Downloads/OutSource/HungTin/backend/src/routes/employees.ts): Xử lý reset mật khẩu, unlock tài khoản & reset đếm sai pass.
@@ -93,6 +101,7 @@ Tài liệu này tổng hợp toàn bộ các tính năng, nâng cấp, refactor
 - [auth.ts (middleware)](file:///Users/suns/Downloads/OutSource/HungTin/backend/src/middleware/auth.ts) & [errorHandler.ts](file:///Users/suns/Downloads/OutSource/HungTin/backend/src/middleware/errorHandler.ts): Tối ưu hóa xác thực & xử lý lỗi tập trung.
 
 ### Frontend:
+
 - [auth.api.ts](file:///Users/suns/Downloads/OutSource/HungTin/frontend/src/api/auth.api.ts): Hệ thống API modules đăng nhập & precheck.
 - [AppRoutes.tsx](file:///Users/suns/Downloads/OutSource/HungTin/frontend/src/router/AppRoutes.tsx): Điều hướng Router v6.
 - [useContracts.ts](file:///Users/suns/Downloads/OutSource/HungTin/frontend/src/hooks/useContracts.ts) & [usePawnDetail.ts](file:///Users/suns/Downloads/OutSource/HungTin/frontend/src/hooks/usePawnDetail.ts): Tách logic state & data hooks.
