@@ -1099,8 +1099,8 @@ export const Contracts: React.FC = () => {
                     <th className="py-3 bg-slate-50/30">#</th>
                     <th className="py-3">Mã HĐ</th>
                     <th className="py-3">Khách hàng</th>
-                    <th className="py-3">Mã TS</th>
-                    <th className="py-3">Tài sản</th>
+                    <th className="py-3">Biển số</th>
+                    <th className="py-3">Tên tài sản</th>
                     <th className="py-3">Tiền cầm</th>
                     <th className="py-3">Ngày cầm</th>
                     <th className="py-3">Lãi đã đóng</th>
@@ -1131,17 +1131,8 @@ export const Contracts: React.FC = () => {
                             {item.customer?.full_name}
                           </button>
                         </td>
-                        <td className="font-mono text-[11px] font-bold text-amber-600">
-                          {item.commodity?.code || <span className="text-slate-300">—</span>}
-                        </td>
-                        <td className="text-slate-700">
-                          <div className="font-bold text-slate-800">{item.asset_name || item.commodity?.name?.split("|")[0] || "—"}</div>
-                          {item.license_plate && (
-                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                              {item.license_plate}
-                            </div>
-                          )}
-                        </td>
+                        <td className="text-slate-500 font-mono text-[11px]">{item.license_plate || <span className="text-slate-300">—</span>}</td>
+                        <td className="text-slate-500">{item.asset_name}</td>
                         <td>
                           <span className="font-bold text-slate-800">{formatCurrency(item.loan_amount).replace("₫", "")}</span>
                           <span className="block text-[10px] text-red-500 font-semibold">
