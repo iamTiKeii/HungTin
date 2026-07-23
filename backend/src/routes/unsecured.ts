@@ -5,7 +5,7 @@ import { requirePermission } from "../middleware/permission";
 import { generateContractCode, getNextContractCodeNumber } from "../utils/codeGen";
 import { generateInterestSchedule, InvalidLoanParamsError } from "../utils/interest";
 import { adjustDailyCash, normalizeToMidnight, checkDailyCashLock } from "../utils/cash";
-import { getUnitMultiplier } from "../utils/durationUtils";
+import { getUnitMultiplier, convertDurationToDays } from "../utils/durationUtils";
 import { calculateDailyInterestRate } from "./pawn";
 
 import { v4 as uuidv4 } from "uuid";
@@ -422,13 +422,8 @@ router.post("/", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: Aut
         throw new Error("Interest type not found");
       }
 
-      const unitMult = getUnitMultiplier(interestType.code);
-      let finalDays = days;
-      let finalPeriodValue = pValue;
-      if (unitMult > 1) {
-        if (finalDays < 15) finalDays = Math.round(finalDays * unitMult);
-        if (finalPeriodValue < 15) finalPeriodValue = Math.round(finalPeriodValue * unitMult);
-      }
+      const finalDays = convertDurationToDays(days, interestType.code);
+      const finalPeriodValue = convertDurationToDays(pValue, interestType.code);
 
       // Generate expected interest payments schedule
       const cycles = generateInterestSchedule(
@@ -1714,8 +1709,6 @@ router.put("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: A
 
       const newPrincipal = loan_amount !== undefined ? Number(loan_amount) : Number(contract.loan_amount);
       const newRate = interest_rate !== undefined ? Number(interest_rate) : Number(contract.interest_rate);
-      const newDays = loan_days !== undefined ? Number(loan_days) : contract.loan_days;
-      const newPeriod = period_value !== undefined ? Number(period_value) : contract.period_value;
       const newUpfront = is_upfront_interest !== undefined ? !!is_upfront_interest : contract.is_upfront_interest;
       const newLoanDate = loan_date ? new Date(loan_date) : new Date(contract.loan_date);
 
@@ -1727,6 +1720,15 @@ router.put("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: A
       if (!interestType) {
         throw new Error("Interest type not found");
       }
+
+      const newDays = convertDurationToDays(
+        loan_days !== undefined ? Number(loan_days) : contract.loan_days,
+        interestType.code
+      );
+      const newPeriod = convertDurationToDays(
+        period_value !== undefined ? Number(period_value) : contract.period_value,
+        interestType.code
+      );
 
       const cycles = generateInterestSchedule(
         newPrincipal,

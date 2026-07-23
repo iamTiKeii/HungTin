@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Navbar } from "../components/Navbar";
+import { Header } from "../components/Header";
+import { Sidebar } from "../components/Sidebar";
 import { ProfileModal } from "../components/modals/ProfileModal";
 import { ChangePasswordModal } from "../components/modals/ChangePasswordModal";
 import { TwoFactorModal } from "../components/modals/TwoFactorModal";
@@ -17,6 +18,7 @@ export const PrivateLayout: React.FC<PrivateLayoutProps> = ({
   requiredPermission,
 }) => {
   const { token, loading, hasPermission } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [twoFactorOpen, setTwoFactorOpen] = useState(false);
@@ -47,15 +49,19 @@ export const PrivateLayout: React.FC<PrivateLayoutProps> = ({
   if (shouldRedirect) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f5f5f5] text-slate-800">
-      <Navbar
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] text-slate-800">
+      <Header
+        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenChangePassword={() => setPasswordOpen(true)}
         onOpenTwoFactor={() => setTwoFactorOpen(true)}
       />
-      <main className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-112px)] mt-28 bg-[#f5f5f5]">
-        {children}
-      </main>
+      <div className="flex flex-1 pt-16">
+        <Sidebar isOpen={sidebarOpen} />
+        <main className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-64px)] bg-[#f8fafc]">
+          {children}
+        </main>
+      </div>
 
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <ChangePasswordModal isOpen={passwordOpen} onClose={() => setPasswordOpen(false)} />

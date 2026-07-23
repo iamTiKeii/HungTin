@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hợp Đồng Góp Vốn Mẫu 01 - {{ContractCode}}</title>
+    <style>
+        @page { size: A4; margin: 15mm; }
+        body { font-family: "Times New Roman", Times, serif; font-size: 13px; line-height: 1.5; color: #000; margin: 0; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .text-uppercase { text-transform: uppercase; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; text-align: center; }
+        .box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; border-radius: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .signatures { display: flex; justify-content: space-between; margin-top: 30px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div className="header">
+        <h2 className="text-uppercase font-bold" style="margin:0; font-size: 16px;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+        <p style="margin:2px 0 10px 0; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</p>
+        <h1 className="text-uppercase font-bold" style="margin: 10px 0 0 0; font-size: 18px; color: #1e3a8a;">HỢP ĐỒNG HỢP TÁC GÓP VỐN ĐẦU TƯ</h1>
+        <p style="margin:2px 0;">Mã HĐ: <strong>{{ContractCode}}</strong> | Ngày lập: {{CreatedDate}}</p>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px;">I. BÊN NHẬN GÓP VỐN (BÊN A)</div>
+        <div>Tên đơn vị/Cửa hàng: <strong>{{StoreName}}</strong></div>
+        <div>Địa chỉ: {{StoreAddress}} | Điện thoại: {{StorePhone}}</div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px;">II. NHÀ ĐẦU TƯ / BÊN GÓP VỐN (BÊN B)</div>
+        <div className="grid-2">
+            <div>Họ và tên: <strong>{{InvestorName}}</strong></div>
+            <div>Số CMND/CCCD: <strong>{{InvestorIdentity}}</strong></div>
+            <div>Điện thoại: {{InvestorPhone}}</div>
+            <div>Địa chỉ: {{InvestorAddress}}</div>
+        </div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px;">III. NỘI DUNG GÓP VỐN</div>
+        <p>1. Số tiền đầu tư góp vốn: <strong style="font-size: 15px; color: #b91c1c;">{{CapitalAmountFormat}} VNĐ</strong> (Bằng chữ: {{CapitalAmountInWords}})</p>
+        <p>2. Thời hạn góp vốn: <strong>{{CapitalDays}} ngày</strong> (Từ {{CapitalStartDate}} đến {{CapitalEndDate}})</p>
+        <p>3. Tỷ lệ / Lợi tức chia sẻ thỏa thuận: <strong>{{ProfitRateFormatted}}</strong></p>
+    </div>
+
+    <div className="signatures">
+        <div>
+            <p className="font-bold">BÊN GÓP VỐN (BÊN B)</p>
+            <p style="font-style: italic; font-size: 11px;">(Ký và ghi rõ họ tên)</p>
+            <br/><br/><br/>
+            <p><strong>{{InvestorName}}</strong></p>
+        </div>
+        <div>
+            <p className="font-bold">ĐẠI DIỆN BÊN NHẬN VỐN (BÊN A)</p>
+            <p style="font-style: italic; font-size: 11px;">(Ký, đóng dấu)</p>
+            <br/><br/><br/>
+            <p><strong>{{StoreName}}</strong></p>
+        </div>
+    </div>
+</body>
+</html>

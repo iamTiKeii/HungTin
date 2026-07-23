@@ -5,7 +5,7 @@ import { requirePermission } from "../middleware/permission";
 import { generateContractCode, generateVoucherCode, getNextContractCodeNumber } from "../utils/codeGen";
 import { generateInterestSchedule, InterestCycle, InterestCalculatorFactory, InvalidLoanParamsError } from "../utils/interest";
 import { adjustDailyCash, normalizeToMidnight, checkDailyCashLock } from "../utils/cash";
-import { getUnitMultiplier } from "../utils/durationUtils";
+import { getUnitMultiplier, convertDurationToDays } from "../utils/durationUtils";
 
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
@@ -436,14 +436,9 @@ router.post("/", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: Aut
         throw new Error("Interest type not found");
       }
 
-      // Auto-convert unit if days or pValue were passed as raw display unit numbers (e.g. 3 months, 1 month)
-      const unitMult = getUnitMultiplier(interestType.code);
-      let finalDays = days;
-      let finalPeriodValue = pValue;
-      if (unitMult > 1) {
-        if (finalDays < 15) finalDays = Math.round(finalDays * unitMult);
-        if (finalPeriodValue < 15) finalPeriodValue = Math.round(finalPeriodValue * unitMult);
-      }
+      // Auto-convert unit using standard convertDurationToDays helper
+      const finalDays = convertDurationToDays(days, interestType.code);
+      const finalPeriodValue = convertDurationToDays(pValue, interestType.code);
 
       // Generate expected interest payments schedule
       console.log(`[PAWN CREATE] contractCode=${contractCode} | interestType=${interestType.code} | days=${finalDays} | pValue=${finalPeriodValue} | loanDate=${normalizedLoanDate.toISOString().split("T")[0]}`);
@@ -1862,25 +1857,14 @@ router.put("/:id", requirePermission(["CONTRACTS_MANAGE"]) as any, async (req: A
 
       const newPrincipal = loan_amount !== undefined ? Number(loan_amount) : Number(contract.loan_amount);
       const newRate = interest_rate !== undefined ? Number(interest_rate) : Number(contract.interest_rate);
-      let newDays = loan_days !== undefined ? Number(loan_days) : contract.loan_days;
-      let newPeriod = period_value !== undefined ? Number(period_value) : contract.period_value;
-      const newUpfront = is_upfront_interest !== undefined ? !!is_upfront_interest : contract.is_upfront_interest;
-      const newLoanDate = loan_date ? new Date(loan_date) : new Date(contract.loan_date);
-
-      // Recreate schedules
-      const interestType = await tx.interestType.findUnique({
-        where: { id: interest_type_id || contract.interest_type_id },
-      });
-
-      if (!interestType) {
-        throw new Error("Interest type not found");
-      }
-
-      const unitMult = getUnitMultiplier(interestType.code);
-      if (unitMult > 1) {
-        if (newDays < 15) newDays = Math.round(newDays * unitMult);
-        if (newPeriod < 15) newPeriod = Math.round(newPeriod * unitMult);
-      }
+      const newDays = convertDurationToDays(
+        loan_days !== undefined ? Number(loan_days) : contract.loan_days,
+        interestType.code
+      );
+      const newPeriod = convertDurationToDays(
+        period_value !== undefined ? Number(period_value) : contract.period_value,
+        interestType.code
+      );
 
       const cycles = generateInterestSchedule(
         newPrincipal,

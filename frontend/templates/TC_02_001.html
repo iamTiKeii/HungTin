@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hợp Đồng Tín Chấp Mẫu 02 - {{ContractCode}}</title>
+    <style>
+        @page { size: A4; margin: 15mm; }
+        body { font-family: "Times New Roman", Times, serif; font-size: 13px; line-height: 1.5; color: #000; margin: 0; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .text-uppercase { text-transform: uppercase; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; text-align: center; }
+        .box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; border-radius: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .signatures { display: flex; justify-content: space-between; margin-top: 30px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div className="header">
+        <h2 className="text-uppercase font-bold" style="margin:0; font-size: 18px;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+        <p style="margin:2px 0 10px 0; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</p>
+        <h1 className="text-uppercase font-bold" style="margin: 10px 0 0 0; font-size: 20px; color: #1e3a8a;">HỢP ĐỒNG CHO VAY TÍN CHẤP TÊU DÙNG</h1>
+        <p style="margin:2px 0;">Mã HĐ: <strong>{{ContractCode}}</strong> | Ngày lập: {{CreatedDate}}</p>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px; color: #1e3a8a;">BÊN CHO VAY (BÊN A)</div>
+        <div>Đơn vị: <strong>{{StoreName}}</strong></div>
+        <div>Địa chỉ: {{StoreAddress}} | Điện thoại: {{StorePhone}}</div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px; color: #1e3a8a;">BÊN VAY (BÊN B)</div>
+        <div className="grid-2">
+            <div>Họ và tên: <strong>{{CustomerName}}</strong></div>
+            <div>Số CMND/CCCD: <strong>{{CustomerIdentity}}</strong></div>
+            <div>Điện thoại: {{CustomerPhone}}</div>
+            <div>Địa chỉ: {{CustomerAddress}}</div>
+        </div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px; color: #1e3a8a;">NỘI DUNG VAY TÍN CHẤP</div>
+        <p>1. Số tiền cho vay: <strong style="font-size: 15px; color: #b91c1c;">{{LoanAmountFormat}} VNĐ</strong> (Bằng chữ: {{LoanAmountInWords}})</p>
+        <p>2. Thời hạn vay: <strong>{{LoanDays}} ngày</strong> (Từ ngày {{LoanStartDate}} đến {{LoanEndDate}})</p>
+        <p>3. Lãi suất thỏa thuận: <strong>{{InterestRateFormatted}}</strong> ({{InterestTypeFormatted}})</p>
+        <p>4. Hình thức cho vay: Cho vay tín chấp dựa trên uy tín cá nhân.</p>
+    </div>
+
+    <div className="signatures">
+        <div>
+            <p className="font-bold">BÊN VAY (BÊN B)</p>
+            <p style="font-style: italic; font-size: 11px;">(Ký và ghi rõ họ tên)</p>
+            <br/><br/><br/>
+            <p><strong>{{CustomerName}}</strong></p>
+        </div>
+        <div>
+            <p className="font-bold">ĐẠI DIỆN BÊN A</p>
+            <p style="font-style: italic; font-size: 11px;">(Ký, đóng dấu)</p>
+            <br/><br/><br/>
+            <p><strong>{{StoreName}}</strong></p>
+        </div>
+    </div>
+</body>
+</html>

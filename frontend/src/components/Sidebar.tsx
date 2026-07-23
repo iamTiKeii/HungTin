@@ -166,21 +166,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 
   return (
     <aside 
-      className={`bg-white text-slate-700 min-h-screen flex flex-col justify-between select-none shrink-0 transition-all duration-300 z-20 pt-16 border-r border-slate-200/80 ${
+      className={`bg-white text-slate-700 h-[calc(100vh-64px)] sticky top-16 flex flex-col justify-between select-none shrink-0 transition-all duration-300 z-20 border-r border-slate-200/80 ${
         isOpen ? "w-64" : "w-16"
       }`}
     >
       {/* Scrollable Navigation Area */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto pt-2 pb-4 px-3 custom-scrollbar">
         {/* Brand Logo Header */}
-        <div className={`mb-6 flex items-center border-b border-slate-100 pb-4 ${isOpen ? "px-2 gap-3" : "justify-center"}`}>
+        <div className={`mb-3 flex items-center border-b border-slate-100 pb-2.5 ${isOpen ? "px-1 gap-2.5" : "justify-center"}`}>
           {systemLogo && !systemLogo.startsWith("blob:") ? (
-            <img src={systemLogo} alt="System Logo" className="w-8 h-8 object-contain rounded-lg shadow-sm" />
+            <img src={systemLogo} alt="System Logo" className="w-7 h-7 object-contain rounded-md shadow-sm shrink-0" />
           ) : (
-            <Shield className="w-8 h-8 text-amber-500 animate-pulse shrink-0" />
+            <Shield className="w-7 h-7 text-amber-500 shrink-0" />
           )}
           {isOpen && (
-            <div className="flex flex-col truncate">
+            <div className="flex flex-col truncate leading-tight">
               <span className="text-sm font-semibold text-slate-800 truncate">{systemName}</span>
               <span className="text-[10px] text-slate-400 truncate">Hệ thống cầm đồ</span>
             </div>

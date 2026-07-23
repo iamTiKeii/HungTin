@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Giấy Cầm Đồ Mẫu 02 - {{ContractCode}}</title>
+    <style>
+        @page { size: A4; margin: 15mm; }
+        body { font-family: "Times New Roman", Times, serif; font-size: 13px; line-height: 1.5; color: #000; margin: 0; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .text-uppercase { text-transform: uppercase; }
+        .header { display: flex; justify-content: space-between; border-b: 2px solid #000; pb: 10px; margin-bottom: 15px; }
+        .box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; border-radius: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .table-data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .table-data th, .table-data td { border: 1px solid #000; padding: 6px; text-align: left; }
+        .signatures { display: flex; justify-content: space-between; margin-top: 30px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div className="header">
+        <div>
+            <h2 style="margin:0; font-size: 16px;">{{StoreName}}</h2>
+            <p style="margin:2px 0;">ĐC: {{StoreAddress}}</p>
+            <p style="margin:2px 0;">ĐN: {{StorePhone}}</p>
+        </div>
+        <div style="text-align: right;">
+            <h2 style="margin:0; font-size: 18px; color: #b91c1c;">GIẤY CẦM CỐ TÀI SẢN</h2>
+            <p style="margin:2px 0;">Mã HĐ: <strong>{{ContractCode}}</strong></p>
+            <p style="margin:2px 0;">Ngày tạo: {{CreatedDate}}</p>
+        </div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px; color: #1e3a8a;">I. BÊN CHO VAY (BÊN A)</div>
+        <div>Đơn vị: <strong>{{StoreName}}</strong></div>
+        <div>Địa chỉ: {{StoreAddress}} | Điện thoại: {{StorePhone}}</div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px; color: #1e3a8a;">II. BÊN CẦM ĐỒ (BÊN B)</div>
+        <div className="grid-2">
+            <div>Họ và tên: <strong>{{CustomerName}}</strong></div>
+            <div>Số CMND/CCCD: <strong>{{CustomerIdentity}}</strong></div>
+            <div>Điện thoại: {{CustomerPhone}}</div>
+            <div>Ngày cấp: {{CustomerIdentityDate}}</div>
+            <div style="grid-column: span 2;">Địa chỉ thường trú: {{CustomerAddress}}</div>
+        </div>
+    </div>
+
+    <div className="box">
+        <div className="font-bold text-uppercase" style="margin-bottom: 5px; color: #1e3a8a;">III. CHI TIẾT TÀI SẢN & KHOẢN VAY</div>
+        <table className="table-data">
+            <tr>
+                <th>Tên tài sản cầm cố</th>
+                <td><strong>{{AssetType}} - {{AssetName}}</strong></td>
+            </tr>
+            <tr>
+                <th>Thông tin chi tiết (Biển số/Khung/Máy/IMEI)</th>
+                <td>{{AssetDescription}}</td>
+            </tr>
+            <tr>
+                <th>Số tiền cầm cố</th>
+                <td><strong style="font-size: 15px; color: #b91c1c;">{{LoanAmountFormat}} VNĐ</strong> ({{LoanAmountInWords}})</td>
+            </tr>
+            <tr>
+                <th>Lãi suất thỏa thuận</th>
+                <td>{{InterestRateFormatted}} ({{InterestTypeFormatted}})</td>
+            </tr>
+            <tr>
+                <th>Thời hạn vay</th>
+                <td>{{LoanDays}} ngày (Từ {{LoanStartDate}} đến {{LoanEndDate}})</td>
+            </tr>
+        </table>
+    </div>
+
+    <div className="signatures">
+        <div>
+            <p className="font-bold">BÊN CẦM ĐỒ (BÊN B)</p>
+            <p style="font-style: italic; font-size: 11px;">(Ký và ghi rõ họ tên)</p>
+            <br/><br/><br/>
+            <p><strong>{{CustomerName}}</strong></p>
+        </div>
+        <div>
+            <p className="font-bold">ĐẠI DIỆN BÊN A</p>
+            <p style="font-style: italic; font-size: 11px;">(Ký, đóng dấu)</p>
+            <br/><br/><br/>
+            <p><strong>{{StoreName}}</strong></p>
+        </div>
+    </div>
+</body>
+</html>

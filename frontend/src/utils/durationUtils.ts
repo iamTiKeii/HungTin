@@ -36,7 +36,16 @@ export function convertDurationToDays(
 ): number {
   const num = typeof value === "number" ? value : parseFloat(String(value)) || 0;
   if (num <= 0 || isNaN(num)) return 0;
+
   const mult = getUnitMultiplier(interestTypeCodeOrUnit);
+  if (mult === 1) return Math.round(num);
+
+  // If already converted to days (e.g. 30, 60, 90 for monthly or 7, 14, 21 for weekly)
+  if (num >= mult && Math.round(num) % mult === 0) {
+    return Math.round(num);
+  }
+
+  // Raw display units (e.g. 3 months -> 90 days, 1 month -> 30 days, 2 weeks -> 14 days)
   return Math.round(num * mult);
 }
 

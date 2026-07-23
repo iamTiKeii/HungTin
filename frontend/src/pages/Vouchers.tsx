@@ -7,6 +7,8 @@ import { useLocation } from "react-router-dom";
 import { toast } from "../lib/toast";
 import { MoneyInput } from "../components/shared/MoneyInput";
 import { useConfirm } from "../context/ConfirmContext";
+import { useAuth } from "../context/AuthContext";
+import { getCompiledHtml } from "../services/print/PrintService";
 
 interface Voucher {
   id: string;
@@ -31,6 +33,7 @@ interface Voucher {
 export const Vouchers: React.FC = () => {
   const location = useLocation();
   const confirm = useConfirm();
+  const { activeStore } = useAuth();
   const isExpensePage = location.pathname.includes("/expenses");
 
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -462,70 +465,20 @@ export const Vouchers: React.FC = () => {
               </button>
             </div>
 
-            {/* Thermal Content Container */}
-            <div className="bg-white p-4 text-black border border-slate-200 rounded-lg text-xs leading-relaxed font-mono">
-              <div ref={printRef} className="print-area">
-                <div className="print-header font-bold text-center">
-                  <p className="text-sm margin-0">CẦM ĐỒ HÙNG TÍN</p>
-                  <p className="text-[9px] text-slate-500 font-medium">Dịch vụ Tài chính & Tín dụng tiêu dùng</p>
-                </div>
-                <div className="print-divider border-t border-dashed border-black my-2"></div>
-
-                <div className="text-center font-bold text-xs my-1">
-                  {activePrintVoucher.type === "receipt" || !isExpensePage ? "PHIẾU THU TIỀN MẶT" : "PHIẾU CHI TIỀN MẶT"}
-                </div>
-                <div className="text-center text-[9px] text-slate-500">
-                  Số phiếu: {activePrintVoucher.voucher_code}
-                </div>
-
-                <div className="my-3">
-                  <table className="w-full text-[11px] border-collapse">
-                    <tbody>
-                      <tr className="border-b border-slate-100">
-                        <td className="py-1 text-slate-500">Đối tác:</td>
-                        <td className="text-right py-1 font-bold text-slate-900">
-                          {activePrintVoucher.recipient_name || activePrintVoucher.partner_name}
-                        </td>
-                      </tr>
-                      <tr className="border-b border-slate-100">
-                        <td className="py-1 text-slate-500">Số tiền:</td>
-                        <td className="text-right py-1 font-extrabold text-slate-950">
-                          {formatCurrency(activePrintVoucher.amount)} VNĐ
-                        </td>
-                      </tr>
-                      <tr className="border-b border-slate-100">
-                        <td className="py-1 text-slate-500 vertical-align-top">Nội dung:</td>
-                        <td className="text-right py-1 text-slate-700">
-                          {activePrintVoucher.notes || activePrintVoucher.description || "---"}
-                        </td>
-                      </tr>
-                      <tr className="border-b border-slate-100">
-                        <td className="py-1 text-slate-500">Ngày lập:</td>
-                        <td className="text-right py-1 text-slate-700">
-                          {new Date(activePrintVoucher.created_at || activePrintVoucher.voucher_date).toLocaleString("vi-VN")}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-slate-500">Nhân viên:</td>
-                        <td className="text-right py-1 text-slate-700">
-                          {activePrintVoucher.employee?.full_name}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="print-divider border-t border-dashed border-black my-2"></div>
-                <div className="flex justify-between text-center mt-3 text-[10px] font-sans">
-                  <div>
-                    <p className="margin-0">Người giao/nhận</p>
-                    <p className="text-[8px] text-slate-400">(Ký và ghi rõ họ tên)</p>
-                  </div>
-                  <div>
-                    <p className="margin-0">Thủ quỹ lập phiếu</p>
-                    <p className="text-[8px] text-slate-400">(Ký và ghi rõ họ tên)</p>
-                  </div>
-                </div>
+            {/* Print Content Container */}
+            <div className="bg-slate-100 p-4 border border-slate-200 rounded-xl max-h-[480px] overflow-y-auto">
+              <div className="bg-white p-6 shadow-md text-black" style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}>
+                <div 
+                  ref={printRef}
+                  className="print-area" 
+                  dangerouslySetInnerHTML={{
+                    __html: getCompiledHtml(
+                      isExpensePage ? "payment" : "receipt",
+                      activePrintVoucher,
+                      activeStore
+                    )
+                  }}
+                />
               </div>
             </div>
 

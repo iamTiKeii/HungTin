@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Phiếu Chi K80 - {{VoucherCode}}</title>
+    <style>
+        @page { size: 80mm auto; margin: 2mm; }
+        body { font-family: monospace, sans-serif; font-size: 11px; line-height: 1.4; color: #000; width: 76mm; margin: 0 auto; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .divider { border-top: 1px dashed #000; margin: 6px 0; }
+        .flex-between { display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <div className="text-center">
+        <h3 className="font-bold" style="margin:0; font-size: 13px;">{{StoreName}}</h3>
+        <p style="margin:2px 0; font-size: 9px;">ĐC: {{StoreAddress}}</p>
+        <p style="margin:2px 0; font-size: 9px;">SĐT: {{StorePhone}}</p>
+    </div>
+
+    <div className="divider"></div>
+
+    <div className="text-center">
+        <h2 className="font-bold" style="margin:2px 0; font-size: 14px;">PHIẾU CHI TIỀN</h2>
+        <p style="margin:0; font-size: 10px;">Mã: {{VoucherCode}} | {{CreatedDate}}</p>
+    </div>
+
+    <div className="divider"></div>
+
+    <div>
+        <p style="margin:2px 0;">Người nhận: <strong>{{PayerName}}</strong></p>
+        <p style="margin:2px 0;">Lý do: {{Reason}}</p>
+        <div className="divider"></div>
+        <div className="flex-between font-bold" style="font-size: 13px;">
+            <span>SỐ TIỀN CHI:</span>
+            <span>{{AmountFormat}} đ</span>
+        </div>
+        <p style="margin:2px 0; font-size: 9px; font-style: italic;">({{AmountInWords}})</p>
+    </div>
+
+    <div className="divider"></div>
+
+    <div className="text-center" style="margin-top: 10px;">
+        <p style="margin:2px 0; font-size: 9px;">Người lập: {{CreatedByName}}</p>
+    </div>
+</body>
+</html>

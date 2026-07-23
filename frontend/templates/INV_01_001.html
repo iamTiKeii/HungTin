@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Phiếu Thu - Mẫu số 01-TT (Thông tư 88/2021/TT-BTC)</title>
+    <style>
+        @page {
+            size: A5 landscape;
+            margin: 10mm 15mm 10mm 15mm;
+        }
+        @media print {
+            body { background: none; padding: 0; }
+            .no-print { display: none; }
+        }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #000;
+            margin: 0;
+            padding: 15px;
+            background-color: #fff;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: bold; }
+        .font-italic { font-style: italic; }
+        .text-uppercase { text-transform: uppercase; }
+        
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .header-table td {
+            vertical-align: top;
+        }
+
+        .title-section {
+            margin: 15px 0 10px 0;
+        }
+        .title-section h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+        .dotted-line {
+            border-bottom: 1px dotted #000;
+            display: inline-block;
+            min-width: 100px;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+        .dotted-fill {
+            border-bottom: 1px dotted #000;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .signature-table td {
+            vertical-align: top;
+            width: 25%;
+            padding: 4px;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header: Đơn vị kinh doanh & Mẫu số thông tư -->
+    <table className="header-table">
+        <tr>
+            <td style="width: 55%;">
+                <div className="font-bold text-uppercase">HỘ, CÁ NHÂN KINH DOANH: {{StoreName}}</div>
+                <div>Địa chỉ: {{StoreAddress}}</div>
+                <div>Điện thoại: {{StorePhone}}</div>
+            </td>
+            <td style="width: 45%; text-align: center;">
+                <div className="font-bold">Mẫu số 01 - TT</div>
+                <div className="font-italic" style="font-size: 11px; margin-top: 2px;">
+                    (Ban hành kèm theo Thông tư số 88/2021/TT-BTC<br/>ngày 11 tháng 10 năm 2021 của Bộ trưởng Bộ Tài chính)
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Title: PHIẾU THU & Ngày / Số phiếu -->
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+        <tr>
+            <td style="width: 65%; text-align: center; padding-left: 15%;">
+                <div className="title-section">
+                    <h1 className="text-uppercase">PHIẾU THU</h1>
+                    <div className="font-italic" style="margin-top: 4px;">
+                        Ngày {{VoucherDay}} tháng {{VoucherMonth}} năm {{VoucherYear}}
+                    </div>
+                </div>
+            </td>
+            <td style="width: 35%; text-align: left; vertical-align: middle;">
+                <div>Quyển số: .......................................</div>
+                <div>Số: <strong style="font-size: 14px;">{{VoucherCode}}</strong></div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Main Content Fields -->
+    <div className="info-section">
+        <div style="display: flex;">
+            <span style="white-space: nowrap;">Họ và tên người nộp tiền:</span>
+            <span style="flex-grow: 1; border-bottom: 1px dotted #000; padding-left: 8px; font-weight: bold; text-transform: uppercase;">{{PayerName}}</span>
+        </div>
+
+        <div style="display: flex; margin-top: 4px;">
+            <span style="white-space: nowrap;">Địa chỉ:</span>
+            <span style="flex-grow: 1; border-bottom: 1px dotted #000; padding-left: 8px;">{{PayerAddress}}</span>
+        </div>
+
+        <div style="display: flex; margin-top: 4px;">
+            <span style="white-space: nowrap;">Lý do nộp:</span>
+            <span style="flex-grow: 1; border-bottom: 1px dotted #000; padding-left: 8px;">{{Reason}}</span>
+        </div>
+
+        <div style="display: flex; margin-top: 4px;">
+            <span style="white-space: nowrap;">Số tiền:</span>
+            <span style="border-bottom: 1px dotted #000; padding-left: 8px; padding-right: 15px; font-weight: bold; font-size: 14px;">{{AmountFormat}} VNĐ</span>
+            <span style="white-space: nowrap;">(Viết bằng chữ):</span>
+            <span style="flex-grow: 1; border-bottom: 1px dotted #000; padding-left: 8px; font-style: italic; font-weight: bold;">{{AmountInWords}}</span>
+        </div>
+
+        <div style="display: flex; margin-top: 4px;">
+            <span style="white-space: nowrap;">Kèm theo:</span>
+            <span style="border-bottom: 1px dotted #000; padding-left: 8px; padding-right: 20px; font-weight: bold;">{{AttachmentCount}}</span>
+            <span style="white-space: nowrap;">Chứng từ gốc.</span>
+            <span style="flex-grow: 1; border-bottom: 1px dotted #000;"></span>
+        </div>
+    </div>
+
+    <!-- Signatures Table -->
+    <table className="signature-table">
+        <tr>
+            <td colSpan={2}></td>
+            <td colSpan={2} className="text-center font-italic" style="padding-bottom: 8px;">
+                Ngày {{VoucherDay}} tháng {{VoucherMonth}} năm {{VoucherYear}}
+            </td>
+        </tr>
+        <tr>
+            <td className="font-bold">
+                NGƯỜI ĐẠI DIỆN<br/>HỘ KINH DOANH / CÁ NHÂN KINH DOANH<br/>
+                <span className="font-italic" style="font-weight: normal; font-size: 11px;">(Ký, họ tên, đóng dấu)</span>
+            </td>
+            <td className="font-bold">
+                NGƯỜI LẬP BIỂU<br/>
+                <span className="font-italic" style="font-weight: normal; font-size: 11px;">(Ký, họ tên)</span>
+            </td>
+            <td className="font-bold">
+                NGƯỜI NỘP TIỀN<br/>
+                <span className="font-italic" style="font-weight: normal; font-size: 11px;">(Ký, họ tên)</span>
+            </td>
+            <td className="font-bold">
+                THỦ QUỸ<br/>
+                <span className="font-italic" style="font-weight: normal; font-size: 11px;">(Ký, họ tên)</span>
+            </td>
+        </tr>
+        <tr style="height: 65px;">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td className="font-bold">{{StoreName}}</td>
+            <td className="font-bold">{{CreatedByName}}</td>
+            <td className="font-bold">{{PayerName}}</td>
+            <td className="font-bold"></td>
+        </tr>
+    </table>
+
+    <div className="footer-note">
+        Đã nhận đủ số tiền (viết bằng chữ): <strong style="border-bottom: 1px dotted #000; padding-left: 6px; padding-right: 6px;">{{AmountInWords}}</strong>
+    </div>
+</body>
+</html>

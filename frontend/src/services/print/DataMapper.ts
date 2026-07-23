@@ -123,12 +123,12 @@ export const buildPawnContractPrintData = (
 ): Record<string, string> => {
   let rep = "Thực";
   try {
-    if (store.notes) {
+    if (store?.notes) {
       const notesObj = JSON.parse(store.notes);
       rep = notesObj.representative || "Thực";
     }
   } catch {
-    rep = store.notes || "Thực";
+    rep = store?.notes || "Thực";
   }
 
   const identityDate = contract.customer?.identity_card_date
@@ -172,26 +172,49 @@ export const buildPawnContractPrintData = (
 
   return {
     ContractCode: contract.contract_code || "",
+    MaHopDong: contract.contract_code || "",
+    CreatedDate: loanStartDate || "",
+    NgayVay: loanStartDate || "",
     ContractDate: loanStartDate || "",
-    StoreName: store.name || "Hưng Tín",
-    StoreAddress: store.address || "",
-    StorePhone: store.phone || "",
+    StoreName: store?.name || "Hưng Tín",
+    TenCuaHang: store?.name || "Hưng Tín",
+    StoreAddress: store?.address || "",
+    DiaChiCuaHang: store?.address || "",
+    StorePhone: store?.phone || "",
+    DienThoaiCuaHang: store?.phone || "",
     Representative: rep,
     CustomerName: contract.customer?.full_name || "",
+    TenKhachHang: contract.customer?.full_name || "",
     CustomerPhone: contract.customer?.phone || "",
+    SoDienThoai: contract.customer?.phone || "",
     CustomerAddress: contract.customer?.address || "",
+    DiaChiKhachHang: contract.customer?.address || "",
     IdentityNumber: contract.customer?.identity_card_number || "",
+    CustomerIdentity: contract.customer?.identity_card_number || "",
+    SoCMND: contract.customer?.identity_card_number || "",
     IdentityIssueDate: identityDate,
     IdentityIssuePlace: contract.customer?.identity_card_place || "",
     CustomerBankAccount: contract.customer?.bank_account_number || "",
     CustomerBankName: contract.customer?.bank_name || "",
     LoanAmount: loanAmountStr,
+    LoanAmountFormat: loanAmountStr,
+    SoTienVay: loanAmountStr,
     LoanAmountText: loanAmountText,
+    LoanAmountInWords: loanAmountText,
+    SoTienBangChu: loanAmountText,
     LoanStartDate: loanStartDate,
     LoanEndDate: loanEndDate,
+    NgayHetHan: loanEndDate,
     InterestRate: interestRateVal,
+    InterestRateFormatted: interestRateVal,
+    InterestTypeFormatted: contract.interest_type?.name || "Lãi suất ngày",
     AssetType: assetType,
+    LoaiTaiSan: assetType,
+    AssetName: contract.asset_name || assetType,
+    TenTaiSan: contract.asset_name || assetType,
     AssetDetail: assetDetail,
+    AssetDescription: assetDetail,
+    MoTaTaiSan: assetDetail,
   };
 };
 
@@ -202,12 +225,12 @@ export const buildLoanContractPrintData = (
 ): Record<string, string> => {
   let rep = "Thực";
   try {
-    if (store.notes) {
+    if (store?.notes) {
       const notesObj = JSON.parse(store.notes);
       rep = notesObj.representative || "Thực";
     }
   } catch {
-    rep = store.notes || "Thực";
+    rep = store?.notes || "Thực";
   }
 
   const identityDate = contract.customer?.identity_card_date
@@ -240,24 +263,43 @@ export const buildLoanContractPrintData = (
 
   return {
     ContractCode: contract.contract_code || "",
+    MaHopDong: contract.contract_code || "",
+    CreatedDate: loanStartDate || "",
+    NgayVay: loanStartDate || "",
     ContractDate: loanStartDate || "",
-    StoreName: store.name || "Hưng Tín",
-    StoreAddress: store.address || "",
-    StorePhone: store.phone || "",
+    StoreName: store?.name || "Hưng Tín",
+    TenCuaHang: store?.name || "Hưng Tín",
+    StoreAddress: store?.address || "",
+    DiaChiCuaHang: store?.address || "",
+    StorePhone: store?.phone || "",
+    DienThoaiCuaHang: store?.phone || "",
     Representative: rep,
     CustomerName: contract.customer?.full_name || "",
+    TenKhachHang: contract.customer?.full_name || "",
     CustomerPhone: contract.customer?.phone || "",
+    SoDienThoai: contract.customer?.phone || "",
     CustomerAddress: contract.customer?.address || "",
+    DiaChiKhachHang: contract.customer?.address || "",
     IdentityNumber: contract.customer?.identity_card_number || "",
+    CustomerIdentity: contract.customer?.identity_card_number || "",
+    SoCMND: contract.customer?.identity_card_number || "",
     IdentityIssueDate: identityDate,
     IdentityIssuePlace: contract.customer?.identity_card_place || "",
     CustomerBankAccount: contract.customer?.bank_account_number || "",
     CustomerBankName: contract.customer?.bank_name || "",
     LoanAmount: loanAmountStr,
+    LoanAmountFormat: loanAmountStr,
+    SoTienVay: loanAmountStr,
     LoanAmountText: loanAmountText,
+    LoanAmountInWords: loanAmountText,
+    SoTienBangChu: loanAmountText,
+    LoanDays: String(contract.loan_days || 30),
     LoanStartDate: loanStartDate,
     LoanEndDate: loanEndDate,
+    NgayHetHan: loanEndDate,
     InterestRate: interestRateVal,
+    InterestRateFormatted: interestRateVal,
+    InterestTypeFormatted: contract.interest_type?.name || "Tín chấp tiêu dùng",
     AssetType: assetType,
     AssetDetail: "—",
     TotalInterest: formatCurrency(totalInterestVal),
@@ -273,12 +315,12 @@ export const buildInstallmentPrintData = (
 ): Record<string, string> => {
   let rep = "Thực";
   try {
-    if (store.notes) {
+    if (store?.notes) {
       const notesObj = JSON.parse(store.notes);
       rep = notesObj.representative || "Thực";
     }
   } catch {
-    rep = store.notes || "Thực";
+    rep = store?.notes || "Thực";
   }
 
   const identityDate = contract.customer?.identity_card_date
@@ -307,11 +349,14 @@ export const buildInstallmentPrintData = (
   const loanAmountStr = formatCurrency(loanAmt);
   const loanAmountText = convertNumberToVietnameseWords(loanAmt);
 
-  const repaymentAmt = Number(contract.repayment_amount || 0);
-  const repaymentAmountStr = formatCurrency(repaymentAmt);
+  const totalRepaymentAmt = Number(contract.total_amount || contract.repayment_amount || 0);
+  const totalRepaymentStr = formatCurrency(totalRepaymentAmt);
 
-  const cycleDays = contract.cycle_days || 1;
-  const loanDuration = contract.loan_duration || 30;
+  const amountPerPeriodAmt = Number(contract.amount_per_period || (contract.loan_duration ? totalRepaymentAmt / contract.loan_duration : 0));
+  const amountPerPeriodStr = formatCurrency(amountPerPeriodAmt);
+
+  const cycleDays = contract.cycle_days || contract.period_value || 1;
+  const loanDuration = contract.loan_duration || contract.total_periods || 30;
 
   const paymentScheduleTable = generateRepaymentScheduleTable(
     contract.payments || []
@@ -319,30 +364,162 @@ export const buildInstallmentPrintData = (
 
   return {
     ContractCode: contract.contract_code || "",
+    MaHopDong: contract.contract_code || "",
+    CreatedDate: loanStartDate || "",
+    NgayVay: loanStartDate || "",
     ContractDate: loanStartDate || "",
-    StoreName: store.name || "Hưng Tín",
-    StoreAddress: store.address || "",
-    StorePhone: store.phone || "",
+    StoreName: store?.name || "Hưng Tín",
+    TenCuaHang: store?.name || "Hưng Tín",
+    StoreAddress: store?.address || "",
+    DiaChiCuaHang: store?.address || "",
+    StorePhone: store?.phone || "",
+    DienThoaiCuaHang: store?.phone || "",
     Representative: rep,
     CustomerName: contract.customer?.full_name || "",
+    TenKhachHang: contract.customer?.full_name || "",
     CustomerPhone: contract.customer?.phone || "",
+    SoDienThoai: contract.customer?.phone || "",
     CustomerAddress: contract.customer?.address || "",
+    DiaChiKhachHang: contract.customer?.address || "",
     IdentityNumber: contract.customer?.identity_card_number || "",
+    CustomerIdentity: contract.customer?.identity_card_number || "",
+    SoCMND: contract.customer?.identity_card_number || "",
     IdentityIssueDate: identityDate,
     IdentityIssuePlace: contract.customer?.identity_card_place || "",
     CustomerBankAccount: contract.customer?.bank_account_number || "",
     CustomerBankName: contract.customer?.bank_name || "",
     LoanAmount: loanAmountStr,
+    LoanAmountFormat: loanAmountStr,
+    SoTienVay: loanAmountStr,
     LoanAmountText: loanAmountText,
+    LoanAmountInWords: loanAmountText,
+    SoTienBangChu: loanAmountText,
+    TotalAmountPayableFormat: totalRepaymentStr,
+    AmountPerPeriodFormat: amountPerPeriodStr,
+    LoanDays: String(contract.loan_days || loanDuration),
     LoanStartDate: loanStartDate,
     LoanEndDate: loanEndDate,
+    NgayHetHan: loanEndDate,
     InterestRate: interestRateVal,
     AssetType: assetType,
     AssetDetail: "—",
-    RepaymentAmount: repaymentAmountStr,
+    RepaymentAmount: totalRepaymentStr,
     PeriodType: contract.period_type || "ngày",
     LoanDuration: String(loanDuration),
+    TotalPeriods: String(loanDuration),
     CycleDays: String(cycleDays),
+    PeriodValue: String(cycleDays),
     PaymentScheduleTable: paymentScheduleTable,
+  };
+};
+
+// Map Capital Contract to standardized flat dictionary
+export const buildCapitalContractPrintData = (
+  contract: any,
+  store: any
+): Record<string, string> => {
+  const capitalAmt = Number(contract.capital_amount || contract.amount || 0);
+  const capitalAmtStr = formatCurrency(capitalAmt);
+  const capitalAmtText = convertNumberToVietnameseWords(capitalAmt);
+
+  const startDate = contract.start_date || contract.created_at
+    ? new Date(contract.start_date || contract.created_at).toLocaleDateString("vi-VN")
+    : "";
+
+  const endDate = contract.end_date
+    ? new Date(contract.end_date).toLocaleDateString("vi-VN")
+    : "";
+
+  const profitRateStr = contract.profit_rate !== undefined && contract.profit_rate !== null
+    ? `${contract.profit_rate}%`
+    : "Thỏa thuận";
+
+  const investorName = contract.investor_name || contract.collaborator?.full_name || contract.customer_name || "—";
+  const investorIdentity = contract.investor_identity || contract.collaborator?.identity_card_number || "—";
+  const investorPhone = contract.investor_phone || contract.collaborator?.phone || "—";
+  const investorAddress = contract.investor_address || contract.collaborator?.address || "—";
+
+  return {
+    ContractCode: contract.contract_code || contract.code || "",
+    MaHopDong: contract.contract_code || contract.code || "",
+    CreatedDate: startDate,
+    NgayLap: startDate,
+    InvestorName: investorName,
+    TenNhaDauTu: investorName,
+    InvestorIdentity: investorIdentity,
+    CustomerIdentity: investorIdentity,
+    SoCMND: investorIdentity,
+    InvestorPhone: investorPhone,
+    SoDienThoai: investorPhone,
+    InvestorAddress: investorAddress,
+    DiaChiNhaDauTu: investorAddress,
+    CapitalAmountFormat: capitalAmtStr,
+    CapitalAmount: capitalAmtStr,
+    SoTienGop: capitalAmtStr,
+    CapitalAmountInWords: capitalAmtText,
+    SoTienBangChu: capitalAmtText,
+    ProfitRateFormatted: profitRateStr,
+    ProfitRate: profitRateStr,
+    CapitalDays: String(contract.capital_days || contract.duration_days || 30),
+    CapitalStartDate: startDate,
+    NgayBatDau: startDate,
+    CapitalEndDate: endDate,
+    NgayKetThuc: endDate,
+    StoreName: store?.name || "Hưng Tín",
+    TenCuaHang: store?.name || "Hưng Tín",
+    StoreAddress: store?.address || "",
+    DiaChiCuaHang: store?.address || "",
+    StorePhone: store?.phone || "",
+    DienThoaiCuaHang: store?.phone || "",
+  };
+};
+
+// Map Voucher (Receipt / Payment) to standardized flat dictionary
+export const buildVoucherPrintData = (
+  voucher: any,
+  store: any
+): Record<string, string> => {
+  const amt = Number(voucher.amount || 0);
+  const amtStr = formatCurrency(amt);
+  const amtText = convertNumberToVietnameseWords(amt);
+
+  const createdDateObj = voucher.created_at ? new Date(voucher.created_at) : new Date();
+  const createdDateStr = createdDateObj.toLocaleDateString("vi-VN");
+
+  const payerName = voucher.person_name || voucher.customer?.full_name || voucher.employee?.full_name || "—";
+  const payerAddress = voucher.person_address || voucher.customer?.address || "—";
+  const createdByName = voucher.employee?.full_name || voucher.created_by_name || "Quản trị viên";
+  const reason = voucher.reason || voucher.description || "—";
+
+  return {
+    VoucherCode: voucher.voucher_code || voucher.code || voucher.id || "",
+    MaPhieu: voucher.voucher_code || voucher.code || voucher.id || "",
+    CreatedDate: createdDateStr,
+    NgayLap: createdDateStr,
+    VoucherDay: String(createdDateObj.getDate()),
+    VoucherMonth: String(createdDateObj.getMonth() + 1),
+    VoucherYear: String(createdDateObj.getFullYear()),
+    PayerName: payerName,
+    NguoiNopNhan: payerName,
+    TenKhachHang: payerName,
+    PayerAddress: payerAddress,
+    DiaChiNguoiNop: payerAddress,
+    Reason: reason,
+    LyDo: reason,
+    AmountFormat: amtStr,
+    Amount: amtStr,
+    SoTien: amtStr,
+    AmountInWords: amtText,
+    SoTienBangChu: amtText,
+    CreatedByName: createdByName,
+    NguoiLapPhieu: createdByName,
+    AttachmentCount: String(voucher.attachment_count || 1),
+    ChungTuKemTheo: String(voucher.attachment_count || 1),
+    StoreName: store?.name || "Hưng Tín",
+    TenCuaHang: store?.name || "Hưng Tín",
+    StoreAddress: store?.address || "",
+    DiaChiCuaHang: store?.address || "",
+    StorePhone: store?.phone || "",
+    DienThoaiCuaHang: store?.phone || "",
   };
 };

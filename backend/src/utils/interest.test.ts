@@ -637,11 +637,16 @@ function runTests() {
   section("TESTING durationUtils helper functions...", () => {
     assert(convertDurationToDays(3, "thang") === 90, "3 thang -> 90 ngay");
     assert(convertDurationToDays(1, "thang") === 30, "1 thang -> 30 ngay");
+    assert(convertDurationToDays(15, "thang") === 450, "15 thang -> 450 ngay (khong bi ket 15 ngay)");
+    assert(convertDurationToDays(90, "thang") === 90, "90 ngay (da quy doi) -> 90 ngay");
     assert(convertDurationToDays(2, "tuan") === 14, "2 tuan -> 14 ngay");
     assert(convertDurationToDays(10, "ngay") === 10, "10 ngay -> 10 ngay");
     assert(convertDurationToDays(3, "flat_rate_monthly") === 90, "3 thang (flat_rate_monthly) -> 90 ngay");
     assert(convertDurationToDays(1, "monthly_percent_periodic") === 30, "1 thang (monthly_percent_periodic) -> 30 ngay");
     assert(convertDurationToDays(2, "weekly_percent") === 14, "2 tuan (weekly_percent) -> 14 ngay");
+    assert(convertDurationToDays(0, "thang") === 0, "0 -> 0 ngay");
+    assert(convertDurationToDays(-5, "thang") === 0, "-5 -> 0 ngay");
+    assert(convertDurationToDays("invalid", "thang") === 0, "invalid -> 0 ngay");
 
     assert(convertDaysToDisplayUnit(90, "monthly_percent_periodic") === 3, "90 ngay (monthly) -> 3 thang");
     assert(convertDaysToDisplayUnit(30, "monthly_percent_periodic") === 1, "30 ngay (monthly) -> 1 thang");
